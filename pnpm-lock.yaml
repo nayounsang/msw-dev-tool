@@ -74,6 +74,9 @@ importers:
       '@types/react-dom':
         specifier: ^18.3.5
         version: 18.3.5(@types/react@18.3.18)
+      msw:
+        specifier: ^2.7.0
+        version: 2.7.0(@types/node@22.10.2)(typescript@5.6.3)
       react:
         specifier: ^18.3.1
         version: 18.3.1
