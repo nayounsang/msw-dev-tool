@@ -14,7 +14,8 @@
   },
   "peerDependencies": {
     "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+    "react-dom": "^18.0.0",
+    "zustand": "^5.0.2"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^24.0.1",
@@ -29,6 +30,7 @@
     "rollup-plugin-dts": "^5.3.1",
     "rollup-plugin-peer-deps-external": "^2.2.4",
     "tslib": "^2.8.1",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "zustand": "^5.0.2"
   }
 }
