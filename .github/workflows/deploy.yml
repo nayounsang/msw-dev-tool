@@ -1,0 +1,77 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    permissions:
+      contents: write
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+
+      - name: Config identity
+        run: |
+          git config --global user.email "${{ secrets.ADMIN_EMAIL }}"
+          git config --global user.name "${{ secrets.ADMIN_NAME }}"
+
+      - name: Install dependencies
+        working-directory: packages/msw-dev-tool
+        run: pnpm install
+
+      - name: Build
+        working-directory: packages/msw-dev-tool
+        run: npm run build
+
+      - name: Get NPM package version
+        id: get_version
+        working-directory: packages/msw-dev-tool
+        run: |
+          PACKAGE_NAME="msw-dev-tool"
+          VERSION=$(npm view $PACKAGE_NAME version)
+          echo "npm_version=$VERSION" >> $GITHUB_ENV
+
+      - name: Compare and Update package.json version
+        working-directory: packages/msw-dev-tool
+        run: |
+          CURRENT_VERSION=$(cat package.json | jq -r '.version')
+          if [ "$CURRENT_VERSION" != "${{ env.npm_version }}" ]; then
+            npm version ${{ env.npm_version }} --no-git-tag-version
+          else
+            echo "Versions are the same, no need to update."
+          fi
+
+      - name: Clean working tree
+        working-directory: packages/msw-dev-tool
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Working tree is clean. Skipping git add and commit."
+          else
+            git add .
+            git commit -m "fix: clean working tree"
+          fi
+
+      - name: Bump version and create new tag
+        working-directory: packages/msw-dev-tool
+        run: |
+          npm version patch -m "chore(release): bump version to %s"
+
+      - name: Create .npmrc file
+        working-directory: packages/msw-dev-tool
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+
+      - name: Publish to npm
+        working-directory: packages/msw-dev-tool
+        run: npm publish
