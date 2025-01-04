@@ -1,0 +1,8 @@
+{
+  "name": "msw-dev-tool-repo",
+  "private": true,
+  "scripts": {},
+  "packageManager": "pnpm@9.10.0",
+  "dependencies": {
+  }
+}
