@@ -1,7 +1,10 @@
 import React from "react";
 import { createPortal } from "react-dom";
+import useUiControlStore from "../store/uiControlStore";
+import { DevToolContentContainer } from "./DevToolContent/DevToolContentContainer";
 
 export const MSWDevTool = () => {
+  const { isOpen, toggleModal } = useUiControlStore();
   return createPortal(
     <>
       <div
@@ -18,10 +21,13 @@ export const MSWDevTool = () => {
           fontSize: "30px",
           textAlign: "center",
           cursor: "pointer",
+          zIndex:999,
         }}
+        onClick={toggleModal}
       >
         M
       </div>
+      {isOpen && <DevToolContentContainer />}
     </>,
     document.body
   );
