@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "packages/msw-dev-tool/**"
+      - ".github/workflows/deploy.yml"
 
 jobs:
   release:
