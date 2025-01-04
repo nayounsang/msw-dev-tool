@@ -21,6 +21,11 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9.10.0
+
       - name: Config identity
         run: |
           git config --global user.email "${{ secrets.ADMIN_EMAIL }}"
