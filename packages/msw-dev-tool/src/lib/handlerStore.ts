@@ -16,9 +16,11 @@ export interface HandlerStoreState {
 export const useHandlerStore = create<HandlerStoreState>((set, get) => ({
   handlerMap: {},
   initHandlerMap: (handlers) => {
-    const handlerMap = handlers.reduce((acc, handler) => {
+    console.log({handlers},"init")
+    const handlerMap = handlers.reduce((acc, _handler) => {
       // Current, GraphQL & WebSocketHandler is not supported.
-      if (!(handler instanceof HttpHandler)) {
+      const handler = _handler as HttpHandler;
+      if (!("info" in handler && handler.info.method && handler.info.path)) {
         return acc;
       }
       const { method: _method, path: _path } = handler.info;
