@@ -1,22 +1,24 @@
-import { HttpHandler, WebSocketHandler } from "msw";
+import { HttpHandler, RequestHandler, WebSocketHandler } from "msw";
 import { create } from "zustand";
 import { produce } from "immer";
 import { HandlerMap } from "./type";
 
 export interface HandlerStoreState {
   handlerMap: HandlerMap;
-  initHandlerMap: (handlers: HttpHandler[]) => void;
+  initHandlerMap: (
+    handlers: (RequestHandler | WebSocketHandler)[]
+  ) => (RequestHandler | WebSocketHandler)[];
   setHandlerMap: (handlers: HandlerMap) => HandlerMap;
   getIsChecked: (url: string, method: string) => boolean;
   setIsChecked: (url: string, method: string, isChecked: boolean) => void;
-  toggleIsChecked: (url: string, method: string, isChecked: boolean) => void;
+  toggleIsChecked: (url: string, method: string) => void;
 }
 export const useHandlerStore = create<HandlerStoreState>((set, get) => ({
   handlerMap: {},
-  initHandlerMap: (handlers: (HttpHandler | WebSocketHandler)[]) => {
+  initHandlerMap: (handlers) => {
     const handlerMap = handlers.reduce((acc, handler) => {
-      // Current, WebSocketHandler is not supported.
-      if (handler instanceof WebSocketHandler) {
+      // Current, GraphQL & WebSocketHandler is not supported.
+      if (!(handler instanceof HttpHandler)) {
         return acc;
       }
       const { method: _method, path: _path } = handler.info;
@@ -28,13 +30,13 @@ export const useHandlerStore = create<HandlerStoreState>((set, get) => ({
       return acc;
     }, {} as HandlerMap);
     set({ handlerMap });
+    return handlers;
   },
-  setHandlerMap: (handlerMap: HandlerMap) => {
+  setHandlerMap: (handlerMap) => {
     set({ handlerMap });
     return handlerMap;
   },
-  getIsChecked: (url: string, method: string) =>
-    get().handlerMap[url]?.[method].checked,
+  getIsChecked: (url, method) => get().handlerMap[url]?.[method].checked,
   setIsChecked: (url, method, isChecked) => {
     set(
       produce<HandlerStoreState>((state) => {
@@ -45,7 +47,7 @@ export const useHandlerStore = create<HandlerStoreState>((set, get) => ({
       })
     );
   },
-  toggleIsChecked: (url: string, method: string) => {
+  toggleIsChecked: (url, method) => {
     set(
       produce<HandlerStoreState>((state) => {
         if (!state.handlerMap[url]?.[method]) {
@@ -58,7 +60,6 @@ export const useHandlerStore = create<HandlerStoreState>((set, get) => ({
   },
 }));
 
-export const initDevToolHandlers = () =>
-  useHandlerStore.getState().initHandlerMap;
+export const initDevToolHandlers = useHandlerStore.getState().initHandlerMap;
 
 export const getHandlerMap = () => useHandlerStore.getState().handlerMap;
