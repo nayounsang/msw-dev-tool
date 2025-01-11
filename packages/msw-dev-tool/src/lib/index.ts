@@ -1,6 +1,6 @@
 import { HandlerMap } from "./type";
-import { useHandlerStore, initDevToolHandlers } from "./handlerStore";
+import { useHandlerStore, initMSWDevTool } from "./handlerStore";
 
 export { HandlerMap };
 export { useHandlerStore };
-export { initDevToolHandlers };
+export { initMSWDevTool };

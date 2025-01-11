@@ -1,13 +1,22 @@
-import { HttpHandler, RequestHandler, WebSocketHandler } from "msw";
+import { SetupWorker } from "msw/browser";
 import { create } from "zustand";
 import { produce } from "immer";
-import { HandlerMap } from "./type";
+import { Handler, HandlerMap } from "./type";
+import { convertHandlers, updateEnableHandler } from "./util";
 
 export interface HandlerStoreState {
+  worker: SetupWorker | null;
+  /**
+   * HTTP handler map
+   */
   handlerMap: HandlerMap;
-  initHandlerMap: (
-    handlers: (RequestHandler | WebSocketHandler)[]
-  ) => (RequestHandler | WebSocketHandler)[];
+  /**
+   * GraphQL or WebSocketHandler
+   *
+   * *Currently not supported*
+   */
+  restHandlers: Handler[];
+  initMSWDevTool: (worker: SetupWorker) => SetupWorker;
   setHandlerMap: (handlers: HandlerMap) => HandlerMap;
   getIsChecked: (url: string, method: string) => boolean;
   setIsChecked: (url: string, method: string, isChecked: boolean) => void;
@@ -15,24 +24,16 @@ export interface HandlerStoreState {
 }
 export const useHandlerStore = create<HandlerStoreState>((set, get) => ({
   handlerMap: {},
-  initHandlerMap: (handlers) => {
-    console.log({handlers},"init")
-    const handlerMap = handlers.reduce((acc, _handler) => {
-      // Current, GraphQL & WebSocketHandler is not supported.
-      const handler = _handler as HttpHandler;
-      if (!("info" in handler && handler.info.method && handler.info.path)) {
-        return acc;
-      }
-      const { method: _method, path: _path } = handler.info;
-      const [method, path] = [_method.toString(), _path.toString()];
-      if (!acc[path]) {
-        acc[path] = {};
-      }
-      acc[path][method] = { handler, checked: true };
-      return acc;
-    }, {} as HandlerMap);
+  worker: null,
+  restHandlers: [],
+  initMSWDevTool: (_worker) => {
+    const worker = _worker;
+    set({ worker });
+    const handlers = worker.listHandlers() as Handler[];
+    const { handlerMap, unsupportedHandlers } = convertHandlers(handlers);
     set({ handlerMap });
-    return handlers;
+    set({ restHandlers: unsupportedHandlers });
+    return worker;
   },
   setHandlerMap: (handlerMap) => {
     set({ handlerMap });
@@ -48,6 +49,7 @@ export const useHandlerStore = create<HandlerStoreState>((set, get) => ({
         state.handlerMap[url][method].checked = isChecked;
       })
     );
+    updateEnableHandler();
   },
   toggleIsChecked: (url, method) => {
     set(
@@ -59,9 +61,19 @@ export const useHandlerStore = create<HandlerStoreState>((set, get) => ({
           !state.handlerMap[url][method].checked;
       })
     );
+    updateEnableHandler();
   },
 }));
 
-export const initDevToolHandlers = useHandlerStore.getState().initHandlerMap;
+export const initMSWDevTool = useHandlerStore.getState().initMSWDevTool;
 
 export const getHandlerMap = () => useHandlerStore.getState().handlerMap;
+
+export const getWorker = () => {
+  const worker = useHandlerStore.getState().worker;
+  if (!worker) throw new Error("Worker is not initialized");
+  return worker;
+};
+
+export const getUnsupportedHandlers = () =>
+  useHandlerStore.getState().restHandlers;
