@@ -1,39 +1,59 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import { MSWDevTool } from 'msw-dev-tool'
-import { useMsw } from './hooks/useMsw'
+import { useState } from "react";
+import "./App.css";
+import { MSWDevTool } from "msw-dev-tool";
+import { useMsw } from "./hooks/useMsw";
+import { User } from "./type/api";
+import { useFetch } from "./hooks/useFetch";
+import { UserList } from "./components/UserList";
+import { UserInfo } from "./components/UserInfo";
 
 function App() {
-  useMsw()
-  const [count, setCount] = useState(0)
+  useMsw();
+  const [userId, setUserId] = useState<string>("");
+  const {
+    data: user,
+    error: fetchUserError,
+    fetchData: fetchUser,
+  } = useFetch<User>(`/api/users/${userId}`);
+  const {
+    data: users,
+    error: fetchUsersError,
+    fetchData: fetchUsers,
+  } = useFetch<User[]>(`/api/users`);
 
   return (
     <>
-      <div>
-        <MSWDevTool/>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+      <MSWDevTool />
+      <div style={{ padding: "20px", fontFamily: "Arial" }}>
+        <h1>User Management</h1>
+        <div style={{ marginBottom: "20px" }}>
+          <button
+            onClick={fetchUsers}
+            style={{ padding: "10px 20px", cursor: "pointer" }}
+          >
+            Fetch All Users
+          </button>
+        </div>
+        <div style={{ marginBottom: "20px" }}>
+          <input
+            type="text"
+            placeholder="Enter User ID"
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+            style={{ padding: "10px", marginRight: "10px" }}
+          />
+          <button
+            onClick={fetchUser}
+            style={{ padding: "10px 20px", cursor: "pointer" }}
+          >
+            Fetch User by ID
+          </button>
+        </div>
+        <UserList users={users} fetchUsersError={fetchUsersError} />
+        <UserInfo user={user} fetchUserError={fetchUserError} />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
