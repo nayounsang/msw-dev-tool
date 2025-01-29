@@ -31,12 +31,14 @@ const HttpControlElement = ({
   return (
     <div>
       <p>{url}</p>
-      <p>{method}</p>
-      <input
-        type="checkbox"
-        checked={getIsChecked(url, method)}
-        onChange={() => toggleIsChecked(url, method)}
-      />
+      <label>
+        {method}
+        <input
+          type="checkbox"
+          checked={getIsChecked(url, method)}
+          onChange={() => toggleIsChecked(url, method)}
+        />
+      </label>
     </div>
   );
 };

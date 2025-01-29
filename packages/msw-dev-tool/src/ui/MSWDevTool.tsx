@@ -7,24 +7,7 @@ export const MSWDevTool = () => {
   const { isOpen, toggleModal } = useUiControlStore();
   return createPortal(
     <>
-      <div
-        style={{
-          position: "absolute",
-          top: "10px",
-          left: "10px",
-          borderRadius: "50%",
-          border: "1px solid black",
-          backgroundColor: "white",
-          color: "black",
-          width: "50px",
-          height: "50px",
-          fontSize: "30px",
-          textAlign: "center",
-          cursor: "pointer",
-          zIndex:999,
-        }}
-        onClick={toggleModal}
-      >
+      <div className="entry-msw-dev-tool" onClick={toggleModal}>
         M
       </div>
       {isOpen && <DevToolContentContainer />}
