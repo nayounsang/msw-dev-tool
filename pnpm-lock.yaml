@@ -65,9 +65,6 @@ importers:
       immer:
         specifier: ^10.1.1
         version: 10.1.1
-      msw:
-        specifier: ^2.7.0
-        version: 2.7.0(@types/node@22.10.5)(typescript@5.6.3)
     devDependencies:
       '@rollup/plugin-commonjs':
         specifier: ^24.0.1
@@ -84,6 +81,9 @@ importers:
       '@types/react-dom':
         specifier: ^18.3.5
         version: 18.3.5(@types/react@18.3.18)
+      msw:
+        specifier: ^2.7.0
+        version: 2.7.0(@types/node@22.10.5)(typescript@5.6.3)
       postcss:
         specifier: ^8.5.1
         version: 8.5.1
