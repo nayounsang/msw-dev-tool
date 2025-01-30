@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "./App.css";
 import { MSWDevTool } from "msw-dev-tool";
+import "msw-dev-tool/msw-dev-tool.css"
 import { useMsw } from "./hooks/useMsw";
 import { User } from "./type/api";
 import { useFetch } from "./hooks/useFetch";
