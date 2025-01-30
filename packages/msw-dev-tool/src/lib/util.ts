@@ -1,21 +1,5 @@
 import { HttpHandler } from "msw";
-import {
-  getHandlerMap,
-  getUnsupportedHandlers,
-  getWorker,
-} from "./handlerStore";
 import { Handler, HandlerMap } from "./type";
-export const updateEnableHandler = () => {
-  const handlerMap = getHandlerMap();
-  const worker = getWorker();
-  const checkedHttpHandlerList = flatHandlerMap(handlerMap)
-    .filter((h) => h.checked)
-    .map((h) => h.handler);
-  const otherProtocolHandlers = getUnsupportedHandlers();
-  worker.resetHandlers(
-    ...[...checkedHttpHandlerList, ...otherProtocolHandlers]
-  );
-};
 
 export const flatHandlerMap = (handlerMap: HandlerMap) => {
   return Object.entries(handlerMap).flatMap(([url, methods]) =>

@@ -2,7 +2,7 @@ import { SetupWorker } from "msw/browser";
 import { create } from "zustand";
 import { produce } from "immer";
 import { Handler, HandlerMap } from "./type";
-import { convertHandlers, updateEnableHandler } from "./util";
+import { convertHandlers, flatHandlerMap} from "./util";
 
 export interface HandlerStoreState {
   worker: SetupWorker | null;
@@ -67,13 +67,25 @@ export const useHandlerStore = create<HandlerStoreState>((set, get) => ({
 
 export const initMSWDevTool = useHandlerStore.getState().initMSWDevTool;
 
-export const getHandlerMap = () => useHandlerStore.getState().handlerMap;
+const getHandlerMap = () => useHandlerStore.getState().handlerMap;
 
-export const getWorker = () => {
+const getWorker = () => {
   const worker = useHandlerStore.getState().worker;
   if (!worker) throw new Error("Worker is not initialized");
   return worker;
 };
 
-export const getUnsupportedHandlers = () =>
+const getUnsupportedHandlers = () =>
   useHandlerStore.getState().restHandlers;
+
+const updateEnableHandler = () => {
+  const handlerMap = getHandlerMap();
+  const worker = getWorker();
+  const checkedHttpHandlerList = flatHandlerMap(handlerMap)
+    .filter((h) => h.checked)
+    .map((h) => h.handler);
+  const otherProtocolHandlers = getUnsupportedHandlers();
+  worker.resetHandlers(
+    ...[...checkedHttpHandlerList, ...otherProtocolHandlers]
+  );
+};
