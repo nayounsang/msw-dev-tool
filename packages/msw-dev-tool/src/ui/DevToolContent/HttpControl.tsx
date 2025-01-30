@@ -1,6 +1,7 @@
 import React from "react";
 import { useHandlerStore } from "../../lib";
 import { flatHandlerMap } from "../../utils/handlerMap";
+import { dummyUrl } from "../../const/handler";
 
 export const HttpControl = () => {
   const { handlerMap } = useHandlerStore();
@@ -8,6 +9,9 @@ export const HttpControl = () => {
     <div>
       {flatHandlerMap(handlerMap).map((flat) => {
         const { url, method } = flat;
+        if (url === dummyUrl) {
+          return <></>;
+        }
         return (
           <HttpControlElement
             key={`${url}-${method}`}

@@ -2,7 +2,8 @@ import { SetupWorker } from "msw/browser";
 import { create } from "zustand";
 import { produce } from "immer";
 import { Handler, HandlerMap } from "./type";
-import { convertHandlers, flatHandlerMap} from "./util";
+import { convertHandlers, flatHandlerMap } from "./util";
+import { dummyHandler } from "../const/handler";
 
 export interface HandlerStoreState {
   worker: SetupWorker | null;
@@ -75,17 +76,27 @@ const getWorker = () => {
   return worker;
 };
 
-const getUnsupportedHandlers = () =>
-  useHandlerStore.getState().restHandlers;
+const getUnsupportedHandlers = () => useHandlerStore.getState().restHandlers;
 
 const updateEnableHandler = () => {
   const handlerMap = getHandlerMap();
   const worker = getWorker();
-  const checkedHttpHandlerList = flatHandlerMap(handlerMap)
+
+  const checkedHttpHandlers = flatHandlerMap(handlerMap)
     .filter((h) => h.checked)
     .map((h) => h.handler);
   const otherProtocolHandlers = getUnsupportedHandlers();
-  worker.resetHandlers(
-    ...[...checkedHttpHandlerList, ...otherProtocolHandlers]
-  );
+  const totalHandlers = [...checkedHttpHandlers, ...otherProtocolHandlers];
+
+  /**
+   * This has to do with `msw` internal workings.
+   * If I spread an empty array in `resetHandlers`, it will be replaced by `initialHandler`.
+   * Therefore, I proposed the `clear` method, but unfortunately it was not accepted!
+   */
+  if (totalHandlers.length === 0) {
+    worker.resetHandlers(dummyHandler);
+    return;
+  }
+
+  worker.resetHandlers(...totalHandlers);
 };
