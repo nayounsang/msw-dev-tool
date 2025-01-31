@@ -7,9 +7,6 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "declaration": true, 
-    "declarationDir": "./dist/types",
-    "outDir": "./dist",
     "moduleResolution": "node"
   },
   "include": ["src/**/*"],

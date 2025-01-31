@@ -11,14 +11,18 @@ export default [
     input: "src/index.ts",
     output: [
       {
-        file: pkg.main, // dist/cjs/index.js
+        dir: "dist/cjs", // dist/cjs/index.js
         format: "cjs",
         sourcemap: true,
+        preserveModules: true,
+        preserveModulesRoot: "src",
       },
       {
-        file: pkg.module, // dist/esm/index.js
+        dir: "dist/esm", // dist/esm/index.js
         format: "esm",
         sourcemap: true,
+        preserveModules: true, 
+        preserveModulesRoot: "src",
       },
     ],
     external: [...Object.keys(pkg.peerDependencies || {})],
@@ -28,6 +32,7 @@ export default [
       commonjs(),
       typescript({
         tsconfig: "./tsconfig.json",
+        declaration: false,
       }),
       postcss({
         extract: "msw-dev-tool.css",
