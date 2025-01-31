@@ -21,7 +21,7 @@ export default [
         dir: "dist/esm", // dist/esm/index.js
         format: "esm",
         sourcemap: true,
-        preserveModules: true, 
+        preserveModules: true,
         preserveModulesRoot: "src",
       },
     ],
@@ -39,6 +39,7 @@ export default [
         minimize: true,
       }),
     ],
+    preserveSymlinks: true,
   },
   {
     input: "src/index.ts",
