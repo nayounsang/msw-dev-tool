@@ -15,7 +15,7 @@ export interface HandlerStoreState {
   /**
    * GraphQL or WebSocketHandler
    *
-   * *Currently not supported*
+   * **Currently not supported**
    */
   restHandlers: Handler[];
   initMSWDevTool: (worker: SetupWorker) => SetupWorker;
