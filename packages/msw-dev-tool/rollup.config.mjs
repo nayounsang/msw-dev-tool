@@ -39,6 +39,9 @@ export default [
         minimize: true,
       }),
     ],
+    /**
+     * When loading external modules, depending on pnpm’s package storage method
+     */
     preserveSymlinks: true,
   },
   {
