@@ -1,6 +1,5 @@
-import { HandlerMap } from "./type";
-import { useHandlerStore, initMSWDevTool } from "./handlerStore";
+import { FlattenHandler } from "./type";
+import { initMSWDevTool } from "./handlerStore";
 
-export { HandlerMap };
-export { useHandlerStore };
+export { FlattenHandler };
 export { initMSWDevTool };

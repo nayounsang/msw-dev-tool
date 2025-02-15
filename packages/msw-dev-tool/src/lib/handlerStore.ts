@@ -1,28 +1,24 @@
 import { SetupWorker } from "msw/browser";
 import { create } from "zustand";
-import { produce } from "immer";
-import { Handler, HandlerMap } from "./type";
-import { convertHandlers, flatHandlerMap } from "./util";
+import { FlattenHandler, Handler } from "./type";
+import { convertHandlers } from "./util";
 import { dummyHandler } from "../const/handler";
 import { HttpHandler } from "msw";
+import { OnChangeFn, RowSelectionState, Updater } from "@tanstack/react-table";
+import { isFunction } from "lodash";
 
 export interface HandlerStoreState {
   worker: SetupWorker | null;
-  /**
-   * HTTP handler map
-   */
-  handlerMap: HandlerMap;
   /**
    * GraphQL or WebSocketHandler
    *
    * **Currently not supported**
    */
   restHandlers: Handler[];
+  flattenHandlers: FlattenHandler[];
+  handlerRowSelection: RowSelectionState;
   initMSWDevTool: (worker: SetupWorker) => SetupWorker;
-  setHandlerMap: (handlers: HandlerMap) => HandlerMap;
-  getIsChecked: (url: string, method: string) => boolean;
-  setIsChecked: (url: string, method: string, isChecked: boolean) => void;
-  toggleIsChecked: (url: string, method: string) => void;
+  handleHandlerRowSelectionChange: OnChangeFn<RowSelectionState>;
   getWorker: () => SetupWorker;
   getTotalEnableHandlers: () => (Handler | HttpHandler)[];
   /**
@@ -33,44 +29,44 @@ export interface HandlerStoreState {
   updateEnableHandlers: () => void;
 }
 export const useHandlerStore = create<HandlerStoreState>((set, get) => ({
-  handlerMap: {},
+  flattenHandlers: [],
   worker: null,
   restHandlers: [],
+  handlerRowSelection: {},
   initMSWDevTool: (_worker) => {
     const worker = _worker;
     set({ worker });
     const handlers = worker.listHandlers() as Handler[];
-    const { handlerMap, unsupportedHandlers } = convertHandlers(handlers);
-    set({ handlerMap });
+    const { flattenHandlers, unsupportedHandlers } = convertHandlers(handlers);
+    set({ flattenHandlers });
+    set({
+      handlerRowSelection: flattenHandlers.reduce((acc, handler) => {
+        acc[handler.id] = handler.enabled;
+        return acc;
+      }, {} as RowSelectionState),
+    });
     set({ restHandlers: unsupportedHandlers });
     return worker;
   },
-  setHandlerMap: (handlerMap) => {
-    set({ handlerMap });
-    return handlerMap;
-  },
-  getIsChecked: (url, method) => get().handlerMap[url]?.[method].checked,
-  setIsChecked: (url, method, isChecked) => {
-    set(
-      produce<HandlerStoreState>((state) => {
-        if (!state.handlerMap[url]) {
-          return;
-        }
-        state.handlerMap[url][method].checked = isChecked;
-      })
-    );
-    get().updateEnableHandlers();
-  },
-  toggleIsChecked: (url, method) => {
-    set(
-      produce<HandlerStoreState>((state) => {
-        if (!state.handlerMap[url]?.[method]) {
-          return;
-        }
-        state.handlerMap[url][method].checked =
-          !state.handlerMap[url][method].checked;
-      })
-    );
+  handleHandlerRowSelectionChange: (updater) => {
+    if (isFunction(updater)) {
+      set(({ handlerRowSelection }) => {
+        const next = updater(handlerRowSelection);
+        const current = get().flattenHandlers.map((handler) =>
+          next[handler.id]
+            ? { ...handler, enabled: true }
+            : { ...handler, enabled: false }
+        );
+        return { handlerRowSelection: next, flattenHandlers: current };
+      });
+    } else {
+      const current = get().flattenHandlers.map((handler) =>
+        updater[handler.id]
+          ? { ...handler, enabled: true }
+          : { ...handler, enabled: false }
+      );
+      set({ handlerRowSelection: updater, flattenHandlers: current });
+    }
     get().updateEnableHandlers();
   },
   getWorker: () => {
@@ -79,9 +75,8 @@ export const useHandlerStore = create<HandlerStoreState>((set, get) => ({
     return worker;
   },
   getTotalEnableHandlers: () => {
-    const handlerMapList = flatHandlerMap(get().handlerMap);
-    const checkedHttpHandlers = handlerMapList
-      .filter((h) => h.checked)
+    const checkedHttpHandlers = get()
+      .flattenHandlers.filter((h) => h.enabled)
       .map((h) => h.handler);
     const otherProtocolHandlers = get().restHandlers;
     return [...checkedHttpHandlers, ...otherProtocolHandlers];

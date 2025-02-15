@@ -1,27 +1,22 @@
 import React, { useMemo } from "react";
-import { useHandlerStore } from "../../lib";
-import {
-  convertRowToRowSelectionState,
-  FlatHandlerMap,
-  flatHandlerMap,
-} from "../../utils/handlerMap";
 import { dummyUrl } from "../../const/handler";
 import {
   ColumnDef,
   createColumnHelper,
   flexRender,
   getCoreRowModel,
-  RowSelectionState,
   useReactTable,
 } from "@tanstack/react-table";
+import { useHandlerStore } from "../../lib/handlerStore";
+import { FlattenHandler } from "../../lib";
 
 export const HttpControl = () => {
-  const { handlerMap } = useHandlerStore();
+  const { flattenHandlers,handlerRowSelection,handleHandlerRowSelectionChange } = useHandlerStore();
 
-  const columnHelper = createColumnHelper<FlatHandlerMap>();
-  const columns: ColumnDef<FlatHandlerMap, any>[] = useMemo(() => {
+  const columnHelper = createColumnHelper<FlattenHandler>();
+  const columns: ColumnDef<FlattenHandler, any>[] = useMemo(() => {
     return [
-      columnHelper.accessor("checked", {
+      columnHelper.accessor("enabled", {
         header: ({ table }) => (
           <input
             type="checkbox"
@@ -37,38 +32,27 @@ export const HttpControl = () => {
           />
         ),
       }),
-      columnHelper.accessor("url", {
+      columnHelper.accessor("path", {
         header: "End point",
       }),
       columnHelper.accessor("method", {
         header: "Method",
         cell: ({ row }) => (
-          <div className="msw-dev-tool-center">{row.original.method}</div>
+          <div className="msw-dev-tool-center">{row.original.enabled}</div>
         ),
       }),
     ];
   }, []);
-  const data = useMemo(() => {
-    return flatHandlerMap(handlerMap).filter((h) => h.url !== dummyUrl);
-  }, [handlerMap]);
-
-  const getRowId = (row: FlatHandlerMap) => `${row.url}_${row.method}`;
-  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>(
-    convertRowToRowSelectionState(data)
-  );
 
   const table = useReactTable({
     columns,
-    data,
+    data:flattenHandlers,
     getCoreRowModel: getCoreRowModel(),
     state: {
-      rowSelection,
+      rowSelection:handlerRowSelection,
     },
-    onRowSelectionChange: (newRowSelection) => {
-      setRowSelection(newRowSelection);
-      
-    },
-    getRowId,
+    onRowSelectionChange: handleHandlerRowSelectionChange,
+    getRowId:(row)=>row.id,
     enableRowSelection: true,
   });
 

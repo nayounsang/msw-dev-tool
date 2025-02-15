@@ -1,8 +1,11 @@
 import { HttpHandler, RequestHandler, WebSocketHandler } from "msw";
 
-export type HandlerMap = Record<
-  string,
-  Record<string, { handler: HttpHandler; checked: boolean }>
->;
+export type FlattenHandler = {
+  id: string;
+  path: string;
+  method: string;
+  enabled: boolean;
+  handler: HttpHandler;
+};
 
 export type Handler = RequestHandler | WebSocketHandler;
