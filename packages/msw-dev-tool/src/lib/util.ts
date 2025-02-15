@@ -19,6 +19,7 @@ export const convertHandlers = (handlers: Handler[]) => {
       unsupportedHandlers.push(handler);
       return acc;
     }
+
     const { method: _method, path: _path } = handler.info;
     const [method, path] = [_method.toString(), _path.toString()];
     acc.push({
@@ -28,6 +29,7 @@ export const convertHandlers = (handlers: Handler[]) => {
       enabled: true,
       handler,
     });
+
     return acc;
   }, [] as FlattenHandler[]);
   return { flattenHandlers, unsupportedHandlers };

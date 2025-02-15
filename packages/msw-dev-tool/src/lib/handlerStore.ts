@@ -35,17 +35,20 @@ export const useHandlerStore = create<HandlerStoreState>((set, get) => ({
   handlerRowSelection: {},
   initMSWDevTool: (_worker) => {
     const worker = _worker;
-    set({ worker });
     const handlers = worker.listHandlers() as Handler[];
     const { flattenHandlers, unsupportedHandlers } = convertHandlers(handlers);
+    const handlerRowSelection = flattenHandlers.reduce((acc, handler) => {
+      acc[handler.id] = handler.enabled;
+      return acc;
+    }, {} as RowSelectionState);
+
+    set({ worker });
     set({ flattenHandlers });
     set({
-      handlerRowSelection: flattenHandlers.reduce((acc, handler) => {
-        acc[handler.id] = handler.enabled;
-        return acc;
-      }, {} as RowSelectionState),
+      handlerRowSelection,
     });
     set({ restHandlers: unsupportedHandlers });
+    
     return worker;
   },
   handleHandlerRowSelectionChange: (updater) => {
