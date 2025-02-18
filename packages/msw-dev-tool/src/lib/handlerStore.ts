@@ -11,6 +11,9 @@ import { OnChangeFn, RowSelectionState, Updater } from "@tanstack/react-table";
 import { isFunction } from "lodash";
 
 export interface HandlerStoreState {
+  /**
+   * @remarks ⚠️ To be safe, access `getWorker()` rather than `get().worker` directly.
+   */
   worker: SetupWorker | null;
   /**
    * GraphQL or WebSocketHandler
@@ -21,6 +24,7 @@ export interface HandlerStoreState {
   flattenHandlers: FlattenHandler[];
   handlerRowSelection: RowSelectionState;
   initMSWDevTool: (worker: SetupWorker) => SetupWorker;
+  resetMSWDevTool: () => void;
   handleHandlerRowSelectionChange: OnChangeFn<RowSelectionState>;
   getWorker: () => SetupWorker;
 }
@@ -45,6 +49,24 @@ export const useHandlerStore = create<HandlerStoreState>((set, get) => ({
     set({ restHandlers: unsupportedHandlers });
 
     return worker;
+  },
+  resetMSWDevTool: () => {
+    const _worker = get().getWorker();
+    _worker.resetHandlers();
+    
+    const {
+      worker,
+      flattenHandlers,
+      handlerRowSelection,
+      unsupportedHandlers,
+    } = initMSWDevToolStore(_worker);
+
+    set({ worker });
+    set({ flattenHandlers });
+    set({
+      handlerRowSelection,
+    });
+    set({ restHandlers: unsupportedHandlers });
   },
   handleHandlerRowSelectionChange: (updater) => {
     const worker = get().getWorker();
