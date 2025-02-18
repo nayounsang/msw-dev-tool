@@ -1,12 +1,15 @@
 import React from "react";
 import { flexRender } from "@tanstack/react-table";
 import { useFlattenHandlersTable } from "../../hook/useFlattenHandlersTable";
+import { useHandlerStore } from "../../lib/handlerStore";
 
 export const HttpControl = () => {
   const table = useFlattenHandlersTable();
+  const { resetMSWDevTool } = useHandlerStore();
 
   return (
     <div>
+      <button onClick={() => resetMSWDevTool()}>Reset Dev tool</button>
       <table>
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
