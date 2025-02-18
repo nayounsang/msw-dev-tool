@@ -4,6 +4,7 @@
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/types/index.d.ts",
+  "repository": "https://github.com/nayounsang/msw-dev-tool",
   "files": [
     "dist",
     "LICENSE",
