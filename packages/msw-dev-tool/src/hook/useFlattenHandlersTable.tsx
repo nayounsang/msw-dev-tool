@@ -6,7 +6,8 @@ import {
 } from "@tanstack/react-table";
 import { useHandlerStore } from "../lib/handlerStore";
 import { FlattenHandler } from "../lib";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
+import { PreviewHandler } from "../ui/Table/PreviewHandler";
 
 export const useFlattenHandlersTable = () => {
   const {
@@ -42,6 +43,24 @@ export const useFlattenHandlersTable = () => {
         cell: ({ row }) => (
           <div className="msw-dev-tool-center">{row.original.method}</div>
         ),
+      }),
+      columnHelper.accessor("handler", {
+        header: "Preview",
+        cell: ({ row }) => {
+          const handler = row.original.handler;
+          const [isOpen, setIsOpen] = useState(false);
+          return (
+            <>
+              <button onClick={() => setIsOpen(true)}>Preview</button>
+              {isOpen && (
+                <PreviewHandler
+                  handler={handler}
+                  onClose={() => setIsOpen(false)}
+                />
+              )}
+            </>
+          );
+        },
       }),
     ];
   }, []);
