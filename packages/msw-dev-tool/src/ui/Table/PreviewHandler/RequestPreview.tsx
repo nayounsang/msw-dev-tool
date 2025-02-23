@@ -1,22 +1,25 @@
 import { PathParams } from "msw";
 import React, { useState } from "react";
-import { getPathWithParams, getTotalUrl } from "../../../utils/url";
+import { getPathWithParams, getSearchParams, getTotalUrl } from "../../../utils/url";
 
 export const RequestPreview = ({
   url,
   paramValues,
   headers = {},
+  searchParams = {},
 }: {
   url: URL;
   paramValues?: PathParams<string>;
   headers?: Record<string, string>;
+  searchParams?: Record<string, string>;
 }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [response, setResponse] = useState<any>(null);
 
   const finalPath = getPathWithParams(url, paramValues);
-  const totalUrl = getTotalUrl(url.origin, finalPath);
+  const searchParamsString = getSearchParams(searchParams);
+  const totalUrl = getTotalUrl(url.origin, finalPath, searchParamsString);
 
   const handleFetch = () => {
     setLoading(true);

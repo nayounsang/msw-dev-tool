@@ -38,6 +38,7 @@ export const KeyValueInputList = ({
           display: "flex",
           gap: "8px",
           width: "100%",
+          alignItems: "center",
         }}
       >
         <input
@@ -49,7 +50,7 @@ export const KeyValueInputList = ({
             padding: "8px",
             borderRadius: "4px",
             border: "1px solid #ccc",
-            width:"100px",
+            width: "100px",
           }}
         />
         <input

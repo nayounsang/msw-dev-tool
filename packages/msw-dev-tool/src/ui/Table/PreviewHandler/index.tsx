@@ -29,6 +29,7 @@ export const PreviewHandler = ({ handler, onClose }: PreviewHandlerProps) => {
       : undefined
   );
   const [headers, setHeaders] = useState<Record<string, string>>({});
+  const [searchParams, setSearchParams] = useState<Record<string, string>>({});
 
   const handleParamChange = (key: string, value: string) => {
     setParamValues((prev) => ({
@@ -47,6 +48,8 @@ export const PreviewHandler = ({ handler, onClose }: PreviewHandlerProps) => {
         boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
         borderRadius: "8px",
         width: "320px",
+        maxHeight: "500px",
+        overflow: "scroll",
       }}
     >
       <div style={{ position: "relative" }}>
@@ -76,9 +79,16 @@ export const PreviewHandler = ({ handler, onClose }: PreviewHandlerProps) => {
           paramValues={paramValues}
           onParamChange={handleParamChange}
         />
+        <h3>Search Params</h3>
+        <KeyValueInputList items={searchParams} setItems={setSearchParams} />
         <h3>Headers</h3>
         <KeyValueInputList items={headers} setItems={setHeaders} />
-        <RequestPreview url={url} paramValues={paramValues} headers={headers} />
+        <RequestPreview
+          url={url}
+          paramValues={paramValues}
+          headers={headers}
+          searchParams={searchParams}
+        />
       </div>
     </div>,
     document.body
