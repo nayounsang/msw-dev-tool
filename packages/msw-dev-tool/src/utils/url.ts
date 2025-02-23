@@ -21,9 +21,29 @@ export const getPathWithParams = (
     .join("/");
 };
 
+export const getSearchParams = (
+  searchParams?: Record<string, string>
+): string => {
+  if (!searchParams || Object.keys(searchParams).length === 0) return "";
+
+  const urlSearchParams = new URLSearchParams();
+  Object.entries(searchParams).forEach(([key, value]) => {
+    urlSearchParams.set(key, value);
+  });
+
+  return urlSearchParams.toString();
+};
 /**
  * Create full URL string
  */
-export const getTotalUrl = (origin: string, path: string): string => {
-  return `${origin}${path}`;
+export const getTotalUrl = (
+  origin: string,
+  path: string,
+  searchParams: string
+): string => {
+  const url = new URL(`${origin}${path}`);
+  if (searchParams) {
+    url.search = searchParams;
+  }
+  return url.toString();
 };
