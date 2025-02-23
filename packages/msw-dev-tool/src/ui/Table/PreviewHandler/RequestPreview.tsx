@@ -5,9 +5,11 @@ import { getPathWithParams, getTotalUrl } from "../../../utils/url";
 export const RequestPreview = ({
   url,
   paramValues,
+  headers = {},
 }: {
   url: URL;
   paramValues?: PathParams<string>;
+  headers?: Record<string, string>;
 }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -20,7 +22,12 @@ export const RequestPreview = ({
     setLoading(true);
     setError(null);
 
-    fetch(totalUrl)
+    fetch(totalUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers,
+      },
+    })
       .then((res) => res.json())
       .then((data) => {
         setResponse(data);
