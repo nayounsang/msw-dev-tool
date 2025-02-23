@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { HttpHandler, matchRequestUrl, PathParams } from "msw";
 import { PathParamSetter } from "./PathParamSetter";
 import { RequestPreview } from "./RequestPreview";
+import { KeyValueInputList } from "./KeyValueInputList";
 
 interface PreviewHandlerProps {
   handler: HttpHandler;
@@ -27,6 +28,7 @@ export const PreviewHandler = ({ handler, onClose }: PreviewHandlerProps) => {
         )
       : undefined
   );
+  const [headers, setHeaders] = useState<Record<string, string>>({});
 
   const handleParamChange = (key: string, value: string) => {
     setParamValues((prev) => ({
@@ -74,7 +76,9 @@ export const PreviewHandler = ({ handler, onClose }: PreviewHandlerProps) => {
           paramValues={paramValues}
           onParamChange={handleParamChange}
         />
-        <RequestPreview url={url} paramValues={paramValues} />
+        <h3>Headers</h3>
+        <KeyValueInputList items={headers} setItems={setHeaders} />
+        <RequestPreview url={url} paramValues={paramValues} headers={headers} />
       </div>
     </div>,
     document.body

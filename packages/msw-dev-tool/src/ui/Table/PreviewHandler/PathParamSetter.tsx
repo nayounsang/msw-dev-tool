@@ -27,6 +27,7 @@ export const PathParamSetter = ({
                 type="text"
                 value={value}
                 onChange={(e) => onParamChange(key, e.target.value)}
+                placeholder="value of path param"
                 style={{
                   padding: "4px 8px",
                   borderRadius: "4px",
