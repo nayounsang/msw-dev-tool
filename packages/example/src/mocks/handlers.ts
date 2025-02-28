@@ -12,4 +12,7 @@ export const handlers: Array<RequestHandler | WebSocketHandler> = [
     }
     return HttpResponse.json(user, { status: 200 });
   }),
+  http.get("https://example.com/users", () => {
+    return HttpResponse.json(users, { status: 200 });
+  }),
 ];

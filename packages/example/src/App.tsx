@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./App.css";
 import { MSWDevTool } from "msw-dev-tool";
-import "msw-dev-tool/msw-dev-tool.css"
+import "msw-dev-tool/msw-dev-tool.css";
 import { useMsw } from "./hooks/useMsw";
 import { User } from "./type/api";
 import { useFetch } from "./hooks/useFetch";
@@ -21,6 +21,11 @@ function App() {
     error: fetchUsersError,
     fetchData: fetchUsers,
   } = useFetch<User[]>(`/api/users`);
+  const {
+    data: exampleUsers,
+    error: fetchExampleUsersError,
+    fetchData: fetchExampleUsers,
+  } = useFetch<User[]>("https://example.com/users");
 
   return (
     <>
@@ -33,6 +38,14 @@ function App() {
             style={{ padding: "10px 20px", cursor: "pointer" }}
           >
             Fetch All Users
+          </button>
+        </div>
+        <div style={{ marginBottom: "20px" }}>
+          <button
+            onClick={fetchExampleUsers}
+            style={{ padding: "10px 20px", cursor: "pointer" }}
+          >
+            Fetch All Users From Other Host
           </button>
         </div>
         <div style={{ marginBottom: "20px" }}>
@@ -51,6 +64,10 @@ function App() {
           </button>
         </div>
         <UserList users={users} fetchUsersError={fetchUsersError} />
+        <UserList
+          users={exampleUsers}
+          fetchUsersError={fetchExampleUsersError}
+        />
         <UserInfo user={user} fetchUserError={fetchUserError} />
       </div>
     </>
