@@ -36,7 +36,26 @@ export const useFlattenHandlersTable = () => {
         ),
       }),
       columnHelper.accessor("path", {
-        header: "End point",
+        header: "Protocol",
+        cell: ({ row }) => {
+          console.log(row.original.path);
+          const protocol = new URL(row.original.path, location.href).protocol;
+          return <div className="msw-dev-tool-center">{protocol}</div>;
+        },
+      }),
+      columnHelper.accessor("path", {
+        header: "Host",
+        cell: ({ row }) => {
+          const host = new URL(row.original.path,location.href).host;
+          return <div className="msw-dev-tool-center">{host}</div>;
+        },
+      }),
+      columnHelper.accessor("path", {
+        header: "Path",
+        cell: ({ row }) => {
+          const path = new URL(row.original.path, location.href).pathname;
+          return <div className="msw-dev-tool-center">{path}</div>;
+        },
       }),
       columnHelper.accessor("method", {
         header: "Method",
