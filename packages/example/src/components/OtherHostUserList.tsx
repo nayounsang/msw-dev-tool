@@ -2,13 +2,13 @@ import { useFetch } from "../hooks/useFetch";
 import { User } from "../type/api";
 import { UsersTable } from "./UsersTable";
 
-export const UserList = () => {
+export const OtherHostUserList = () => {
   const {
     data: users,
     error,
     fetchData: fetchUsers,
     isFetching,
-  } = useFetch<User[]>(`/api/users`);
+  } = useFetch<User[]>(`https://example.com/users`);
 
   return (
     <section
@@ -20,7 +20,7 @@ export const UserList = () => {
         gap: "1rem",
       }}
     >
-      <h2>User List</h2>
+      <h2>Other Host User List</h2>
       <button
         onClick={fetchUsers}
         style={{ padding: "10px 20px", cursor: "pointer" }}
