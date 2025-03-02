@@ -39,10 +39,6 @@ export default [
         minimize: true,
       }),
     ],
-    /**
-     * When loading external modules, depending on pnpm’s package storage method
-     */
-    preserveSymlinks: true,
   },
   {
     input: "src/index.ts",
@@ -50,7 +46,14 @@ export default [
       file: "dist/types/index.d.ts",
       format: "es",
     },
-    external: [/\.css$/],
-    plugins: [dts()],
+    external: [/\.css$/, ...Object.keys(pkg.peerDependencies || {})],
+    plugins: [
+      dts({
+        compilerOptions: {
+          preserveSymlinks: false,
+          skipLibCheck: true,
+        },
+      }),
+    ],
   },
 ];
