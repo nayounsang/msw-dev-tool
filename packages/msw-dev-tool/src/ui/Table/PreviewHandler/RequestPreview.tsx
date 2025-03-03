@@ -1,6 +1,7 @@
 import { PathParams } from "msw";
 import React, { useState } from "react";
 import { getPathWithParams, getSearchParams, getTotalUrl } from "../../../utils/url";
+import { Box, Button, Heading } from "@radix-ui/themes";
 
 export const RequestPreview = ({
   url,
@@ -43,15 +44,15 @@ export const RequestPreview = ({
   };
 
   return (
-    <div style={{ marginTop: "20px" }}>
-      <h3>Response</h3>
-      <div
+    <Box style={{ marginTop: "20px" }}>
+      <Heading as="h3">Response</Heading>
+      <Box
         style={{
           fontFamily: "monospace",
           wordBreak: "break-all",
         }}
       >
-        <button
+        <Button
           onClick={handleFetch}
           disabled={loading}
           style={{
@@ -63,10 +64,10 @@ export const RequestPreview = ({
           }}
         >
           {loading ? "Fetching..." : "Send Request"}
-        </button>
+        </Button>
 
         {error && (
-          <div
+          <Box
             style={{
               marginTop: "8px",
               color: "#f44336",
@@ -74,11 +75,11 @@ export const RequestPreview = ({
             }}
           >
             Error: {error.message}
-          </div>
+          </Box>
         )}
 
         {response && (
-          <div
+          <Box
             style={{
               marginTop: "8px",
               maxHeight: "200px",
@@ -97,9 +98,9 @@ export const RequestPreview = ({
             >
               {JSON.stringify(response, null, 2)}
             </pre>
-          </div>
+          </Box>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 };

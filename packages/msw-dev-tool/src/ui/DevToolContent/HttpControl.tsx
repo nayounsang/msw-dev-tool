@@ -2,43 +2,44 @@ import React from "react";
 import { flexRender } from "@tanstack/react-table";
 import { useFlattenHandlersTable } from "../../hook/useFlattenHandlersTable";
 import { useHandlerStore } from "../../lib/handlerStore";
+import { Box, Button, Table } from "@radix-ui/themes";
 
 export const HttpControl = () => {
   const table = useFlattenHandlersTable();
   const { resetMSWDevTool } = useHandlerStore();
 
   return (
-    <div>
-      <button onClick={() => resetMSWDevTool()}>Reset Dev tool</button>
-      <table>
-        <thead>
+    <Box>
+      <Button onClick={() => resetMSWDevTool()}>Reset Dev tool</Button>
+      <Table.Root onDragStart={(e) => e.stopPropagation()} style={{ userSelect: 'text' }}>
+        <Table.Header>
           {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
+            <Table.Row key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <th key={header.id}>
+                <Table.ColumnHeaderCell key={header.id}>
                   {header.isPlaceholder
                     ? null
                     : flexRender(
                         header.column.columnDef.header,
                         header.getContext()
                       )}
-                </th>
+                </Table.ColumnHeaderCell>
               ))}
-            </tr>
+            </Table.Row>
           ))}
-        </thead>
-        <tbody>
+        </Table.Header>
+        <Table.Body>
           {table.getRowModel().rows.map((row) => (
-            <tr key={row.id}>
+            <Table.Row key={row.id} align="center">
               {row.getVisibleCells().map((cell) => (
-                <td key={cell.id}>
+                <Table.Cell key={cell.id}>
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
+                </Table.Cell>
               ))}
-            </tr>
+            </Table.Row>
           ))}
-        </tbody>
-      </table>
-    </div>
+        </Table.Body>
+      </Table.Root>
+    </Box>
   );
 };
