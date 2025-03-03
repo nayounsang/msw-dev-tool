@@ -14,15 +14,11 @@ export default [
         dir: "dist/cjs", // dist/cjs/index.js
         format: "cjs",
         sourcemap: true,
-        preserveModules: true,
-        preserveModulesRoot: "src",
       },
       {
         dir: "dist/esm", // dist/esm/index.js
         format: "esm",
         sourcemap: true,
-        preserveModules: true,
-        preserveModulesRoot: "src",
       },
     ],
     external: [...Object.keys(pkg.peerDependencies || {})],
@@ -39,6 +35,28 @@ export default [
         minimize: true,
       }),
     ],
+    onwarn(warning, warn) {
+      if (
+        warning.code === "MODULE_LEVEL_DIRECTIVE" &&
+        warning.message.includes("use client")
+      ) {
+        return;
+      }
+
+      /**
+       * FIXME: Silence warnings caused by the following issues
+       * @see {@link https://github.com/radix-ui/primitives/issues/3281}
+       */
+      if (
+        warning.code === "SOURCEMAP_ERROR" &&
+        warning.loc.file.includes("@radix-ui") &&
+        warning.loc.line === 1
+      ) {
+        return;
+      }
+
+      warn(warning);
+    },
   },
   {
     input: "src/index.ts",

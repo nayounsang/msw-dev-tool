@@ -6,8 +6,18 @@ import {
 } from "@tanstack/react-table";
 import { useHandlerStore } from "../lib/handlerStore";
 import { FlattenHandler } from "../lib";
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { PreviewHandler } from "../ui/Table/PreviewHandler";
+import { Flex } from "@radix-ui/themes";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogOverlay,
+  DialogPortal,
+  DialogTitle,
+  DialogTrigger,
+} from "@radix-ui/react-dialog";
 
 export const useFlattenHandlersTable = () => {
   const {
@@ -38,46 +48,76 @@ export const useFlattenHandlersTable = () => {
       columnHelper.accessor("path", {
         header: "Protocol",
         cell: ({ row }) => {
-          console.log(row.original.path);
           const protocol = new URL(row.original.path, location.href).protocol;
-          return <div className="msw-dev-tool-center">{protocol}</div>;
+          return protocol;
         },
       }),
       columnHelper.accessor("path", {
         header: "Host",
         cell: ({ row }) => {
-          const host = new URL(row.original.path,location.href).host;
-          return <div className="msw-dev-tool-center">{host}</div>;
+          const host = new URL(row.original.path, location.href).host;
+          return host;
         },
       }),
       columnHelper.accessor("path", {
         header: "Path",
         cell: ({ row }) => {
           const path = new URL(row.original.path, location.href).pathname;
-          return <div className="msw-dev-tool-center">{path}</div>;
+          return path;
         },
       }),
       columnHelper.accessor("method", {
         header: "Method",
-        cell: ({ row }) => (
-          <div className="msw-dev-tool-center">{row.original.method}</div>
-        ),
+        cell: ({ row }) => row.original.method,
       }),
       columnHelper.accessor("handler", {
         header: "Preview",
         cell: ({ row }) => {
           const handler = row.original.handler;
-          const [isOpen, setIsOpen] = useState(false);
           return (
-            <>
-              <button onClick={() => setIsOpen(true)}>Preview</button>
-              {isOpen && (
-                <PreviewHandler
-                  handler={handler}
-                  onClose={() => setIsOpen(false)}
+            <Dialog>
+              <DialogTrigger>Preview</DialogTrigger>
+              <DialogPortal>
+                <DialogOverlay
+                  style={{
+                    backgroundColor: "rgba(0, 0, 0, 0.5)",
+                    inset: 0,
+                    position: "fixed",
+                    zIndex: 10001,
+                  }}
                 />
-              )}
-            </>
+                <DialogContent
+                  style={{
+                    backgroundColor: "white",
+                    padding: "1rem",
+                    position: "fixed",
+                    zIndex: 99999,
+                    inset:0,
+                    borderRadius: "8px",
+                    width: "320px",
+                    maxHeight: "500px",
+                    overflow: "scroll",
+                  }}
+                >
+                  <Flex justify="between" align="center">
+                    <DialogTitle>Preview Handler</DialogTitle>
+                    <DialogClose
+                      style={{
+                        fontSize: "1.5rem",
+                        backgroundColor: "transparent",
+                        width: "2rem",
+                        height: "2rem",
+                        padding: 0,
+                        textAlign: "center",
+                      }}
+                    >
+                      X
+                    </DialogClose>
+                  </Flex>
+                  <PreviewHandler handler={handler} />
+                </DialogContent>
+              </DialogPortal>
+            </Dialog>
           );
         },
       }),

@@ -4,13 +4,14 @@ import { HttpHandler, matchRequestUrl, PathParams } from "msw";
 import { PathParamSetter } from "./PathParamSetter";
 import { RequestPreview } from "./RequestPreview";
 import { KeyValueInputList } from "./KeyValueInputList";
+import { Box, Heading, Text } from "@radix-ui/themes";
+import { DialogDescription } from "@radix-ui/react-dialog";
 
 interface PreviewHandlerProps {
   handler: HttpHandler;
-  onClose: () => void;
 }
 
-export const PreviewHandler = ({ handler, onClose }: PreviewHandlerProps) => {
+export const PreviewHandler = ({ handler }: PreviewHandlerProps) => {
   const path = handler.info.path;
   const url = new URL(String(path), location.href);
   const { params } = matchRequestUrl(url, path, url.origin);
@@ -38,59 +39,27 @@ export const PreviewHandler = ({ handler, onClose }: PreviewHandlerProps) => {
     }));
   };
 
-  return createPortal(
-    <div
-      style={{
-        padding: "20px",
-        position: "fixed",
-        zIndex: 9999,
-        backgroundColor: "white",
-        boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
-        borderRadius: "8px",
-        width: "320px",
-        maxHeight: "500px",
-        overflow: "scroll",
-      }}
-    >
-      <div style={{ position: "relative" }}>
-        <button
-          onClick={onClose}
-          style={{
-            position: "absolute",
-            right: 0,
-            top: 0,
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            fontSize: "1.2rem",
-            padding: "4px",
-          }}
-        >
-          ✕
-        </button>
-
-        <h2 style={{ marginBottom: "20px", paddingRight: "24px" }}>
-          Handler Preview
-        </h2>
-        <p style={{ fontSize: "0.8rem", color: "#666", overflow: "scroll" }}>
+  return (
+    <Box style={{ position: "relative" }}>
+      <DialogDescription asChild>
+        <Text style={{ fontSize: "0.8rem", color: "#666", overflow: "scroll" }}>
           {url.toString()}
-        </p>
-        <PathParamSetter
-          paramValues={paramValues}
-          onParamChange={handleParamChange}
-        />
-        <h3>Search Params</h3>
-        <KeyValueInputList items={searchParams} setItems={setSearchParams} />
-        <h3>Headers</h3>
-        <KeyValueInputList items={headers} setItems={setHeaders} />
-        <RequestPreview
-          url={url}
-          paramValues={paramValues}
-          headers={headers}
-          searchParams={searchParams}
-        />
-      </div>
-    </div>,
-    document.body
+        </Text>
+      </DialogDescription>
+      <PathParamSetter
+        paramValues={paramValues}
+        onParamChange={handleParamChange}
+      />
+      <Heading as="h3">Search Params</Heading>
+      <KeyValueInputList items={searchParams} setItems={setSearchParams} />
+      <Heading as="h3">Headers</Heading>
+      <KeyValueInputList items={headers} setItems={setHeaders} />
+      <RequestPreview
+        url={url}
+        paramValues={paramValues}
+        headers={headers}
+        searchParams={searchParams}
+      />
+    </Box>
   );
 };
