@@ -7,6 +7,8 @@ on:
     paths:
       - "packages/msw-dev-tool/**"
       - ".github/workflows/deploy.yml"
+      - "package.json"
+      - "pnpm-lock.yaml"
 
 jobs:
   release:
