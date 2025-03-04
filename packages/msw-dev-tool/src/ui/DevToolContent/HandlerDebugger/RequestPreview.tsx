@@ -1,6 +1,10 @@
 import { PathParams } from "msw";
 import React, { useState } from "react";
-import { getPathWithParams, getSearchParams, getTotalUrl } from "../../../utils/url";
+import {
+  getPathWithParams,
+  getSearchParams,
+  getTotalUrl,
+} from "../../../utils/url";
 import { Box, Button, Heading } from "@radix-ui/themes";
 
 export const RequestPreview = ({
@@ -28,7 +32,7 @@ export const RequestPreview = ({
 
     fetch(totalUrl, {
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...headers,
       },
     })
@@ -44,28 +48,25 @@ export const RequestPreview = ({
   };
 
   return (
-    <Box style={{ marginTop: "20px" }}>
-      <Heading as="h3">Response</Heading>
-      <Box
-        style={{
-          fontFamily: "monospace",
-          wordBreak: "break-all",
-        }}
-      >
+    <Box>
+      <Heading as="h3" size="3">
+        Response
+      </Heading>
+      <Box py="2">
         <Button
           onClick={handleFetch}
           disabled={loading}
           style={{
             padding: "4px 12px",
             borderRadius: "4px",
-            border: "1px solid #ccc",
-            backgroundColor: loading ? "#f5f5f5" : "white",
+            backgroundColor: loading ? "#f5f5f5" : undefined,
             cursor: loading ? "not-allowed" : "pointer",
           }}
+          color="gray"
+          variant="outline"
         >
           {loading ? "Fetching..." : "Send Request"}
         </Button>
-
         {error && (
           <Box
             style={{
@@ -77,7 +78,6 @@ export const RequestPreview = ({
             Error: {error.message}
           </Box>
         )}
-
         {response && (
           <Box
             style={{
@@ -94,6 +94,7 @@ export const RequestPreview = ({
                 borderRadius: "4px",
                 fontFamily: "monospace",
                 wordBreak: "break-all",
+                fontSize: "0.8rem",
               }}
             >
               {JSON.stringify(response, null, 2)}

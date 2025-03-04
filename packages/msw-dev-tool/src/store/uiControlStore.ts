@@ -1,17 +1,14 @@
 import { create } from "zustand";
+import { HttpHandler } from "msw";
 
 export type UiControlState = {
-  isOpen: boolean;
-  openModal: () => void;
-  closeModal: () => void;
-  toggleModal: () => void;
+  currentHandler: HttpHandler | null;
+  setDebuggerHandler: (handler: HttpHandler) => void;
 };
 
 const useUiControlStore = create<UiControlState>((set) => ({
-  isOpen: false,
-  openModal: () => set({ isOpen: true }),
-  closeModal: () => set({ isOpen: false }),
-  toggleModal: () => set((state) => ({ isOpen: !state.isOpen })),
+  currentHandler: null,
+  setDebuggerHandler: (handler) => set({ currentHandler: handler }),
 }));
 
 export default useUiControlStore;

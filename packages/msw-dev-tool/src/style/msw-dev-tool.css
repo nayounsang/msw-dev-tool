@@ -1,0 +1,14 @@
+@import "@radix-ui/colors/gray.css";
+
+.msw-dt-http-control-row:hover {
+  background-color: var(--gray-2);
+}
+.msw-dt-http-control-row {
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.msw-dt-sub-text {
+  font-size: 0.8rem;
+  color: var(--gray-12);
+}

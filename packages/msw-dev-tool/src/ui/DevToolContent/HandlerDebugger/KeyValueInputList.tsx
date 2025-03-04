@@ -1,14 +1,20 @@
-import React, { useState } from "react";
+import { Label } from "@radix-ui/react-label";
+import { Box, Button, Flex, TextField } from "@radix-ui/themes";
+import React, { ReactNode, useId, useState } from "react";
 
 interface KeyValueInputListProps {
   items: Record<string, string>;
   setItems: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  title: ReactNode;
 }
 
 export const KeyValueInputList = ({
   items,
   setItems,
+  title,
 }: KeyValueInputListProps) => {
+  const id = useId();
+
   const [key, setKey] = useState("");
   const [value, setValue] = useState("");
 
@@ -32,16 +38,10 @@ export const KeyValueInputList = ({
   };
 
   return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          gap: "8px",
-          width: "100%",
-          alignItems: "center",
-        }}
-      >
-        <input
+    <Box>
+      <Label htmlFor={id}>{title}</Label>
+      <Flex align="center" py="2" gap="2">
+        <TextField.Root
           type="text"
           value={key}
           onChange={(e) => setKey(e.target.value)}
@@ -50,10 +50,11 @@ export const KeyValueInputList = ({
             padding: "8px",
             borderRadius: "4px",
             border: "1px solid #ccc",
-            width: "100px",
+            width: "160px",
           }}
+          id={id}
         />
-        <input
+        <TextField.Root
           type="text"
           value={value}
           onChange={(e) => setValue(e.target.value)}
@@ -62,55 +63,39 @@ export const KeyValueInputList = ({
             padding: "8px",
             borderRadius: "4px",
             border: "1px solid #ccc",
-            width: "100px",
+            width: "180px",
           }}
         />
-        <button
-          onClick={handleAdd}
-          style={{
-            padding: "8px 16px",
-            backgroundColor: "#0066ff",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
-        >
+        <Button onClick={handleAdd} variant="soft">
           Add
-        </button>
-      </div>
+        </Button>
+      </Flex>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      <Flex direction="column" gap="1">
         {Object.entries(items).map(([key, value]) => (
-          <div
+          <Flex
             key={key}
             style={{
-              display: "flex",
-              alignItems: "center",
-              padding: "8px",
               backgroundColor: "#f5f5f5",
               borderRadius: "4px",
-              gap: "8px",
+              width:"fit-content"
             }}
+            align="center"
+            gap="2"
+            py="1"
           >
-            <span style={{ flex: 1 }}>{key}</span>
-            <span style={{ flex: 1 }}>{value}</span>
-            <button
+            <span style={{ width: "160px",paddingLeft:"8px",boxSizing:"border-box" }}>{key}</span>
+            <span style={{ width: "180px",paddingLeft:"8px",boxSizing:"border-box" }}>{value}</span>
+            <Button
               onClick={() => handleDelete(key)}
-              style={{
-                padding: "4px 8px",
-                backgroundColor: "#ff4444",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-              }}
+              variant="soft"
+              color="crimson"
             >
               Delete
-            </button>
-          </div>
+            </Button>
+          </Flex>
         ))}
-      </div>
-    </div>
+      </Flex>
+    </Box>
   );
 };
