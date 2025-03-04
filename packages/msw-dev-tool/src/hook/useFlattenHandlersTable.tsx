@@ -7,17 +7,6 @@ import {
 import { useHandlerStore } from "../lib/handlerStore";
 import { FlattenHandler } from "../lib";
 import React, { useMemo } from "react";
-import { PreviewHandler } from "../ui/Table/PreviewHandler";
-import { Flex } from "@radix-ui/themes";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogOverlay,
-  DialogPortal,
-  DialogTitle,
-  DialogTrigger,
-} from "@radix-ui/react-dialog";
 
 export const useFlattenHandlersTable = () => {
   const {
@@ -34,14 +23,20 @@ export const useFlattenHandlersTable = () => {
           <input
             type="checkbox"
             checked={table.getIsAllRowsSelected()}
-            onChange={(e) => table.toggleAllRowsSelected(e.target.checked)}
+            onChange={(e) => {
+              e.stopPropagation();
+              table.toggleAllRowsSelected(e.target.checked);
+            }}
           />
         ),
         cell: ({ row }) => (
           <input
             type="checkbox"
             checked={row.getIsSelected()}
-            onChange={(e) => row.toggleSelected(e.target.checked)}
+            onChange={(e) => {
+              e.stopPropagation();
+              row.toggleSelected(e.target.checked);
+            }}
           />
         ),
       }),
@@ -51,6 +46,7 @@ export const useFlattenHandlersTable = () => {
           const protocol = new URL(row.original.path, location.href).protocol;
           return protocol;
         },
+        id: "protocol",
       }),
       columnHelper.accessor("path", {
         header: "Host",
@@ -58,6 +54,7 @@ export const useFlattenHandlersTable = () => {
           const host = new URL(row.original.path, location.href).host;
           return host;
         },
+        id: "host",
       }),
       columnHelper.accessor("path", {
         header: "Path",
@@ -65,61 +62,11 @@ export const useFlattenHandlersTable = () => {
           const path = new URL(row.original.path, location.href).pathname;
           return path;
         },
+        id: "path",
       }),
       columnHelper.accessor("method", {
         header: "Method",
         cell: ({ row }) => row.original.method,
-      }),
-      columnHelper.accessor("handler", {
-        header: "Preview",
-        cell: ({ row }) => {
-          const handler = row.original.handler;
-          return (
-            <Dialog>
-              <DialogTrigger>Preview</DialogTrigger>
-              <DialogPortal>
-                <DialogOverlay
-                  style={{
-                    backgroundColor: "rgba(0, 0, 0, 0.5)",
-                    inset: 0,
-                    position: "fixed",
-                    zIndex: 10001,
-                  }}
-                />
-                <DialogContent
-                  style={{
-                    backgroundColor: "white",
-                    padding: "1rem",
-                    position: "fixed",
-                    zIndex: 99999,
-                    inset:0,
-                    borderRadius: "8px",
-                    width: "320px",
-                    maxHeight: "500px",
-                    overflow: "scroll",
-                  }}
-                >
-                  <Flex justify="between" align="center">
-                    <DialogTitle>Preview Handler</DialogTitle>
-                    <DialogClose
-                      style={{
-                        fontSize: "1.5rem",
-                        backgroundColor: "transparent",
-                        width: "2rem",
-                        height: "2rem",
-                        padding: 0,
-                        textAlign: "center",
-                      }}
-                    >
-                      X
-                    </DialogClose>
-                  </Flex>
-                  <PreviewHandler handler={handler} />
-                </DialogContent>
-              </DialogPortal>
-            </Dialog>
-          );
-        },
       }),
     ];
   }, []);

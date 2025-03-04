@@ -1,5 +1,5 @@
 import { Label } from "@radix-ui/react-label";
-import { Flex, Heading, TextField } from "@radix-ui/themes";
+import { Box, Flex, Heading, TextField } from "@radix-ui/themes";
 import { PathParams } from "msw";
 import React from "react";
 
@@ -13,16 +13,12 @@ export const PathParamSetter = ({
   return (
     paramValues &&
     Object.keys(paramValues).length > 0 && (
-      <>
-        <Heading as="h3">Path Parameters</Heading>
-        <Flex direction="column" gap="8px">
+      <Box>
+        <Label>Path Parameters</Label>
+        <Flex direction="column" gap="2" py="2">
           {Object.entries(paramValues).map(([key, value]) => (
-            <Flex
-              align="center"
-              gap="8px"
-              key={key}
-            >
-              <Label htmlFor={`param-${key}`} style={{ minWidth: "100px" }}>
+            <Flex align="center" gap="2" key={key}>
+              <Label htmlFor={`param-${key}`} style={{ width:"160px" }}>
                 {key}:
               </Label>
               <TextField.Root
@@ -35,13 +31,13 @@ export const PathParamSetter = ({
                   padding: "4px 8px",
                   borderRadius: "4px",
                   border: "1px solid #ccc",
-                  width: "100%",
+                  width: "180px",
                 }}
               />
             </Flex>
           ))}
         </Flex>
-      </>
+      </Box>
     )
   );
 };
