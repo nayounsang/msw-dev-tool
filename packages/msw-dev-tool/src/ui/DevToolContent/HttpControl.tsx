@@ -8,12 +8,10 @@ export const HttpControl = () => {
   const table = useFlattenHandlersTable();
   const { setDebuggerHandler } = useUiControlStore();
 
+  const currentHandler = useUiControlStore((state) => state.currentHandler);
+
   return (
-    <Flex
-      style={{ flex: 3, overflowY: "auto" }}
-      direction="column"
-      gap="4"
-    >
+    <Flex style={{ flex: 3, overflowY: "auto" }} direction="column" gap="4">
       <Heading as="h2" size="5">
         Handlers
       </Heading>
@@ -42,7 +40,9 @@ export const HttpControl = () => {
             <Table.Row
               key={row.id}
               align="center"
-              className="msw-dt-http-control-row"
+              className={`msw-dt-http-control-row ${
+                row.original.handler === currentHandler && "msw-dt-current-row"
+              }`}
               onClick={() => {
                 setDebuggerHandler(row.original.handler);
               }}
