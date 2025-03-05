@@ -1,3 +1,4 @@
+import { PlusIcon, TrashIcon } from "@radix-ui/react-icons";
 import { Label } from "@radix-ui/react-label";
 import { Box, Button, Flex, TextField } from "@radix-ui/themes";
 import React, { ReactNode, useId, useState } from "react";
@@ -67,6 +68,7 @@ export const KeyValueInputList = ({
           }}
         />
         <Button onClick={handleAdd} variant="soft">
+          <PlusIcon />
           Add
         </Button>
       </Flex>
@@ -78,19 +80,36 @@ export const KeyValueInputList = ({
             style={{
               backgroundColor: "#f5f5f5",
               borderRadius: "4px",
-              width:"fit-content"
+              width: "fit-content",
             }}
             align="center"
             gap="2"
             py="1"
           >
-            <span style={{ width: "160px",paddingLeft:"8px",boxSizing:"border-box" }}>{key}</span>
-            <span style={{ width: "180px",paddingLeft:"8px",boxSizing:"border-box" }}>{value}</span>
+            <span
+              style={{
+                width: "160px",
+                paddingLeft: "8px",
+                boxSizing: "border-box",
+              }}
+            >
+              {key}
+            </span>
+            <span
+              style={{
+                width: "180px",
+                paddingLeft: "8px",
+                boxSizing: "border-box",
+              }}
+            >
+              {value}
+            </span>
             <Button
               onClick={() => handleDelete(key)}
               variant="soft"
               color="crimson"
             >
+              <TrashIcon />
               Delete
             </Button>
           </Flex>
