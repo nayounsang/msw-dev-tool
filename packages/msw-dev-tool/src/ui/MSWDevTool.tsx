@@ -18,6 +18,7 @@ export const MSWDevTool = () => {
               borderRadius: "50%",
               width: "3.5rem",
               height: "3.5rem",
+              margin: "1rem",
             }}
           >
             M
