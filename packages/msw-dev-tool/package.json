@@ -5,6 +5,16 @@
   "module": "dist/esm/index.js",
   "types": "dist/types/index.d.ts",
   "repository": "https://github.com/nayounsang/msw-dev-tool",
+  "keywords": [
+    "msw",
+    "mock",
+    "service",
+    "worker",
+    "devtool",
+    "tool",
+    "test",
+    "api"
+  ],
   "files": [
     "dist",
     "LICENSE",
