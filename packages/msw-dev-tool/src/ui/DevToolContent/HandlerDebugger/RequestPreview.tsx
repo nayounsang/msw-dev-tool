@@ -6,6 +6,7 @@ import {
   getTotalUrl,
 } from "../../../utils/url";
 import { Box, Button, Heading } from "@radix-ui/themes";
+import { PlayIcon } from "@radix-ui/react-icons";
 
 export const RequestPreview = ({
   url,
@@ -65,6 +66,7 @@ export const RequestPreview = ({
           color="gray"
           variant="outline"
         >
+          <PlayIcon />
           {loading ? "Fetching..." : "Send Request"}
         </Button>
         {error && (
