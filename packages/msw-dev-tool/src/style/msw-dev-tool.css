@@ -7,6 +7,9 @@
   cursor: pointer;
   transition: background-color 0.2s ease-in-out;
 }
+.msw-dt-current-row {
+  background-color: var(--gray-3);
+}
 
 .msw-dt-sub-text {
   font-size: 0.8rem;
