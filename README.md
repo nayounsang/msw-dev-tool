@@ -1,51 +1,11 @@
-# Install
+# Greeting
+- Thx for using this package:`msw-dev-tool`!
+- This allows you more flexible and extensive API mocking with UI.
+- This package is based on [msw](https://mswjs.io/) and [zustand](https://zustand.docs.pmnd.rs/).
+- Please look forward to the official document. I will tell you how to use it in more detail.
 
-```bash
-npm i msw-dev-tool --save-dev
-```
-
-## Peer Dep
-
-These dependencies are assumed to already exist in your project.
-If not, please install it.
-
-```json
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "zustand": "^5.0.2",
-    "msw": "^2.7.0"
-```
-
-# Usage
-
-## UI
-
-```jsx
-import { MSWDevTool } from "msw-dev-tool";
-import "msw-dev-tool/msw-dev-tool.css"
-
-function App() {
-
-  return (
-    <>
-      <MSWDevTool />
-      {/* ... */}
-    </>
-  );
-}
-```
-
-## Integration with msw
-
-```typescript
-import { setupWorker } from "msw/browser";
-import { handlers } from "./handlers";
-import { initMSWDevTool } from "msw-dev-tool";
-
-// Wrap worker init logic with `initMSWDevTool` middleware.
-export const worker = initMSWDevTool(setupWorker(...handlers));
-
-```
+# Package Readme
+- [go to here](./packages/msw-dev-tool/README.md)
 
 # Structure
 
