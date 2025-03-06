@@ -4,9 +4,20 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useHandlerStore } from "../lib/handlerStore";
-import { FlattenHandler } from "../lib";
-import React, { useMemo } from "react";
+import { useHandlerStore } from "../../../lib/handlerStore";
+import { FlattenHandler } from "../../../lib";
+import React, { useMemo, useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectPortal,
+  SelectTrigger,
+  SelectValue,
+  SelectViewport,
+} from "@radix-ui/react-select";
+import { HttpHandlerBehavior } from "../../../lib/type";
+import { BehaviorSelect } from "../HandlerTable/BehaviorSelect";
 
 export const useFlattenHandlersTable = () => {
   const {
@@ -67,6 +78,12 @@ export const useFlattenHandlersTable = () => {
       columnHelper.accessor("method", {
         header: "Method",
         cell: ({ row }) => row.original.method,
+      }),
+      columnHelper.accessor("behavior", {
+        header: "Behavior",
+        cell: ({ row }) => {
+          return <BehaviorSelect row={row} />;
+        },
       }),
     ];
   }, []);

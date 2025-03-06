@@ -1,5 +1,4 @@
-import { setupWorker } from "msw/browser";
 import { handlers } from "./handlers";
-import { initMSWDevTool } from "msw-dev-tool";
+import { setupDevToolWorker } from "msw-dev-tool";
 
-export const worker = initMSWDevTool(setupWorker(...handlers));
+export const worker = setupDevToolWorker(...handlers);

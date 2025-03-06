@@ -1,9 +1,15 @@
-import { HttpHandler } from "msw";
-import { FlattenHandler, Handler } from "./type";
+import {
+  CustomBehavior,
+  FlattenHandler,
+  Handler,
+  HttpHandler,
+  HttpHandlerBehavior,
+  HttpStatusCode,
+} from "./type";
 import { dummyHandler } from "../const/handler";
 import { SetupWorker } from "msw/lib/browser";
-import { initial } from "lodash";
 import { RowSelectionState } from "@tanstack/react-table";
+import { AsyncResponseResolverReturnType, delay, HttpResponse } from "msw";
 
 export const getRowId = ({ path, method }: { path: string; method: string }) =>
   JSON.stringify({
@@ -19,7 +25,7 @@ export const convertHandlers = (handlers: Handler[]) => {
   const flattenHandlers: FlattenHandler[] = handlers.reduce((acc, _handler) => {
     // Current, GraphQL & WebSocketHandler is not supported.
     const handler = _handler as HttpHandler;
-    if (!("info" in handler && handler.info.method && handler.info.path)) {
+    if (!isHttpHandler(handler)) {
       unsupportedHandlers.push(handler);
       return acc;
     }
@@ -32,6 +38,7 @@ export const convertHandlers = (handlers: Handler[]) => {
       method,
       enabled: true,
       handler,
+      behavior: HttpHandlerBehavior.DEFAULT,
     });
 
     return acc;
@@ -75,4 +82,43 @@ export const initMSWDevToolStore = (worker: SetupWorker) => {
   }, {} as RowSelectionState);
 
   return { worker, flattenHandlers, unsupportedHandlers, handlerRowSelection };
+};
+
+export const isHttpHandler = (handler: Handler): handler is HttpHandler => {
+  return (
+    "info" in handler && "method" in handler.info && "path" in handler.info
+  );
+};
+
+export const getHandlerResponseByBehavior = async (
+  behavior: HttpHandlerBehavior | undefined,
+  originalResolverCallback: () => AsyncResponseResolverReturnType<any>
+): Promise<AsyncResponseResolverReturnType<any>> => {
+  if (!behavior || behavior === CustomBehavior.DEFAULT) {
+    return originalResolverCallback();
+  }
+
+  if (behavior === CustomBehavior.DELAY) {
+    await delay("infinite");
+    return new Response();
+  }
+
+  if (behavior === CustomBehavior.RETURN_NULL) {
+    return new HttpResponse(null, { status: 200 });
+  }
+
+  if (behavior === CustomBehavior.NETWORK_ERROR) {
+    return HttpResponse.error();
+  }
+
+  for (const code of Object.values(HttpStatusCode)) {
+    if (behavior === code) {
+      return new HttpResponse(null, {
+        status: code,
+        statusText: `${code} triggered by dev tools.`,
+      });
+    }
+  }
+
+  return originalResolverCallback();
 };

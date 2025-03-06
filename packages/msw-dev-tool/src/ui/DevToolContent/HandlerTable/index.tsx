@@ -1,10 +1,10 @@
 import React from "react";
 import { flexRender } from "@tanstack/react-table";
-import { useFlattenHandlersTable } from "../../hook/useFlattenHandlersTable";
+import { useFlattenHandlersTable } from "../hook/useFlattenHandlersTable";
 import { Flex, Heading, Table } from "@radix-ui/themes";
-import useUiControlStore from "../../store/uiControlStore";
+import useUiControlStore from "../../../store/uiControlStore";
 
-export const HttpControl = () => {
+export const HandlerTable = () => {
   const table = useFlattenHandlersTable();
   const { setDebuggerHandler } = useUiControlStore();
 
