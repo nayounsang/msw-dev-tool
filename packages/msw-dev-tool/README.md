@@ -1,7 +1,18 @@
 # Install
 
+- npm:
 ```bash
 npm i msw-dev-tool --save-dev
+```
+
+- yarn:
+```bash
+yarn add msw-dev-tool --dev
+```
+
+- pnpm:
+```bash
+pnpm add msw-dev-tool --save-dev
 ```
 
 ## Peer Dep
@@ -15,8 +26,11 @@ If not, please install it.
     "zustand": "^5.0.2",
     "msw": "^2.7.0"
 ```
+- [install msw](https://mswjs.io/docs/getting-started)
+- [install zustand](https://zustand.docs.pmnd.rs/getting-started/introduction#installation)
 
 # Usage
+> Please look forward to the official document. I will tell you how to use it in more detail.
 
 ## UI
 
@@ -40,14 +54,15 @@ function App() {
 ```typescript
 import { setupWorker } from "msw/browser";
 import { handlers } from "./handlers";
-import { initMSWDevTool } from "msw-dev-tool";
+import { setupDevToolWorker } from "msw-dev-tool";
 
-// Wrap worker init logic with `initMSWDevTool` middleware.
-export const worker = initMSWDevTool(setupWorker(...handlers));
+// use setupDevToolWorker instead of setupWorker from msw.
+export const worker = setupDevToolWorker(...handlers);
 
 ```
 
-# Structure
+
+# ProjectStructure
 
 This project uses pnpm workspaces.
 
