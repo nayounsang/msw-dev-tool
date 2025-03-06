@@ -1,13 +1,15 @@
-import { SetupWorker } from "msw/browser";
+import { setupWorker, SetupWorker } from "msw/browser";
 import { create } from "zustand";
-import { FlattenHandler, Handler } from "./type";
+import { FlattenHandler, Handler, HttpHandlerBehavior } from "./type";
 import {
-  convertHandlers,
+  getHandlerResponseByBehavior,
+  getRowId,
   getTotalEnableHandlers,
   initMSWDevToolStore,
+  isHttpHandler,
   updateEnableHandlers,
 } from "./util";
-import { OnChangeFn, RowSelectionState, Updater } from "@tanstack/react-table";
+import { OnChangeFn, RowSelectionState } from "@tanstack/react-table";
 import { isFunction } from "lodash";
 
 export interface HandlerStoreState {
@@ -23,16 +25,56 @@ export interface HandlerStoreState {
   restHandlers: Handler[];
   flattenHandlers: FlattenHandler[];
   handlerRowSelection: RowSelectionState;
+  setupDevToolWorker: (...handlers: Handler[]) => SetupWorker;
+  /**
+   * @deprecated use `setupDevToolWorker` instead.
+   */
   initMSWDevTool: (worker: SetupWorker) => SetupWorker;
   resetMSWDevTool: () => void;
   handleHandlerRowSelectionChange: OnChangeFn<RowSelectionState>;
   getWorker: () => SetupWorker;
+  getFlattenHandlerById: (id: string) => FlattenHandler | undefined;
+  getHandlerBehavior: (id: string) => HttpHandlerBehavior | undefined;
+  setHandlerBehavior: (id: string, behavior: HttpHandlerBehavior) => void;
 }
 export const useHandlerStore = create<HandlerStoreState>((set, get) => ({
   flattenHandlers: [],
   worker: null,
   restHandlers: [],
   handlerRowSelection: {},
+  setupDevToolWorker: (...handlers: Handler[]) => {
+    const _handlers = handlers.map((handler) => {
+      if (!isHttpHandler(handler)) {
+        return handler;
+      }
+
+      const originalResolver = handler.resolver;
+      handler.resolver = async (args) => {
+        const id = getRowId({
+          path: handler.info.path.toString(),
+          method: handler.info.method.toString(),
+        });
+        const behavior = get().getHandlerBehavior(id);
+
+        return await getHandlerResponseByBehavior(behavior, () =>
+          originalResolver(args)
+        );
+      };
+      return handler;
+    });
+
+    const worker = setupWorker(..._handlers);
+    const { flattenHandlers, handlerRowSelection, unsupportedHandlers } =
+      initMSWDevToolStore(worker);
+    set({
+      worker,
+      flattenHandlers,
+      handlerRowSelection,
+      restHandlers: unsupportedHandlers,
+    });
+
+    return worker;
+  },
   initMSWDevTool: (_worker) => {
     const {
       worker,
@@ -41,19 +83,19 @@ export const useHandlerStore = create<HandlerStoreState>((set, get) => ({
       unsupportedHandlers,
     } = initMSWDevToolStore(_worker);
 
-    set({ worker });
-    set({ flattenHandlers });
     set({
+      worker,
+      flattenHandlers,
       handlerRowSelection,
+      restHandlers: unsupportedHandlers,
     });
-    set({ restHandlers: unsupportedHandlers });
 
     return worker;
   },
   resetMSWDevTool: () => {
     const _worker = get().getWorker();
     _worker.resetHandlers();
-    
+
     const {
       worker,
       flattenHandlers,
@@ -61,12 +103,12 @@ export const useHandlerStore = create<HandlerStoreState>((set, get) => ({
       unsupportedHandlers,
     } = initMSWDevToolStore(_worker);
 
-    set({ worker });
-    set({ flattenHandlers });
     set({
+      worker,
+      flattenHandlers,
       handlerRowSelection,
+      restHandlers: unsupportedHandlers,
     });
-    set({ restHandlers: unsupportedHandlers });
   },
   handleHandlerRowSelectionChange: (updater) => {
     const worker = get().getWorker();
@@ -103,6 +145,25 @@ export const useHandlerStore = create<HandlerStoreState>((set, get) => ({
     if (!worker) throw new Error("Worker is not initialized");
     return worker;
   },
+  getFlattenHandlerById: (id: string) => {
+    return get().flattenHandlers.find((handler) => handler.id === id);
+  },
+  getHandlerBehavior: (id: string) => {
+    const handler = get().getFlattenHandlerById(id);
+    if (!handler) return undefined;
+    return handler.behavior;
+  },
+  setHandlerBehavior: (id: string, behavior: HttpHandlerBehavior) => {
+    set({
+      flattenHandlers: get().flattenHandlers.map((handler) => {
+        if (handler.id === id) {
+          return { ...handler, behavior };
+        }
+        return handler;
+      }),
+    });
+  },
 }));
 
 export const initMSWDevTool = useHandlerStore.getState().initMSWDevTool;
+export const setupDevToolWorker = useHandlerStore.getState().setupDevToolWorker;

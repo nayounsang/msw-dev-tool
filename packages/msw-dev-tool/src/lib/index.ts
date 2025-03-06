@@ -1,5 +1,6 @@
 import { FlattenHandler } from "./type";
-import { initMSWDevTool } from "./handlerStore";
+import { initMSWDevTool, setupDevToolWorker } from "./handlerStore";
 
 export { FlattenHandler };
 export { initMSWDevTool };
+export { setupDevToolWorker };

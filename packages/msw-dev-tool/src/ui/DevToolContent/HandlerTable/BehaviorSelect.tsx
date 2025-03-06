@@ -22,18 +22,28 @@ import {
   ChevronUpIcon,
 } from "@radix-ui/react-icons";
 import { HttpHandlerBehavior } from "../../../lib/type";
+import { useHandlerStore } from "../../../lib/handlerStore";
 
 export const BehaviorSelect = ({ row }: { row: Row<FlattenHandler> }) => {
-  const [value, setValue] = useState(row.original.behavior);
+  const id = row.original.id;
+  const { setHandlerBehavior, getHandlerBehavior } = useHandlerStore();
 
   return (
-    <Select onValueChange={(value) => setValue(value as HttpHandlerBehavior)}>
+    <Select
+      onValueChange={(_value) => {
+        const value = _value as HttpHandlerBehavior;
+        setHandlerBehavior(row.original.id, value);
+      }}
+    >
       <SelectTrigger
-        className="msw-dt-select-trigger msw-dt-text-ellipsis"
+        className="msw-dt-select-trigger"
         aria-label="Behavior"
         onClick={(e) => e.stopPropagation()}
       >
-        <SelectValue placeholder={value} />
+        <SelectValue
+          placeholder={getHandlerBehavior(id) ?? HttpHandlerBehavior.DEFAULT}
+          className="msw-dt-text-ellipsis"
+        />
         <SelectIcon className="msw-dt-select-icon">
           <ChevronDownIcon />
         </SelectIcon>
