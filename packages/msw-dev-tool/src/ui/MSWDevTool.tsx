@@ -1,7 +1,7 @@
 import React from "react";
 import { Button, Flex } from "@radix-ui/themes";
 import { Drawer } from "vaul";
-import { HttpControl } from "./DevToolContent/HttpControl";
+import { HandlerTable } from "./DevToolContent/HandlerTable";
 import { DialogDescription } from "@radix-ui/react-dialog";
 import { HandlerDebugger } from "./DevToolContent/HandlerDebugger";
 import { ThemeProvider } from "./ThemeProvider";
@@ -73,7 +73,7 @@ export const MSWDevTool = () => {
               </DialogDescription>
               <ToolButtonGroup />
               <Flex gap="6" style={{ flex: 1, overflow: "hidden" }}>
-                <HttpControl />
+                <HandlerTable />
                 <HandlerDebugger />
               </Flex>
             </Drawer.Content>
