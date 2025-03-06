@@ -1,8 +1,7 @@
 import { HttpHandler } from "msw";
-import { FlattenHandler, Handler } from "./type";
+import { FlattenHandler, Handler, HttpHandlerBehavior } from "./type";
 import { dummyHandler } from "../const/handler";
 import { SetupWorker } from "msw/lib/browser";
-import { initial } from "lodash";
 import { RowSelectionState } from "@tanstack/react-table";
 
 export const getRowId = ({ path, method }: { path: string; method: string }) =>
@@ -32,6 +31,7 @@ export const convertHandlers = (handlers: Handler[]) => {
       method,
       enabled: true,
       handler,
+      behavior: HttpHandlerBehavior.DEFAULT,
     });
 
     return acc;

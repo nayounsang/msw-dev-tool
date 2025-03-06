@@ -1,4 +1,7 @@
 @import "@radix-ui/colors/gray.css";
+@import "@radix-ui/colors/black-alpha.css";
+@import "@radix-ui/colors/mauve.css";
+@import "@radix-ui/colors/violet.css";
 
 .msw-dt-http-control-row:hover {
   background-color: var(--gray-2);
@@ -14,4 +17,117 @@
 .msw-dt-sub-text {
   font-size: 0.8rem;
   color: var(--gray-12);
+}
+
+/* reset */
+button {
+  all: unset;
+}
+
+.msw-dt-text-ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.msw-dt-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 4px;
+  padding: 0 15px;
+  font-size: 13px;
+  line-height: 1;
+  height: 35px;
+  gap: 5px;
+  border: 1px solid var(--gray-6);
+  color: var(--gray-11);
+  width: 90px;
+}
+.msw-dt-select-trigger:hover {
+  background-color: var(--mauve-3);
+}
+.msw-dt-select-trigger:focus {
+  box-shadow: 0 0 0 2px black;
+}
+.msw-dt-select-trigger[data-placeholder] {
+  color: var(--gray-11);
+}
+
+.msw-dt-select-icon {
+  color: Var(--gray-11);
+}
+
+.msw-dt-select-content {
+  overflow: hidden;
+  background-color: white;
+  border-radius: 6px;
+  box-shadow: 0px 10px 38px -10px rgba(22, 23, 24, 0.35),
+    0px 10px 20px -15px rgba(22, 23, 24, 0.2);
+}
+
+.msw-dt-select-viewport {
+  padding: 5px;
+  overflow-y: auto;
+}
+
+.msw-dt-select-item {
+  font-size: 0.8rem;
+  line-height: 1;
+  color: var(--gray-11);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  padding: 10px 35px 10px 25px;
+  position: relative;
+  user-select: none;
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.msw-dt-select-item[data-disabled] {
+  color: var(--mauve-8);
+  pointer-events: none;
+}
+.msw-dt-select-item[data-highlighted] {
+  outline: none;
+  background-color: var(--gray-9);
+  color: var(--gray-1);
+}
+
+.msw-dt-select-label {
+  padding: 0 25px;
+  font-size: 12px;
+  line-height: 25px;
+  color: var(--mauve-11);
+}
+
+.msw-dt-select-separator {
+  height: 1px;
+  background-color: var(--gray-6);
+  margin: 5px;
+}
+
+.msw-dt-select-item-indicator {
+  position: absolute;
+  left: 0;
+  width: 25px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.msw-dt-select-scroll-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 25px;
+  background-color: white;
+  color: var(--gray-11);
+  cursor: default;
+}
+
+.msw-dt-select-value {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
