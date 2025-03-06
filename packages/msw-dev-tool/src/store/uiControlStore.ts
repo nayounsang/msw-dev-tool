@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { HttpHandler } from "msw";
+import { HttpHandler } from "../lib/type";
 
 export type UiControlState = {
   currentHandler: HttpHandler | null;

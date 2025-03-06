@@ -19,11 +19,6 @@
   color: var(--gray-12);
 }
 
-/* reset */
-button {
-  all: unset;
-}
-
 .msw-dt-text-ellipsis {
   white-space: nowrap;
   overflow: hidden;
@@ -43,6 +38,8 @@ button {
   border: 1px solid var(--gray-6);
   color: var(--gray-11);
   width: 90px;
+  background-color: #fff;
+  box-sizing: border-box;
 }
 .msw-dt-select-trigger:hover {
   background-color: var(--mauve-3);

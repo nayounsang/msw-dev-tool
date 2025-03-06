@@ -1,4 +1,15 @@
-import { HttpHandler, RequestHandler, WebSocketHandler } from "msw";
+import {
+  HttpHandler as _HttpHandler,
+  PathParams,
+  RequestHandler,
+  ResponseResolver,
+  WebSocketHandler,
+} from "msw";
+
+export type HttpRequestResolverExtras<Params extends PathParams> = {
+  params: Params;
+  cookies: Record<string, string>;
+};
 
 export type ValueUnion<T> = T[keyof T];
 export const HttpStatusCode = {
@@ -29,13 +40,26 @@ export const HttpStatusCode = {
 
 export type HttpStatusCode = ValueUnion<typeof HttpStatusCode>;
 
-export const HttpHandlerBehavior = {
+export const CustomBehavior = {
   DEFAULT: "default",
   DELAY: "delay",
-  RETURN_NULL:"return null",
+  RETURN_NULL: "return null",
+  NETWORK_ERROR: "network error",
+} as const;
+export type CustomBehavior = ValueUnion<typeof CustomBehavior>;
+
+export const HttpHandlerBehavior = {
+  ...CustomBehavior,
   ...HttpStatusCode,
 } as const;
 export type HttpHandlerBehavior = ValueUnion<typeof HttpHandlerBehavior>;
+
+/**
+ * To use private method: `resolver`.
+ */
+export type HttpHandler = _HttpHandler & {
+  resolver: ResponseResolver<HttpRequestResolverExtras<any>, any, any>;
+};
 
 export type FlattenHandler = {
   id: string;

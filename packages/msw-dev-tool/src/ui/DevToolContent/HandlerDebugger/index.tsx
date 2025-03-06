@@ -1,11 +1,11 @@
 import React, { PropsWithChildren, useState, useEffect } from "react";
 import useUiControlStore from "../../../store/uiControlStore";
-import { HttpHandler, matchRequestUrl, PathParams } from "msw";
+import { matchRequestUrl, PathParams } from "msw";
 import { Flex, Heading, Text, Container as _Container } from "@radix-ui/themes";
 import { PathParamSetter } from "./PathParamSetter";
 import { KeyValueInputList } from "./KeyValueInputList";
 import { RequestPreview } from "./RequestPreview";
-
+import { HttpHandler } from "../../../lib/type";
 /**
  * - It uses `zustand` global state.
  * - remounting of the inner component that uses local states.
