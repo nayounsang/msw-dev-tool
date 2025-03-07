@@ -6,17 +6,7 @@ import {
 } from "@tanstack/react-table";
 import { useHandlerStore } from "../../../lib/handlerStore";
 import { FlattenHandler } from "../../../lib";
-import React, { useMemo, useState } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  SelectValue,
-  SelectViewport,
-} from "@radix-ui/react-select";
-import { HttpHandlerBehavior } from "../../../lib/type";
+import React, { useMemo } from "react";
 import { BehaviorSelect } from "../HandlerTable/BehaviorSelect";
 
 export const useFlattenHandlersTable = () => {
@@ -86,7 +76,7 @@ export const useFlattenHandlersTable = () => {
         },
       }),
     ];
-  }, []);
+  }, [flattenHandlers, handlerRowSelection, handleHandlerRowSelectionChange]);
 
   const table = useReactTable({
     columns,
