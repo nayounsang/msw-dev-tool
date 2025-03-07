@@ -104,7 +104,7 @@ export const getHandlerResponseByBehavior = async (
   }
 
   if (behavior === CustomBehavior.RETURN_NULL) {
-    return new HttpResponse(null, { status: 200 });
+    return HttpResponse.json(null, { status: 200 });;
   }
 
   if (behavior === CustomBehavior.NETWORK_ERROR) {
