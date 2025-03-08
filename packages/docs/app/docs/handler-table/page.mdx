@@ -1,0 +1,50 @@
+---
+description: Show handlers and control them
+---
+
+# Handler Table
+
+The handler table is a table that shows all the handlers in the project and control them.
+
+## Toggle Enabled / Disabled
+The checkbox state indicates:
+- ✓ **Checked**: Mocking is **enabled** - API requests will be intercepted and mocked
+- ☐ **Unchecked**: Mocking is **disabled** - API requests will be sent to the actual endpoint
+
+## Set Response Behavior
+
+Control how your mocked APIs respond using the behavior selector. Each handler can be configured with the following response types:
+
+### Available Behaviors
+
+- **default**
+  - Executes the original handler logic you've defined
+  - Uses your custom mock implementation
+
+- **delay**
+  - Simulates an infinite loading state
+  - Request remains pending indefinitely
+
+- **return null**
+  - Responds with a null value
+  - Useful for testing null handling
+
+- **network Error**
+  - Simulates network failure scenarios
+  - Triggers error handling in your application
+
+- **4xx Error**
+  - Returns client error status codes
+  - Simulates client-side error responses
+
+- **5xx Error**
+  - Returns server error status codes
+  - Simulates server-side failure scenarios
+
+> **Tip**: Use these behaviors to test how your application handles different API response scenarios.
+
+## Reset
+
+You can reset all handlers to their initial state using the `Reset Dev Tool` button:
+- All response behaviors will be set back to **Default**
+- All handlers will be **Enabled** for mocking
