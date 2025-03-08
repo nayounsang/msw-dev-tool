@@ -1,0 +1,36 @@
+---
+description: Debugging API calls with msw-dev-tool
+---
+
+# Debugger
+
+The Debugger allows you to test your mock handlers interactively:
+
+1. Open the Debugger by clicking any row in the Handler Table
+2. Enter the request parameters in the input fields
+3. Send a test request to see the mocked response
+
+## Path Parameters
+
+- Path parameters are part of the URL path
+- Enter path parameters in the input field
+- Input field is only visible when the endpoint has path parameters
+
+## Search Params
+
+- Search params are part of the URL query string
+- Enter key-value pairs and click the `Add` button
+- To modify a param, enter the same key with a different value
+- To remove a param, click the `Delete` button
+
+## Headers
+
+- Headers are additional request metadata
+- Enter key-value pairs and click the `Add` button
+- To modify a header, enter the same key with a different value
+- To remove a header, click the `Delete` button
+
+## Send Request
+
+- Click the `Send Request` button to test with your configured parameters
+- View the response in the panel

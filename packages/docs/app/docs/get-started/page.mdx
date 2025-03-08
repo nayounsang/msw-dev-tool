@@ -1,0 +1,120 @@
+---
+description: "Getting Started with MSW DEV TOOL"
+---
+
+import { Cards, Image, Tabs } from "nextra/components";
+import { cloneElement } from "react";
+
+export default function MdxLayout(props) {
+  return cloneElement(props.children, {
+    components: {
+      img: Image,
+    },
+  });
+}
+
+# Getting Started
+
+**msw-dev-tool** is a package that helps you control mock logic, modify responses, and monitor API calls with msw.
+
+## Installation
+
+### Core Package
+Install msw-dev-tool using your preferred package manager:
+
+{/* prettier-ignore */}
+<Tabs items={["pnpm", "npm", "yarn"]}>
+  <Tabs.Tab>
+  ```bash 
+  pnpm add -D msw-dev-tool
+  ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```bash 
+  npm i msw-dev-tool --save-dev 
+  ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```bash 
+  yarn add msw-dev-tool --dev 
+  ```
+  </Tabs.Tab>
+</Tabs>
+
+### Peer Dependencies
+To use msw-dev-tool, you need to install the following peer dependencies:
+
+<Tabs items={["pnpm", "npm", "yarn"]}>
+  <Tabs.Tab>
+  ```bash
+  # If you don't use zustand
+  pnpm add react react-dom
+  pnpm add -D zustand msw
+
+  # If you already use zustand
+  pnpm add react react-dom zustand
+  pnpm add -D msw
+  ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```bash
+  # If you don't use zustand
+  npm install react react-dom
+  npm install --save-dev zustand msw
+
+  # If you already use zustand
+  npm install react react-dom zustand
+  npm install --save-dev msw
+  ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```bash
+  # If you don't use zustand
+  yarn add react react-dom
+  yarn add -D zustand msw
+
+  # If you already use zustand
+  yarn add react react-dom zustand
+  yarn add -D msw
+  ```
+  </Tabs.Tab>
+</Tabs>
+
+For detailed setup instructions:
+- [MSW Setup Guide](https://mswjs.io/docs/getting-started/install)
+- [Zustand Setup Guide](https://zustand.docs.pmnd.rs/getting-started/introduction)
+
+## Setup
+
+### 1. Integrate with msw
+Replace MSW's `setupWorker` with `setupDevToolWorker` from `msw-dev-tool`:
+
+```ts
+import { setupDevToolWorker } from "msw-dev-tool";
+
+export const worker = setupDevToolWorker([
+  // your handlers here
+]);
+```
+
+### 2. Add DevTool UI
+Add the `MSWDevTool` component to your jsx:
+
+```tsx
+import { MSWDevTool } from "msw-dev-tool";
+
+export default function App() {
+  return (
+    <>
+      {/* Your app components */}
+      <MSWDevTool />
+    </>
+  );
+}
+```
+
+## Questions & Support
+
+Have questions? We're here to help!
+- [Open a Discussion](https://github.com/nayounsang/msw-dev-tool/discussions) for questions and ideas
+- [Report an Issue](https://github.com/nayounsang/msw-dev-tool/issues) for bugs
