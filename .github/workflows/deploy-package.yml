@@ -1,4 +1,4 @@
-name: Deploy
+name: Deploy Package
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - "packages/msw-dev-tool/**"
-      - ".github/workflows/deploy.yml"
+      - ".github/workflows/deploy-package.yml"
       - "package.json"
       - "pnpm-lock.yaml"
 
