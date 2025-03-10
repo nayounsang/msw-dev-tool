@@ -25,17 +25,17 @@ Install msw-dev-tool using your preferred package manager:
 {/* prettier-ignore */}
 <Tabs items={["pnpm", "npm", "yarn"]}>
   <Tabs.Tab>
-  ```bash 
+  ```bash copy
   pnpm add -D msw-dev-tool
   ```
   </Tabs.Tab>
   <Tabs.Tab>
-  ```bash 
+  ```bash copy
   npm i msw-dev-tool --save-dev 
   ```
   </Tabs.Tab>
   <Tabs.Tab>
-  ```bash 
+  ```bash copy
   yarn add msw-dev-tool --dev 
   ```
   </Tabs.Tab>
@@ -48,7 +48,7 @@ Install msw-dev-tool using your preferred package manager:
 
 <Tabs items={["pnpm", "npm", "yarn"]}>
   <Tabs.Tab>
-  ```bash
+  ```bash copy
   # If you don't use zustand
   pnpm add react react-dom
   pnpm add -D zustand msw
@@ -59,7 +59,7 @@ Install msw-dev-tool using your preferred package manager:
   ```
   </Tabs.Tab>
   <Tabs.Tab>
-  ```bash
+  ```bash copy
   # If you don't use zustand
   npm install react react-dom
   npm install --save-dev zustand msw
@@ -70,7 +70,7 @@ Install msw-dev-tool using your preferred package manager:
   ```
   </Tabs.Tab>
   <Tabs.Tab>
-  ```bash
+  ```bash copy
   # If you don't use zustand
   yarn add react react-dom
   yarn add -D zustand msw
@@ -91,17 +91,18 @@ For detailed setup instructions:
 ### 1. Integrate with msw
 Replace MSW's `setupWorker` with `setupDevToolWorker` from `msw-dev-tool`:
 
-```ts
+```ts copy
 import { setupDevToolWorker } from "msw-dev-tool";
 
 export const worker = setupDevToolWorker(...handlers);
 ```
 
 ### 2. Add DevTool UI
-Add the `MSWDevTool` component to your jsx:
+Add the `MSWDevTool` component and `msw-dev-tool.css` to your jsx:
 
-```tsx
+```tsx {1-2}
 import { MSWDevTool } from "msw-dev-tool";
+import "msw-dev-tool/msw-dev-tool.css";
 
 export default function App() {
   return (
