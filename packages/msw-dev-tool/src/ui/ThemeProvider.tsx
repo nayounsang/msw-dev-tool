@@ -12,11 +12,7 @@ export const ThemeProvider = forwardRef<HTMLDivElement, PropsWithChildren>(
         ref={ref}
         style={{
           minHeight: 0,
-          maxHeight: 0,
-          position: "fixed",
-          top: 0,
-          left: 0,
-          zIndex: 999,
+          minWidth: 0,
         }}
       >
         {children}

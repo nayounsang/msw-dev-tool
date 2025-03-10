@@ -1,29 +1,28 @@
-import React from "react";
-import { Button, Flex } from "@radix-ui/themes";
+import React, { ReactNode } from "react";
+import { Flex } from "@radix-ui/themes";
 import { Drawer } from "vaul";
 import { HandlerTable } from "./DevToolContent/HandlerTable";
 import { DialogDescription } from "@radix-ui/react-dialog";
 import { HandlerDebugger } from "./DevToolContent/HandlerDebugger";
 import { ThemeProvider } from "./ThemeProvider";
 import { ToolButtonGroup } from "./DevToolContent/ToolButtonGroup";
+import { DefaultDevToolTrigger } from "./Trigger";
 
-export const MSWDevTool = () => {
+interface MSWDevToolProps {
+  trigger?: ReactNode;
+}
+
+export const MSWDevTool = ({ trigger }: MSWDevToolProps) => {
   return (
     <ThemeProvider>
       <Drawer.Root>
-        <Drawer.Trigger asChild>
-          <Button
-            style={{
-              fontSize: "2rem",
-              borderRadius: "50%",
-              width: "3.5rem",
-              height: "3.5rem",
-              margin: "1rem",
-            }}
-          >
-            M
-          </Button>
-        </Drawer.Trigger>
+        {trigger ? (
+          <Drawer.Trigger asChild>{trigger}</Drawer.Trigger>
+        ) : (
+          <Drawer.Trigger asChild>
+            <DefaultDevToolTrigger />
+          </Drawer.Trigger>
+        )}
         <Drawer.Portal>
           <ThemeProvider>
             <Drawer.Overlay
@@ -46,8 +45,8 @@ export const MSWDevTool = () => {
                 backgroundColor: "#FFF",
                 outline: "none",
                 padding: "2rem",
-                display:"flex",
-                flexDirection:"column",
+                display: "flex",
+                flexDirection: "column",
               }}
             >
               <Flex align="center" justify="between">
