@@ -50,7 +50,7 @@ export default async function RootLayout({
           footer={footer}
           banner={banner}
           editLink={null}
-          darkMode
+          darkMode={false}
           nextThemes={{ forcedTheme: "dark", defaultTheme: "dark" }}
         >
           {children}
