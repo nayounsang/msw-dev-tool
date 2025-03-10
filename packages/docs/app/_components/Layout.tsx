@@ -1,5 +1,4 @@
 import { Footer, Navbar } from "nextra-theme-docs";
-import { Banner } from "nextra/components";
 import cn from "clsx";
 import { REPO_URL } from "@/const/link";
 
