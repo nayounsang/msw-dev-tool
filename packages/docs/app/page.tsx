@@ -1,5 +1,5 @@
 import { REPO_URL } from "@/const/link";
-import { SquareTerminal, Github } from "lucide-react";
+import { SquareTerminal } from "lucide-react";
 import Link from "next/link";
 import { GitHubIcon } from "nextra/icons";
 

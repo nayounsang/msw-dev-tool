@@ -42,7 +42,9 @@ Install msw-dev-tool using your preferred package manager:
 </Tabs>
 
 ### Peer Dependencies
-To use msw-dev-tool, you need to install the following peer dependencies:
+> **Warning** Currently, msw-dev-tool is not compatible with React 19.
+
+> **Note** To use msw-dev-tool, you need to install the following peer dependencies:
 
 <Tabs items={["pnpm", "npm", "yarn"]}>
   <Tabs.Tab>
@@ -92,9 +94,7 @@ Replace MSW's `setupWorker` with `setupDevToolWorker` from `msw-dev-tool`:
 ```ts
 import { setupDevToolWorker } from "msw-dev-tool";
 
-export const worker = setupDevToolWorker([
-  // your handlers here
-]);
+export const worker = setupDevToolWorker(...handlers);
 ```
 
 ### 2. Add DevTool UI
