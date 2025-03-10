@@ -2,38 +2,63 @@
 description: Show handlers and control them
 ---
 
+import Image from "next/image";
+
 # Handler Table
 
 The handler table is a table that shows all the handlers in the project and control them.
 
 ## Toggle Enabled / Disabled
+
+<Image
+  src="/msw-dev-tool-enable.webp"
+  alt="enable handler image"
+  width={800}
+  height={300}
+  className="w-full h-auto"
+/>
+
 The checkbox state indicates:
+
 - ✓ **Checked**: Mocking is **enabled** - API requests will be intercepted and mocked
 - ☐ **Unchecked**: Mocking is **disabled** - API requests will be sent to the actual endpoint
 
 ## Set Response Behavior
+
+<Image
+  src="/msw-dev-tool-behavior.webp"
+  alt="response behavior image"
+  width={800}
+  height={300}
+  className="w-full h-auto"
+/>
 
 Control how your mocked APIs respond using the behavior selector. Each handler can be configured with the following response types:
 
 ### Available Behaviors
 
 - **default**
+
   - Executes the original handler logic you've defined
   - Uses your custom mock implementation
 
 - **delay**
+
   - Simulates an infinite loading state
   - Request remains pending indefinitely
 
 - **return null**
+
   - Responds with a null value
   - Useful for testing null handling
 
 - **network Error**
+
   - Simulates network failure scenarios
   - Triggers error handling in your application
 
 - **4xx Error**
+
   - Returns client error status codes
   - Simulates client-side error responses
 
@@ -45,6 +70,15 @@ Control how your mocked APIs respond using the behavior selector. Each handler c
 
 ## Reset
 
+<Image
+  src="/msw-dev-tool-reset.webp"
+  alt="reset button image"
+  width={800}
+  height={300}
+  className="w-full h-auto"
+/>
+
 You can reset all handlers to their initial state using the `Reset Dev Tool` button:
+
 - All response behaviors will be set back to **Default**
 - All handlers will be **Enabled** for mocking

@@ -17,8 +17,12 @@ export const UsersTable = ({
     return <p>Fetching users...</p>;
   }
 
-  if (!users) {
+  if (users === undefined) {
     return <p>No users fetched yet.</p>;
+  }
+
+  if (!users || users.length === 0) {
+    return <p>Empty Users.</p>;
   }
 
   return (
