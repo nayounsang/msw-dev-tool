@@ -2,7 +2,7 @@
 description: Show handlers and control them
 ---
 
-import Image from "next/image";
+import { ExampleImage } from "@/app/_components/ExampleImage";
 
 # Handler Table
 
@@ -10,13 +10,7 @@ The handler table is a table that shows all the handlers in the project and cont
 
 ## Toggle Enabled / Disabled
 
-<Image
-  src="/msw-dev-tool-enable.webp"
-  alt="enable handler image"
-  width={800}
-  height={300}
-  className="w-full h-auto"
-/>
+<ExampleImage src="/msw-dev-tool-enable.webp" alt="enable handler image" />
 
 The checkbox state indicates:
 
@@ -25,13 +19,7 @@ The checkbox state indicates:
 
 ## Set Response Behavior
 
-<Image
-  src="/msw-dev-tool-behavior.webp"
-  alt="response behavior image"
-  width={800}
-  height={300}
-  className="w-full h-auto"
-/>
+<ExampleImage src="/msw-dev-tool-behavior.webp" alt="response behavior image" />
 
 Control how your mocked APIs respond using the behavior selector. Each handler can be configured with the following response types:
 
@@ -70,13 +58,7 @@ Control how your mocked APIs respond using the behavior selector. Each handler c
 
 ## Reset
 
-<Image
-  src="/msw-dev-tool-reset.webp"
-  alt="reset button image"
-  width={800}
-  height={300}
-  className="w-full h-auto"
-/>
+<ExampleImage src="/msw-dev-tool-reset.webp" alt="reset button image" />
 
 You can reset all handlers to their initial state using the `Reset Dev Tool` button:
 
