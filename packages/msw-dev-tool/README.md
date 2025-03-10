@@ -1,72 +1,39 @@
 # Install
 
 - npm:
+
 ```bash
 npm i msw-dev-tool --save-dev
 ```
 
 - yarn:
+
 ```bash
 yarn add msw-dev-tool --dev
 ```
 
 - pnpm:
+
 ```bash
 pnpm add msw-dev-tool --save-dev
 ```
 
-## Peer Dep
+# How to use?
 
-These dependencies are assumed to already exist in your project.
-If not, please install it.
+view [docs](https://msw-dev-tool-docs.vercel.app/docs/get-started)
 
-```json
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "zustand": "^5.0.2",
-    "msw": "^2.7.0"
-```
-- [install msw](https://mswjs.io/docs/getting-started)
-- [install zustand](https://zustand.docs.pmnd.rs/getting-started/introduction#installation)
+# What features?
 
-# Usage
-> Please look forward to the official document. I will tell you how to use it in more detail.
+## Handler Table
 
-## UI
+**view [docs](https://msw-dev-tool-docs.vercel.app/docs/handler-table)**
+The handler table is a table that shows all the handlers in the project and control them.
 
-```jsx
-import { MSWDevTool } from "msw-dev-tool";
-import "msw-dev-tool/msw-dev-tool.css"
+## Debugger
 
-function App() {
+**view [docs](https://msw-dev-tool-docs.vercel.app/docs/debugger)**
+The Debugger allows you to test your mock handlers interactively:
 
-  return (
-    <>
-      <MSWDevTool />
-      {/* ... */}
-    </>
-  );
-}
-```
-
-## Integration with msw
-
-```typescript
-import { setupWorker } from "msw/browser";
-import { handlers } from "./handlers";
-import { setupDevToolWorker } from "msw-dev-tool";
-
-// use setupDevToolWorker instead of setupWorker from msw.
-export const worker = setupDevToolWorker(...handlers);
-
-```
-
-
-# ProjectStructure
-
-This project uses pnpm workspaces.
-
-| Project          | Description                                                                                           |
-| ---------------- | ----------------------------------------------------------------------------------------------------- |
-| **example**      | A sample project to develop and test `msw-dev-tool`. You need to build `msw-dev-tool` before testing. |
-| **msw-dev-tool** | The source code of the library.                                                                       |
+1. Open the Debugger by clicking any row in the Handler Table
+2. Enter the request parameters in the input fields
+3. Send a test request to see the mocked response
