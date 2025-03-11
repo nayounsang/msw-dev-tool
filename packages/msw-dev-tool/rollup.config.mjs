@@ -6,22 +6,31 @@ import dts from "rollup-plugin-dts";
 import pkg from "./package.json" assert { type: "json" };
 import postcss from "rollup-plugin-postcss";
 
+const externalPackages = [
+  ...Object.keys(pkg.peerDependencies || {}),
+  "msw/browser",
+];
 export default [
   {
     input: "src/index.ts",
     output: [
       {
-        dir: "dist/cjs", // dist/cjs/index.js
+        dir: "dist/cjs",
         format: "cjs",
         sourcemap: true,
+        preserveModules: true,
+        preserveModulesRoot: "src",
+        exports: "named",
       },
       {
-        dir: "dist/esm", // dist/esm/index.js
+        dir: "dist/esm",
         format: "esm",
         sourcemap: true,
+        preserveModules: true,
+        preserveModulesRoot: "src",
       },
     ],
-    external: [...Object.keys(pkg.peerDependencies || {})],
+    external: [...externalPackages],
     plugins: [
       peerDepsExternal(),
       resolve(),
@@ -64,7 +73,7 @@ export default [
       file: "dist/types/index.d.ts",
       format: "es",
     },
-    external: [/\.css$/, ...Object.keys(pkg.peerDependencies || {})],
+    external: [/\.css$/, ...externalPackages],
     plugins: [
       dts({
         compilerOptions: {
