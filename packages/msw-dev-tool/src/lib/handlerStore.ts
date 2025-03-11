@@ -12,7 +12,7 @@ import {
   updateEnableHandlers,
 } from "./util";
 import { OnChangeFn, RowSelectionState } from "@tanstack/react-table";
-import { isFunction } from "lodash";
+import isFunction  from "lodash/isFunction";
 
 export interface HandlerStoreState {
   /**
