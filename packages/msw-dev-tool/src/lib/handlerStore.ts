@@ -1,3 +1,5 @@
+"use client";
+
 import { setupWorker, SetupWorker } from "msw/browser";
 import { create } from "zustand";
 import { FlattenHandler, Handler, HttpHandlerBehavior } from "./type";
