@@ -1,11 +1,9 @@
 import { Footer, Navbar } from "nextra-theme-docs";
 import cn from "clsx";
 import { REPO_URL } from "@/const/link";
+import { Banner } from "nextra/components";
 
-export const banner = <></>;
-{
-  /* <Banner dismissible={false}>MSW DEV TOOL</Banner>; */
-}
+export const banner = <Banner>I am working on supporting nextjs🔥 Please look forward to it!</Banner>;
 
 export const navbar = (
   <Navbar
