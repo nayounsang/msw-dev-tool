@@ -1,3 +1,5 @@
+"use client";
+
 import React, { ReactNode } from "react";
 import { Flex } from "@radix-ui/themes";
 import { Drawer } from "vaul";
@@ -47,6 +49,7 @@ export const MSWDevTool = ({ trigger }: MSWDevToolProps) => {
                 padding: "2rem",
                 display: "flex",
                 flexDirection: "column",
+                color: "#000",
               }}
             >
               <Flex align="center" justify="between">

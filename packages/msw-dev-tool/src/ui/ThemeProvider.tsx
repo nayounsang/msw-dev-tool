@@ -9,6 +9,7 @@ export const ThemeProvider = forwardRef<HTMLDivElement, PropsWithChildren>(
   ({ children }, ref) => {
     return (
       <Theme
+        appearance="light"
         ref={ref}
         style={{
           minHeight: 0,
