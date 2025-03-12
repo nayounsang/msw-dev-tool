@@ -53,7 +53,11 @@ export const MSWDevTool = ({ trigger }: MSWDevToolProps) => {
               }}
             >
               <Flex align="center" justify="between">
-                <Drawer.Title style={{ margin: 0 }}>MSW DEV TOOL</Drawer.Title>
+                <Drawer.Title
+                  style={{ margin: 0, fontSize: "1.5rem", fontWeight: "bold" }}
+                >
+                  MSW DEV TOOL
+                </Drawer.Title>
                 <Drawer.Close
                   style={{
                     fontSize: "1.5rem",

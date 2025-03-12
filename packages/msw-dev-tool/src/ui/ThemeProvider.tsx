@@ -14,6 +14,9 @@ export const ThemeProvider = forwardRef<HTMLDivElement, PropsWithChildren>(
         style={{
           minHeight: 0,
           minWidth: 0,
+          maxHeight: "fit-content",
+          maxWidth: "fit-content",
+          backgroundColor: "transparent",
         }}
       >
         {children}
