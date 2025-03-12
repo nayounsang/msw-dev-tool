@@ -18,6 +18,13 @@ const meta: MetaRecord = {
   debugger: {
     title: "Debugger",
   },
+  examples: {
+    title: <p className="font-extralight">EXAMPLES</p>,
+    type: "separator",
+  },
+  playground: {
+    title: "Playground",
+  },
 };
 
 export default meta;
