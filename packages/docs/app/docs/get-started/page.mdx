@@ -99,9 +99,11 @@ export const worker = setupDevToolWorker(...handlers);
 
 > **Note:** Unlike `msw`, `setupDevToolWorker()` returns a **Promise** that resolves to a worker instance.
 
+### 2. Integrate worker with browser
+
 For detailed information about **msw browser integration**, please refer to the [msw official documentation](https://mswjs.io/docs/integrations/browser).
 
-### 2. Add DevTool UI
+### 3. Add DevTool UI
 Add the `MSWDevTool` component and `msw-dev-tool.css` to your jsx:
 
 ```tsx {1-2}
