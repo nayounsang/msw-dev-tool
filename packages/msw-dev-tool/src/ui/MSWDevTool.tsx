@@ -1,5 +1,3 @@
-"use client";
-
 import React, { ReactNode } from "react";
 import { Flex } from "@radix-ui/themes";
 import { Drawer } from "vaul";
