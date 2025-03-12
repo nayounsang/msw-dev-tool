@@ -13,7 +13,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.479.0",
     "msw": "^2.7.0",
-    "msw-dev-tool": "workspace:*",
+    "msw-dev-tool": "latest",
     "next": "15.2.1",
     "nextra": "^4.2.16",
     "nextra-theme-docs": "^4.2.16",
