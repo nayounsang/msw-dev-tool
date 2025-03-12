@@ -5,9 +5,11 @@ export const useMsw = () => {
   useEffect(() => {
     if (process.env.NODE_ENV !== "development") return;
     if (flagRef.current) return;
-    
+
     const initWorker = async () => {
-      const { worker } = await import("../mocks/browser");
+      const worker = await import("../mocks/browser").then(
+        async (mod) => await mod.worker
+      );
       worker.start();
       flagRef.current = true;
     };

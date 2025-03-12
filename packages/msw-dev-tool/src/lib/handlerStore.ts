@@ -1,6 +1,6 @@
 "use client";
 
-import { setupWorker, SetupWorker } from "msw/browser";
+import { SetupWorker } from "msw/browser";
 import { create } from "zustand";
 import { FlattenHandler, Handler, HttpHandlerBehavior } from "./type";
 import {
@@ -12,7 +12,8 @@ import {
   updateEnableHandlers,
 } from "./util";
 import { OnChangeFn, RowSelectionState } from "@tanstack/react-table";
-import isFunction  from "lodash/isFunction";
+import isFunction from "lodash/isFunction";
+import { setupWorker as _setupWorker } from "../utils/mswBrowser";
 
 export interface HandlerStoreState {
   /**
@@ -27,7 +28,7 @@ export interface HandlerStoreState {
   restHandlers: Handler[];
   flattenHandlers: FlattenHandler[];
   handlerRowSelection: RowSelectionState;
-  setupDevToolWorker: (...handlers: Handler[]) => SetupWorker;
+  setupDevToolWorker: (...handlers: Handler[]) => Promise<SetupWorker>;
   /**
    * @deprecated use `setupDevToolWorker` instead.
    */
@@ -44,7 +45,7 @@ export const useHandlerStore = create<HandlerStoreState>((set, get) => ({
   worker: null,
   restHandlers: [],
   handlerRowSelection: {},
-  setupDevToolWorker: (...handlers: Handler[]) => {
+  setupDevToolWorker: async (...handlers: Handler[]) => {
     const _handlers = handlers.map((handler) => {
       if (!isHttpHandler(handler)) {
         return handler;
@@ -65,7 +66,14 @@ export const useHandlerStore = create<HandlerStoreState>((set, get) => ({
       return handler;
     });
 
-    const worker = setupWorker(..._handlers);
+    const setupWorker = await _setupWorker;
+    if (!setupWorker) {
+      throw new Error(
+        "Fail to import 'msw/browser'. Is environment is not browser?"
+      );
+    }
+    const worker = setupWorker?.(..._handlers);
+
     const { flattenHandlers, handlerRowSelection, unsupportedHandlers } =
       initMSWDevToolStore(worker);
     set({
