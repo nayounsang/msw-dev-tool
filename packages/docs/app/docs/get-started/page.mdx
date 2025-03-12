@@ -103,6 +103,23 @@ export const worker = setupDevToolWorker(...handlers);
 
 For detailed information about **msw browser integration**, please refer to the [msw official documentation](https://mswjs.io/docs/integrations/browser).
 
+### nextjs
+
+Add webpack config in `next.config.ts` to exclude `msw/browser`:
+
+```ts
+webpack: (config, { isServer }) => {
+  // ... other config
+  if (isServer) {
+    config.resolve.alias["msw/browser"] = false;
+  }
+  /// --- other config
+  return config;
+}
+```
+This works fine, as it only ignores validation during the build process.
+
+
 ### 3. Add DevTool UI
 Add the `MSWDevTool` component and `msw-dev-tool.css` to your jsx:
 
