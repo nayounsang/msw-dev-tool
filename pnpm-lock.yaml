@@ -20,8 +20,8 @@ importers:
         specifier: ^2.7.0
         version: 2.7.0(@types/node@20.17.23)(typescript@5.6.3)
       msw-dev-tool:
-        specifier: workspace:*
-        version: link:../msw-dev-tool
+        specifier: latest
+        version: 1.1.24(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(msw@2.7.0(@types/node@20.17.23)(typescript@5.6.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zustand@5.0.2(@types/react@18.3.18)(immer@10.1.1)(react@18.3.1))
       next:
         specifier: 15.2.1
         version: 15.2.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3906,6 +3906,14 @@ packages:
 
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
+
+  msw-dev-tool@1.1.24:
+    resolution: {integrity: sha512-7ZffWNg+VQvTimDuQwn2+s6MDshW5+4jIh6Eqr8TeEWqu8i4PSEbEpiPWiT9EgqQhz6UKjfMNU4Ymt3us5YcIQ==}
+    peerDependencies:
+      msw: ^2.7.0
+      react: ^18.0.0
+      react-dom: ^18.0.0
+      zustand: ^5.0.2
 
   msw@2.7.0:
     resolution: {integrity: sha512-BIodwZ19RWfCbYTxWTUfTXc+sg4OwjCAgxU1ZsgmggX/7S3LdUifsbUPJs61j0rWb19CZRGY5if77duhc0uXzw==}
@@ -9600,6 +9608,27 @@ snapshots:
       ufo: 1.5.4
 
   ms@2.1.3: {}
+
+  msw-dev-tool@1.1.24(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(msw@2.7.0(@types/node@20.17.23)(typescript@5.6.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zustand@5.0.2(@types/react@18.3.18)(immer@10.1.1)(react@18.3.1)):
+    dependencies:
+      '@radix-ui/colors': 3.0.0
+      '@radix-ui/react-dialog': 1.1.6(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-icons': 1.3.2(react@18.3.1)
+      '@radix-ui/react-label': 2.1.2(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/react-select': 2.1.6(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@radix-ui/themes': 3.2.1(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tanstack/react-table': 8.20.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@types/lodash': 4.17.15
+      immer: 10.1.1
+      lodash: 4.17.21
+      msw: 2.7.0(@types/node@20.17.23)(typescript@5.6.3)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      vaul: 1.1.2(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      zustand: 5.0.2(@types/react@18.3.18)(immer@10.1.1)(react@18.3.1)
+    transitivePeerDependencies:
+      - '@types/react'
+      - '@types/react-dom'
 
   msw@2.7.0(@types/node@20.17.23)(typescript@5.6.3):
     dependencies:
