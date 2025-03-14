@@ -34,6 +34,8 @@ export const BehaviorSelect = ({ row }: { row: Row<FlattenHandler> }) => {
         const value = _value as HttpHandlerBehavior;
         setHandlerBehavior(row.original.id, value);
       }}
+      data-theme="light"
+      data-radix-color-scheme="light"
     >
       <SelectTrigger
         className="msw-dt-select-trigger"
@@ -52,6 +54,8 @@ export const BehaviorSelect = ({ row }: { row: Row<FlattenHandler> }) => {
         <SelectContent
           className="msw-dt-select-content"
           style={{ zIndex: 10000 }}
+          data-theme="light"
+          data-radix-color-scheme="light"
         >
           <SelectScrollUpButton className="msw-dt-select-scroll-button">
             <ChevronUpIcon />
