@@ -5,6 +5,7 @@ import { Layout } from "nextra-theme-docs";
 import { REPO_URL } from "@/const/link";
 import { getPageMap } from "nextra/page-map";
 import { banner, footer, navbar } from "./_components/Layout";
+import { MSWProvider } from "./_components/MSWProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,19 +43,21 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Layout
-          sidebar={{ autoCollapse: true }}
-          docsRepositoryBase={REPO_URL}
-          pageMap={await getPageMap()}
-          navbar={navbar}
-          footer={footer}
-          banner={banner}
-          editLink={null}
-          darkMode={false}
-          nextThemes={{ forcedTheme: "dark", defaultTheme: "dark" }}
-        >
-          {children}
-        </Layout>
+        <MSWProvider>
+          <Layout
+            sidebar={{ autoCollapse: true }}
+            docsRepositoryBase={REPO_URL}
+            pageMap={await getPageMap()}
+            navbar={navbar}
+            footer={footer}
+            banner={banner}
+            editLink={null}
+            darkMode={false}
+            nextThemes={{ forcedTheme: "dark", defaultTheme: "dark" }}
+          >
+            {children}
+          </Layout>
+        </MSWProvider>
       </body>
     </html>
   );
