@@ -1,10 +1,9 @@
 import { Footer, Navbar } from "nextra-theme-docs";
 import cn from "clsx";
 import { REPO_URL } from "@/const/link";
-import { Banner } from "nextra/components";
+//import { Banner } from "nextra/components";
 
-export const banner = <Banner>I am working on supporting nextjs🔥 Please look forward to it!</Banner>;
-
+export const banner = <></>
 export const navbar = (
   <Navbar
     logo={
@@ -21,7 +20,6 @@ export const navbar = (
     }
     projectLink={REPO_URL}
     className="border-b border-gray-700"
-
   />
 );
 
