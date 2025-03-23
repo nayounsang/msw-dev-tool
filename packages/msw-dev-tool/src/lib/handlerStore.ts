@@ -27,10 +27,6 @@ export interface HandlerStoreState {
   flattenHandlers: FlattenHandler[];
   handlerRowSelection: RowSelectionState;
   setupDevToolWorker: (...handlers: Handler[]) => Promise<SetupWorker>;
-  /**
-   * @deprecated use `setupDevToolWorker` instead.
-   */
-  initMSWDevTool: (worker: SetupWorker) => SetupWorker;
   resetMSWDevTool: () => void;
   handleHandlerRowSelectionChange: OnChangeFn<RowSelectionState>;
   getWorker: () => SetupWorker;
@@ -74,23 +70,6 @@ export const useHandlerStore = create<HandlerStoreState>((set, get) => ({
 
     const { flattenHandlers, handlerRowSelection, unsupportedHandlers } =
       initMSWDevToolStore(worker);
-    set({
-      worker,
-      flattenHandlers,
-      handlerRowSelection,
-      restHandlers: unsupportedHandlers,
-    });
-
-    return worker;
-  },
-  initMSWDevTool: (_worker) => {
-    const {
-      worker,
-      flattenHandlers,
-      handlerRowSelection,
-      unsupportedHandlers,
-    } = initMSWDevToolStore(_worker);
-
     set({
       worker,
       flattenHandlers,
@@ -172,6 +151,4 @@ export const useHandlerStore = create<HandlerStoreState>((set, get) => ({
     });
   },
 }));
-
-export const initMSWDevTool = useHandlerStore.getState().initMSWDevTool;
 export const setupDevToolWorker = useHandlerStore.getState().setupDevToolWorker;
