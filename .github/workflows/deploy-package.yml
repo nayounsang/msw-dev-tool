@@ -56,8 +56,18 @@ jobs:
         working-directory: packages/msw-dev-tool
         run: |
           CURRENT_VERSION=$(cat package.json | jq -r '.version')
-          if [ "$CURRENT_VERSION" != "${{ env.npm_version }}" ]; then
-            npm version ${{ env.npm_version }} --no-git-tag-version
+          REGISTRY_VERSION=${{ env.npm_version }}
+
+          # Compare version
+          function version_gt() { 
+            test "$(printf '%s\n' "$1" "$2" | sort -V | head -n 1)" != "$1"
+          }
+
+          if version_gt "$CURRENT_VERSION" "$NPM_VERSION"; then
+            echo "Local version: ($CURRENT_VERSION) is higher then registry version: ($NPM_VERSION). Maintain local version."
+          elif [ "$CURRENT_VERSION" != "$NPM_VERSION" ]; then
+            echo "Registry version: ($NPM_VERSION) is higher then ($CURRENT_VERSION). Update local version."
+            npm version $NPM_VERSION --no-git-tag-version
           else
             echo "Versions are the same, no need to update."
           fi
