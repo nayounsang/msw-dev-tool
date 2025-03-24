@@ -61,7 +61,7 @@ jobs:
         working-directory: packages/msw-dev-tool
         run: |
           CURRENT_VERSION=$(cat package.json | jq -r '.version')
-          REGISTRY_VERSION=${{ env.npm_version }}
+          NPM_VERSION=${{ env.npm_version }}
 
           # Compare version
           function version_gt() { 
