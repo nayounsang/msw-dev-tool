@@ -5,11 +5,13 @@ import {
   HttpHandler,
   HttpHandlerBehavior,
   HttpStatusCode,
+  StorageData,
 } from "./type";
 import { dummyHandler } from "../const/handler";
 import { SetupWorker } from "msw/lib/browser";
 import { RowSelectionState } from "@tanstack/react-table";
 import { AsyncResponseResolverReturnType, delay, HttpResponse } from "msw";
+import { STORAGE_KEY } from "./const";
 
 export const getRowId = ({ path, method }: { path: string; method: string }) =>
   JSON.stringify({
@@ -75,7 +77,11 @@ export const updateEnableHandlers = (
 
 export const initMSWDevToolStore = (worker: SetupWorker) => {
   const handlers = worker.listHandlers() as Handler[];
-  const { flattenHandlers, unsupportedHandlers } = convertHandlers(handlers);
+  const { flattenHandlers: newFlattenHandlers, unsupportedHandlers } =
+    convertHandlers(handlers);
+  const { flattenHandlers } = mergeStorageData({
+    flattenHandlers: newFlattenHandlers,
+  });
   const handlerRowSelection = flattenHandlers.reduce((acc, handler) => {
     acc[handler.id] = handler.enabled;
     return acc;
@@ -104,7 +110,7 @@ export const getHandlerResponseByBehavior = async (
   }
 
   if (behavior === CustomBehavior.RETURN_NULL) {
-    return HttpResponse.json(null, { status: 200 });;
+    return HttpResponse.json(null, { status: 200 });
   }
 
   if (behavior === CustomBehavior.NETWORK_ERROR) {
@@ -121,4 +127,33 @@ export const getHandlerResponseByBehavior = async (
   }
 
   return originalResolverCallback();
+};
+
+export const getStorageData = (): StorageData => {
+  const storage = sessionStorage.getItem(STORAGE_KEY);
+  if (!storage) return { flattenHandlers: [] };
+  return JSON.parse(storage).state;
+};
+
+export const mergeStorageData = ({
+  flattenHandlers: newFlattenHandlers,
+}: StorageData) => {
+  const { flattenHandlers: savedFlattenHandlers } = getStorageData();
+
+  // Merge with saved and new element based on worker's handlers
+  const flattenHandlers = newFlattenHandlers.map((newHandler) => {
+    const savedHandler = savedFlattenHandlers.find(
+      (h) => h.id === newHandler.id
+    );
+    if (savedHandler) {
+      return {
+        ...newHandler,
+        enabled: savedHandler.enabled,
+        behavior: savedHandler.behavior,
+      };
+    }
+    return newHandler;
+  });
+
+  return { flattenHandlers };
 };

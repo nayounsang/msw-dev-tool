@@ -71,3 +71,7 @@ export type FlattenHandler = {
 };
 
 export type Handler = RequestHandler | WebSocketHandler;
+
+export interface StorageData {
+  flattenHandlers: FlattenHandler[];
+}
