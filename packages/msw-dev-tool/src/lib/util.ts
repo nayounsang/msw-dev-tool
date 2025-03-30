@@ -10,7 +10,7 @@ import {
 import { dummyHandler } from "../const/handler";
 import { SetupWorker } from "msw/lib/browser";
 import { RowSelectionState } from "@tanstack/react-table";
-import { AsyncResponseResolverReturnType, delay, HttpResponse } from "msw";
+import { AsyncResponseResolverReturnType, delay, HttpResponse, passthrough } from "msw";
 import { STORAGE_KEY } from "./const";
 
 export const getRowId = ({ path, method }: { path: string; method: string }) =>
@@ -38,7 +38,6 @@ export const convertHandlers = (handlers: Handler[]) => {
       id: getRowId({ path, method }),
       path,
       method,
-      enabled: true,
       handler,
       behavior: HttpHandlerBehavior.DEFAULT,
     });
@@ -48,46 +47,12 @@ export const convertHandlers = (handlers: Handler[]) => {
   return { flattenHandlers, unsupportedHandlers };
 };
 
-export const getTotalEnableHandlers = (
-  flattenHandlers: FlattenHandler[],
-  restHandlers: Handler[]
-) => {
-  const checkedHttpHandlers = flattenHandlers
-    .filter((h) => h.enabled)
-    .map((h) => h.handler);
-  return [...checkedHttpHandlers, ...restHandlers];
-};
-
-/**
- * This has to do with `msw` internal workings.
- * If I spread an empty array in `resetHandlers`, it will be replaced by `initialHandler`.
- * Therefore, I proposed the `clear` method, but unfortunately it was not accepted!
- */
-export const updateEnableHandlers = (
-  worker: SetupWorker,
-  totalEnableHandlers: Handler[]
-) => {
-  if (totalEnableHandlers.length === 0) {
-    worker.resetHandlers(dummyHandler);
-    return;
-  }
-
-  worker.resetHandlers(...totalEnableHandlers);
-};
-
 export const initMSWDevToolStore = (worker: SetupWorker) => {
   const handlers = worker.listHandlers() as Handler[];
-  const { flattenHandlers: newFlattenHandlers, unsupportedHandlers } =
+  const { flattenHandlers, unsupportedHandlers } =
     convertHandlers(handlers);
-  const { flattenHandlers } = mergeStorageData({
-    flattenHandlers: newFlattenHandlers,
-  });
-  const handlerRowSelection = flattenHandlers.reduce((acc, handler) => {
-    acc[handler.id] = handler.enabled;
-    return acc;
-  }, {} as RowSelectionState);
 
-  return { worker, flattenHandlers, unsupportedHandlers, handlerRowSelection };
+  return { worker, flattenHandlers, unsupportedHandlers };
 };
 
 export const isHttpHandler = (handler: Handler): handler is HttpHandler => {
@@ -102,6 +67,10 @@ export const getHandlerResponseByBehavior = async (
 ): Promise<AsyncResponseResolverReturnType<any>> => {
   if (!behavior || behavior === CustomBehavior.DEFAULT) {
     return originalResolverCallback();
+  }
+
+  if (behavior === CustomBehavior.DISABLE) {
+    return passthrough();
   }
 
   if (behavior === CustomBehavior.DELAY) {
@@ -148,7 +117,6 @@ export const mergeStorageData = ({
     if (savedHandler) {
       return {
         ...newHandler,
-        enabled: savedHandler.enabled,
         behavior: savedHandler.behavior,
       };
     }

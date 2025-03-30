@@ -12,35 +12,11 @@ import { BehaviorSelect } from "../HandlerTable/BehaviorSelect";
 export const useFlattenHandlersTable = () => {
   const {
     flattenHandlers,
-    handlerRowSelection,
-    handleHandlerRowSelectionChange,
   } = useHandlerStore();
 
   const columnHelper = createColumnHelper<FlattenHandler>();
   const columns: ColumnDef<FlattenHandler, any>[] = useMemo(() => {
     return [
-      columnHelper.accessor("enabled", {
-        header: ({ table }) => (
-          <input
-            type="checkbox"
-            checked={table.getIsAllRowsSelected()}
-            onChange={(e) => {
-              e.stopPropagation();
-              table.toggleAllRowsSelected(e.target.checked);
-            }}
-          />
-        ),
-        cell: ({ row }) => (
-          <input
-            type="checkbox"
-            checked={row.getIsSelected()}
-            onChange={(e) => {
-              e.stopPropagation();
-              row.toggleSelected(e.target.checked);
-            }}
-          />
-        ),
-      }),
       columnHelper.accessor("path", {
         header: "Protocol",
         cell: ({ row }) => {
@@ -76,16 +52,12 @@ export const useFlattenHandlersTable = () => {
         },
       }),
     ];
-  }, [flattenHandlers, handlerRowSelection, handleHandlerRowSelectionChange]);
+  }, [flattenHandlers]);
 
   const table = useReactTable({
     columns,
     data: flattenHandlers,
     getCoreRowModel: getCoreRowModel(),
-    state: {
-      rowSelection: handlerRowSelection,
-    },
-    onRowSelectionChange: handleHandlerRowSelectionChange,
     getRowId: (row) => row.id,
     enableRowSelection: true,
   });
