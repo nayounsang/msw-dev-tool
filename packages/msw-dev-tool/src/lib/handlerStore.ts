@@ -4,13 +4,10 @@ import { FlattenHandler, Handler, HttpHandlerBehavior } from "./type";
 import {
   getHandlerResponseByBehavior,
   getRowId,
-  getTotalEnableHandlers,
   initMSWDevToolStore,
   isHttpHandler,
-  updateEnableHandlers,
+  mergeStorageData,
 } from "./util";
-import { OnChangeFn, RowSelectionState } from "@tanstack/react-table";
-import isFunction from "lodash/isFunction";
 import { setupWorker as _setupWorker } from "../utils/mswBrowser";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { STORAGE_KEY } from "./const";
@@ -27,10 +24,8 @@ export interface HandlerStoreState {
    */
   restHandlers: Handler[];
   flattenHandlers: FlattenHandler[];
-  handlerRowSelection: RowSelectionState;
   setupDevToolWorker: (...handlers: Handler[]) => Promise<SetupWorker>;
   resetMSWDevTool: () => void;
-  handleHandlerRowSelectionChange: OnChangeFn<RowSelectionState>;
   getWorker: () => SetupWorker;
   getFlattenHandlerById: (id: string) => FlattenHandler | undefined;
   getHandlerBehavior: (id: string) => HttpHandlerBehavior | undefined;
@@ -73,20 +68,18 @@ export const useHandlerStore = create<HandlerStoreState>()(
         }
         const worker = setupWorker(..._handlers);
 
-        const { flattenHandlers, handlerRowSelection, unsupportedHandlers } =
+        const { flattenHandlers, unsupportedHandlers } =
           initMSWDevToolStore(worker);
-        set({
-          worker,
+
+        const { flattenHandlers: mergedHandlers } = mergeStorageData({
           flattenHandlers,
-          handlerRowSelection,
-          restHandlers: unsupportedHandlers,
         });
 
-        const totalEnableHandlers = getTotalEnableHandlers(
-          flattenHandlers,
-          unsupportedHandlers
-        );
-        updateEnableHandlers(worker, totalEnableHandlers);
+        set({
+          worker,
+          flattenHandlers: mergedHandlers,
+          restHandlers: unsupportedHandlers,
+        });
 
         return worker;
       },
@@ -94,49 +87,14 @@ export const useHandlerStore = create<HandlerStoreState>()(
         const _worker = get().getWorker();
         _worker.resetHandlers();
 
-        const {
-          worker,
-          flattenHandlers,
-          handlerRowSelection,
-          unsupportedHandlers,
-        } = initMSWDevToolStore(_worker);
+        const { worker, flattenHandlers, unsupportedHandlers } =
+          initMSWDevToolStore(_worker);
 
         set({
           worker,
           flattenHandlers,
-          handlerRowSelection,
           restHandlers: unsupportedHandlers,
         });
-      },
-      handleHandlerRowSelectionChange: (updater) => {
-        const worker = get().getWorker();
-
-        if (isFunction(updater)) {
-          set(({ handlerRowSelection }) => {
-            const next = updater(handlerRowSelection);
-            const current = get().flattenHandlers.map((handler) =>
-              next[handler.id]
-                ? { ...handler, enabled: true }
-                : { ...handler, enabled: false }
-            );
-            return { handlerRowSelection: next, flattenHandlers: current };
-          });
-        } else {
-          const current = get().flattenHandlers.map((handler) =>
-            updater[handler.id]
-              ? { ...handler, enabled: true }
-              : { ...handler, enabled: false }
-          );
-          set({ handlerRowSelection: updater, flattenHandlers: current });
-        }
-
-        const flattenHandlers = get().flattenHandlers;
-        const restHandlers = get().restHandlers;
-        const totalEnableHandlers = getTotalEnableHandlers(
-          flattenHandlers,
-          restHandlers
-        );
-        updateEnableHandlers(worker, totalEnableHandlers);
       },
       getWorker: () => {
         const worker = get().worker;
