@@ -1,15 +1,16 @@
 import { MetaRecord } from "nextra";
+import { Separator } from "./_components/Separator";
 
 const meta: MetaRecord = {
   introduction: {
-    title: <p className="font-extralight">INTRODUCTION</p>,
+    title: <Separator>INTRODUCTION</Separator>,
     type: "separator",
   },
   "get-started": {
     title: "Getting Started",
   },
   features: {
-    title: <p className="font-extralight">FEATURES</p>,
+    title: <Separator>FEATURES</Separator>,
     type: "separator",
   },
   "handler-table": {
@@ -18,8 +19,15 @@ const meta: MetaRecord = {
   debugger: {
     title: "Debugger",
   },
+  ui: {
+    title: <Separator>UI</Separator>,
+    type: "separator",
+  },
+  "custom-trigger": {
+    title: "Custom Trigger",
+  },
   examples: {
-    title: <p className="font-extralight">EXAMPLES</p>,
+    title: <Separator>EXAMPLES</Separator>,
     type: "separator",
   },
   playground: {
