@@ -18,7 +18,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "msw dev tool",
+  title: {
+    default: 'msw dev tool : Control and debug mock logic and api',
+    template: '%s | msw dev tool'
+  },
   description:
     "Dev tool to control mock logic, modify responses, and monitor API calls with msw.",
   keywords: [

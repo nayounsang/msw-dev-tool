@@ -1,0 +1,23 @@
+---
+description: Customize style of the trigger ui
+---
+
+# Custom Trigger
+
+The trigger ui is customizable.
+
+## Customize Trigger UI
+
+Just pass the `trigger` prop to the `MSWDevTool` component.
+
+```ts
+{
+    trigger?: ReactNode;
+}
+```
+For example using `tailwindcss`,
+
+```tsx
+<MSWDevTool trigger={<button className="bg-blue-500 text-white px-4 py-2 rounded-md">Open msw-dev-tool</button>} />
+```
+
