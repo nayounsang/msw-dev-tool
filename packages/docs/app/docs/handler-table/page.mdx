@@ -3,12 +3,22 @@ description: Show handlers and control them
 ---
 
 import { ExampleImage } from "@/app/_components/ExampleImage";
+import { Callout } from "nextra/components";
+import { Badge } from "@/app/docs/_components/Badge";
 
 # Handler Table
 
 The handler table is a table that shows all the handlers in the project and control them.
 
-## Toggle Enabled / Disabled
+## ~Toggle Enabled / Disabled~
+
+
+<Callout type="warning">
+**Deprecated** 
+- This feature's usage has changed since `^2.3.0` version. 
+- This section will be deleted in the next major version. 
+- Check the latest usage [here](/docs/handler-table#control)
+</Callout>
 
 <ExampleImage src="/msw-dev-tool-enable.webp" alt="enable handler image" />
 
@@ -25,10 +35,18 @@ Control how your mocked APIs respond using the behavior selector. Each handler c
 
 ### Available Behaviors
 
+> **Tip**: Use these behaviors to test how your application handles different API response scenarios.
+
+#### Control
+
 - **default**
 
   - Executes the original handler logic you've defined
   - Uses your custom mock implementation
+
+- **disable mock** <Badge variant="new">^2.3.0</Badge>
+  - Disables the mock for the handler
+  - The handler will be sent to the actual endpoint.
 
 - **delay**
 
@@ -39,6 +57,8 @@ Control how your mocked APIs respond using the behavior selector. Each handler c
 
   - Responds with a null value
   - Useful for testing null handling
+
+#### Error
 
 - **network Error**
 
@@ -53,8 +73,6 @@ Control how your mocked APIs respond using the behavior selector. Each handler c
 - **5xx Error**
   - Returns server error status codes
   - Simulates server-side failure scenarios
-
-> **Tip**: Use these behaviors to test how your application handles different API response scenarios.
 
 ## Reset
 
