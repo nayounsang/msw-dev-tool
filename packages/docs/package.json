@@ -14,7 +14,7 @@
     "framer-motion": "^12.5.0",
     "lucide-react": "^0.479.0",
     "msw": "^2.7.0",
-    "msw-dev-tool": "^1.1.27",
+    "msw-dev-tool": "latest",
     "next": "15.2.1",
     "nextra": "^4.2.16",
     "nextra-theme-docs": "^4.2.16",

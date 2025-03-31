@@ -23,8 +23,8 @@ importers:
         specifier: ^2.7.0
         version: 2.7.0(@types/node@20.17.23)(typescript@5.6.3)
       msw-dev-tool:
-        specifier: ^1.1.27
-        version: 1.1.27(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(msw@2.7.0(@types/node@20.17.23)(typescript@5.6.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zustand@5.0.2(@types/react@18.3.18)(immer@10.1.1)(react@18.3.1))
+        specifier: latest
+        version: 2.3.1(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(msw@2.7.0(@types/node@20.17.23)(typescript@5.6.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zustand@5.0.2(@types/react@18.3.18)(immer@10.1.1)(react@18.3.1))
       next:
         specifier: 15.2.1
         version: 15.2.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3937,8 +3937,8 @@ packages:
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
-  msw-dev-tool@1.1.27:
-    resolution: {integrity: sha512-x7EHwgRMtqsosSDeLFlKE/5+UMVWMgvt66olkiAWxh1XPdMifFqkNPFxjL4kIc1DXU0N3G3fYS/1aUigaoDfGg==}
+  msw-dev-tool@2.3.1:
+    resolution: {integrity: sha512-293dJlBmT6KyIlVe0cg6hFOAz0XS6yAqRWgYABD6zvzYXit+DmCrTqG9av7Q88iK/L9qyPROFh4gspb+JXKDzA==}
     peerDependencies:
       msw: ^2.7.0
       react: ^18.0.0
@@ -9666,7 +9666,7 @@ snapshots:
 
   ms@2.1.3: {}
 
-  msw-dev-tool@1.1.27(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(msw@2.7.0(@types/node@20.17.23)(typescript@5.6.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zustand@5.0.2(@types/react@18.3.18)(immer@10.1.1)(react@18.3.1)):
+  msw-dev-tool@2.3.1(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(msw@2.7.0(@types/node@20.17.23)(typescript@5.6.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zustand@5.0.2(@types/react@18.3.18)(immer@10.1.1)(react@18.3.1)):
     dependencies:
       '@radix-ui/colors': 3.0.0
       '@radix-ui/react-dialog': 1.1.6(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
