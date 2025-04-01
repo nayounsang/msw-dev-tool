@@ -7,9 +7,7 @@ import {
   HttpStatusCode,
   StorageData,
 } from "./type";
-import { dummyHandler } from "../const/handler";
 import { SetupWorker } from "msw/lib/browser";
-import { RowSelectionState } from "@tanstack/react-table";
 import { AsyncResponseResolverReturnType, delay, HttpResponse, passthrough } from "msw";
 import { STORAGE_KEY } from "./const";
 
