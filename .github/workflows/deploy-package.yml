@@ -8,7 +8,7 @@ on:
       - "packages/msw-dev-tool/**"
       - ".github/workflows/deploy-package.yml"
       - "package.json"
-      - "pnpm-lock.yaml"
+      - "yarn.lock"
 
 jobs:
   release:
@@ -25,11 +25,10 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "20"
+          cache: 'yarn'
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9.10.0
+      - name: Enable Corepack
+        run: corepack enable
 
       - name: Config identity
         run: |
@@ -37,12 +36,10 @@ jobs:
           git config --global user.name "${{ secrets.ADMIN_NAME }}"
 
       - name: Install dependencies
-        working-directory: packages/msw-dev-tool
-        run: pnpm install
+        run: yarn install
 
-      - name: Build
-        working-directory: packages/msw-dev-tool
-        run: npm run build
+      - name: Build msw-dev-tool
+        run: yarn workspace msw-dev-tool build
 
       - name: Get NPM package version
         id: get_version

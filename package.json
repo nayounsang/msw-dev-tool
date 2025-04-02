@@ -1,8 +1,17 @@
 {
-  "name": "msw-dev-tool-repo",
+  "name": "msw-dev-tool-monorepo",
   "private": true,
-  "scripts": {},
-  "packageManager": "pnpm@9.10.0",
-  "dependencies": {
-  }
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "yarn workspace docs dev",
+    "build": "yarn workspaces run build",
+    "lint": "yarn workspaces run lint",
+    "test": "yarn workspaces run test"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "packageManager": "yarn@4.5.3"
 }
