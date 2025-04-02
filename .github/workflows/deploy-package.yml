@@ -25,9 +25,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "20"
-          cache: 'yarn'
-
-      - name: Use yarn@4.5.3
+      
+      - name: Set up yarn@4.5.3
         run: | 
           corepack enable
           corepack prepare yarn@4.5.3 --activate
@@ -71,7 +70,7 @@ jobs:
             echo "Local version: ($CURRENT_VERSION) is higher then registry version: ($NPM_VERSION). Maintain local version."
           elif [ "$CURRENT_VERSION" != "$NPM_VERSION" ]; then
             echo "Registry version: ($NPM_VERSION) is higher then ($CURRENT_VERSION). Update local version."
-            npm version $NPM_VERSION --no-git-tag-version
+            yarn version $NPM_VERSION --no-git-tag-version
           else
             echo "Versions are the same, no need to update."
           fi
@@ -89,7 +88,7 @@ jobs:
       - name: Bump version and create new tag
         working-directory: packages/msw-dev-tool
         run: |
-          npm version patch -m "chore(release): bump version to %s"
+          yarn version patch -m "chore(release): bump version to %s"
 
       - name: Create .npmrc file
         working-directory: packages/msw-dev-tool
@@ -98,4 +97,5 @@ jobs:
 
       - name: Publish to npm
         working-directory: packages/msw-dev-tool
-        run: npm publish
+        run: |
+          yarn npm publish --access public
