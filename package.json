@@ -5,12 +5,8 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "yarn workspace docs dev",
-    "build": "yarn workspaces run build",
-    "lint": "yarn workspaces run lint",
-    "test": "yarn workspaces run test",
-    "changeset": "changeset",
-    "version-packages": "changeset version"
+    "build": "yarn workspace msw-dev-tool build",
+    "changeset": "changeset"
   },
   "devDependencies": {
     "typescript": "^5.0.0"
