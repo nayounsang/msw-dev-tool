@@ -72,5 +72,8 @@
     "immer": "^10.1.1",
     "lodash": "^4.17.21",
     "vaul": "^1.1.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
