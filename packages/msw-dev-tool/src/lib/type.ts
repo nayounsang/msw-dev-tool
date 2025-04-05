@@ -72,6 +72,7 @@ export type FlattenHandler = {
   method: HttpMethod;
   handler: HttpHandler;
   behavior: HttpHandlerBehavior;
+  type: "temp" | "default";
 };
 
 export type Handler = RequestHandler | WebSocketHandler;
@@ -90,6 +91,5 @@ export const HttpMethod = {
   HEAD: "HEAD",
   TRACE: "TRACE",
   CONNECT: "CONNECT",
-  
 } as const;
 export type HttpMethod = ValueUnion<typeof HttpMethod>;

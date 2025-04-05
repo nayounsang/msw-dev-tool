@@ -1,6 +1,12 @@
 import { SetupWorker } from "msw/browser";
 import { create } from "zustand";
-import { FlattenHandler, Handler, HttpHandlerBehavior } from "./type";
+import {
+  FlattenHandler,
+  Handler,
+  HttpHandler,
+  HttpHandlerBehavior,
+  HttpMethod,
+} from "./type";
 import {
   getHandlerResponseByBehavior,
   getRowId,
@@ -11,6 +17,7 @@ import {
 import { setupWorker as _setupWorker } from "../utils/mswBrowser";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { STORAGE_KEY } from "./const";
+import { http } from "msw";
 
 export interface HandlerStoreState {
   /**
@@ -26,6 +33,11 @@ export interface HandlerStoreState {
   flattenHandlers: FlattenHandler[];
   setupDevToolWorker: (...handlers: Handler[]) => Promise<SetupWorker>;
   resetMSWDevTool: () => void;
+  addTempHandler: (handler: {
+    method: HttpMethod;
+    path: string;
+    response: string;
+  }) => void;
   getWorker: () => SetupWorker;
   getFlattenHandlerById: (id: string) => FlattenHandler | undefined;
   getHandlerBehavior: (id: string) => HttpHandlerBehavior | undefined;
@@ -96,6 +108,39 @@ export const useHandlerStore = create<HandlerStoreState>()(
           restHandlers: unsupportedHandlers,
         });
       },
+      addTempHandler: ({ method, path, response }) => {
+        const id = getRowId({
+          path: path,
+          method: method,
+        });
+
+        const handler = http.get(path, async () => {
+          const behavior = get().getHandlerBehavior(id);
+          return await getHandlerResponseByBehavior(behavior, () =>
+            Response.json(JSON.parse(response))
+          );
+        }) as HttpHandler;
+
+        const worker = get().getWorker();
+        worker.use(handler);
+
+        const newFlattenHandlers: FlattenHandler[] = [
+          ...get().flattenHandlers,
+          {
+            id,
+            path,
+            method,
+            handler,
+            type: "temp",
+            behavior: HttpHandlerBehavior.DEFAULT,
+          },
+        ];
+
+        set({
+          worker,
+          flattenHandlers: newFlattenHandlers,
+        });
+      },
       getWorker: () => {
         const worker = get().worker;
         if (!worker) throw new Error("Worker is not initialized");
@@ -131,3 +176,9 @@ export const useHandlerStore = create<HandlerStoreState>()(
 );
 
 export const setupDevToolWorker = useHandlerStore.getState().setupDevToolWorker;
+
+export const isDuplicateHandler = (id: string) => {
+  return useHandlerStore
+    .getState()
+    .flattenHandlers.some((handler) => handler.id === id);
+};

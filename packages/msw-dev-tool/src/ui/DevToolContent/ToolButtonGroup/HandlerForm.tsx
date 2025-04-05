@@ -8,6 +8,7 @@ import { Select } from "../Form/Select";
 import { InputFormField } from "../Form/InputFormField";
 import { TextAreaFormField } from "../Form/TextAreaFormField";
 import { SelectFormField } from "../Form/SelectFormField";
+import { useHandlerStore } from "../../../lib/handlerStore";
 
 interface HandlerFormProps {
   onClose?: () => void;
@@ -23,6 +24,8 @@ const options = Object.values(HttpMethod).map((method) => ({
 }));
 
 export const HandlerForm = ({ onClose }: HandlerFormProps) => {
+  const { addTempHandler } = useHandlerStore();
+
   const [errors, setErrors] = useState<FormErrors>({});
 
   const validateForm = (e: React.FormEvent<HTMLFormElement>) => {
@@ -41,8 +44,10 @@ export const HandlerForm = ({ onClose }: HandlerFormProps) => {
       const formattedErrors: FormErrors = {};
 
       result.error.issues.forEach((issue) => {
-        const path = issue.path[0] as keyof HandlerSchema;
-        formattedErrors[path] = issue.message;
+        issue.path.forEach((path) => {
+          const key = path as keyof HandlerSchema;
+          formattedErrors[key] = issue.message;
+        });
       });
 
       setErrors(formattedErrors);
@@ -50,12 +55,15 @@ export const HandlerForm = ({ onClose }: HandlerFormProps) => {
     }
 
     setErrors({});
-    console.log(result.data);
+    addTempHandler(result.data);
     onClose?.();
   };
 
   return (
-    <form onSubmit={validateForm} style={{ overflowY: "auto", flexGrow: 1 }}>
+    <form
+      onSubmit={validateForm}
+      style={{ overflowY: "scroll", flexGrow: 1, paddingRight: "1.5rem" }}
+    >
       <Flex gap="5" direction="column">
         <SelectFormField
           label="Method"
@@ -78,7 +86,7 @@ export const HandlerForm = ({ onClose }: HandlerFormProps) => {
           error={errors.response}
           placeholder="JSON response"
           style={{
-            minHeight: "250px",
+            minHeight: "225px",
           }}
           required
         />
