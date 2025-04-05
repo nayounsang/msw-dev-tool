@@ -4,11 +4,17 @@ import {
   Handler,
   HttpHandler,
   HttpHandlerBehavior,
+  HttpMethod,
   HttpStatusCode,
   StorageData,
 } from "./type";
 import { SetupWorker } from "msw/lib/browser";
-import { AsyncResponseResolverReturnType, delay, HttpResponse, passthrough } from "msw";
+import {
+  AsyncResponseResolverReturnType,
+  delay,
+  HttpResponse,
+  passthrough,
+} from "msw";
 import { STORAGE_KEY } from "./const";
 
 export const getRowId = ({ path, method }: { path: string; method: string }) =>
@@ -35,9 +41,10 @@ export const convertHandlers = (handlers: Handler[]) => {
     acc.push({
       id: getRowId({ path, method }),
       path,
-      method,
+      method: method as HttpMethod,
       handler,
       behavior: HttpHandlerBehavior.DEFAULT,
+      type: "default",
     });
 
     return acc;
@@ -47,8 +54,7 @@ export const convertHandlers = (handlers: Handler[]) => {
 
 export const initMSWDevToolStore = (worker: SetupWorker) => {
   const handlers = worker.listHandlers() as Handler[];
-  const { flattenHandlers, unsupportedHandlers } =
-    convertHandlers(handlers);
+  const { flattenHandlers, unsupportedHandlers } = convertHandlers(handlers);
 
   return { worker, flattenHandlers, unsupportedHandlers };
 };
@@ -107,7 +113,7 @@ export const mergeStorageData = ({
 }: StorageData) => {
   const { flattenHandlers: savedFlattenHandlers } = getStorageData();
 
-  // Merge with saved and new element based on worker's handlers
+  // Merge with saved and new element based on worker's default handlers
   const flattenHandlers = newFlattenHandlers.map((newHandler) => {
     const savedHandler = savedFlattenHandlers.find(
       (h) => h.id === newHandler.id
@@ -116,9 +122,17 @@ export const mergeStorageData = ({
       return {
         ...newHandler,
         behavior: savedHandler.behavior,
+        type: savedHandler.type,
       };
     }
     return newHandler;
+  });
+
+  // Merge with temp handlers
+  savedFlattenHandlers.forEach((handler) => {
+    if (handler.type === "temp") {
+      flattenHandlers.push(handler);
+    }
   });
 
   return { flattenHandlers };

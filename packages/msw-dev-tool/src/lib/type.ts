@@ -69,9 +69,10 @@ export type HttpHandler = _HttpHandler & {
 export type FlattenHandler = {
   id: string;
   path: string;
-  method: string;
+  method: HttpMethod;
   handler: HttpHandler;
   behavior: HttpHandlerBehavior;
+  type: "temp" | "default";
 };
 
 export type Handler = RequestHandler | WebSocketHandler;
@@ -79,3 +80,16 @@ export type Handler = RequestHandler | WebSocketHandler;
 export interface StorageData {
   flattenHandlers: FlattenHandler[];
 }
+
+export const HttpMethod = {
+  GET: "GET",
+  POST: "POST",
+  PUT: "PUT",
+  DELETE: "DELETE",
+  PATCH: "PATCH",
+  OPTIONS: "OPTIONS",
+  HEAD: "HEAD",
+  TRACE: "TRACE",
+  CONNECT: "CONNECT",
+} as const;
+export type HttpMethod = ValueUnion<typeof HttpMethod>;
