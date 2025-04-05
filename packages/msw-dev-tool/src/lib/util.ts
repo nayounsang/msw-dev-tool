@@ -4,6 +4,7 @@ import {
   Handler,
   HttpHandler,
   HttpHandlerBehavior,
+  HttpMethod,
   HttpStatusCode,
   StorageData,
 } from "./type";
@@ -35,7 +36,7 @@ export const convertHandlers = (handlers: Handler[]) => {
     acc.push({
       id: getRowId({ path, method }),
       path,
-      method,
+      method: method as HttpMethod,
       handler,
       behavior: HttpHandlerBehavior.DEFAULT,
     });
