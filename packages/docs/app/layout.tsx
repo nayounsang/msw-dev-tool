@@ -34,6 +34,9 @@ export const metadata: Metadata = {
     "test",
     "api",
   ],
+  other: {
+    "google-site-verification":"nZV_ZdGfP7qnS6DjjdRD9T6a6XLWkdKXYYpphQg-w2s"
+  }
 };
 
 export default async function RootLayout({
