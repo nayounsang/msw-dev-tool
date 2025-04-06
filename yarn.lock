@@ -9734,8 +9734,8 @@ __metadata:
   linkType: soft
 
 "msw-dev-tool@npm:latest":
-  version: 2.3.3
-  resolution: "msw-dev-tool@npm:2.3.3"
+  version: 3.1.0
+  resolution: "msw-dev-tool@npm:3.1.0"
   dependencies:
     "@radix-ui/colors": "npm:^3.0.0"
     "@radix-ui/react-dialog": "npm:^1.1.6"
@@ -9748,12 +9748,13 @@ __metadata:
     immer: "npm:^10.1.1"
     lodash: "npm:^4.17.21"
     vaul: "npm:^1.1.2"
+    zod: "npm:^3.24.2"
   peerDependencies:
     msw: ^2.7.0
     react: ^18.0.0
     react-dom: ^18.0.0
     zustand: ^5.0.2
-  checksum: 10c0/1f74b9b06a34f56e230ae6e334a998bb6c35b538eebeb9e068368989ed6b09d3c03efc1531bce9fc239758df57fbe2b5825790622cf141505b166a752c597927
+  checksum: 10c0/e4b1ae5d52f450641e4f886302b2937440a686033c80eb31219fe8c8e249738a8b8b6763af2e5bca581f6f533ea91a3b0d22826816e74a7e106bfbb14b3a77c2
   languageName: node
   linkType: hard
 

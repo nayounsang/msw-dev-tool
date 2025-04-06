@@ -33,7 +33,8 @@
     }
   },
   "scripts": {
-    "build": "rollup -c"
+    "build": "rollup -c",
+    "clean": "rm -rf dist && rm -rf node_modules"
   },
   "peerDependencies": {
     "msw": "^2.7.0",

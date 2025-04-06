@@ -5,9 +5,11 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "yarn workspace msw-dev-tool build",
+    "build": "yarn workspace msw-dev-tool build && yarn workspace docs build",
+    "dev": "yarn workspace docs dev",
     "version-packages": "yarn changeset version",
-    "changeset": "changeset"
+    "changeset": "changeset",
+    "clean": "yarn workspace msw-dev-tool clean && yarn workspace docs clean && rm -rf node_modules"
   },
   "devDependencies": {
     "typescript": "^5.0.0"
