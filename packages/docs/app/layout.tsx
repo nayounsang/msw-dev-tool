@@ -6,6 +6,7 @@ import { REPO_URL } from "@/const/link";
 import { getPageMap } from "nextra/page-map";
 import { banner, footer, navbar } from "./_components/Layout";
 import { MSWProvider } from "./_components/MSWProvider";
+import { GoogleAnalytics } from '@next/third-parties/google'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -73,6 +74,7 @@ export default async function RootLayout({
           </Layout>
         </MSWProvider>
       </body>
+      <GoogleAnalytics gaId="G-B4RWVVK40Q" />
     </html>
   );
 }
