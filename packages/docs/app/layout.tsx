@@ -26,6 +26,7 @@ export const metadata: Metadata = {
     "Dev tool to control mock logic, modify responses, and monitor API calls with msw.",
   keywords: [
     "msw",
+    "zustand",
     "mock",
     "service",
     "worker",
@@ -33,6 +34,13 @@ export const metadata: Metadata = {
     "tool",
     "test",
     "api",
+    "msw-dev-tool",
+    "front-end",
+    "FE",
+    "react",
+    "nextjs",
+    "Next.js",
+    "developer tool"
   ],
   other: {
     "google-site-verification":"nZV_ZdGfP7qnS6DjjdRD9T6a6XLWkdKXYYpphQg-w2s"
