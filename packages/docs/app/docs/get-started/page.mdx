@@ -4,6 +4,8 @@ description: "Getting Started with MSW DEV TOOL"
 
 import { Cards, Image, Tabs } from "nextra/components";
 import { cloneElement } from "react";
+import { Badge } from  "@/app/docs/_components/Badge";
+import { Callout } from "nextra/components";
 
 export default function MdxLayout(props) {
   return cloneElement(props.children, {
@@ -19,7 +21,7 @@ export default function MdxLayout(props) {
 
 ## Installation
 
-### Core Package
+### Install Core Package
 Install msw-dev-tool using your preferred package manager:
 
 {/* prettier-ignore */}
@@ -41,8 +43,10 @@ Install msw-dev-tool using your preferred package manager:
   </Tabs.Tab>
 </Tabs>
 
-### Peer Dependencies
-> **Warning** Currently, msw-dev-tool is not compatible with React 19.
+### Install Peer Dependencies
+<Callout type="warning">
+Currently, msw-dev-tool is not compatible with React 19.
+</Callout>
 
 > **Note** To use msw-dev-tool, you need to install the following peer dependencies:
 
@@ -103,9 +107,51 @@ export const worker = setupDevToolWorker(...handlers);
 
 For detailed information about **msw browser integration**, please refer to the [msw official documentation](https://mswjs.io/docs/integrations/browser).
 
-#### nextjs
+#### Next.js Integration
+<Callout type="info">
+There is two ways to load worker in nextjs. Choose one of them.
+</Callout>
 
-Add webpack config in `next.config.ts` to exclude `msw/browser`:
+1. **use `use` and `Suspense` to load worker**
+
+
+```ts
+export const initWorkerPromise =
+  typeof window === "undefined"
+    ? Promise.resolve()
+    : import("@/mock/browser")
+        .then(async (mod) => await mod.worker)
+        .then((worker) => {
+          worker.start({
+            onUnhandledRequest: "bypass",
+          });
+        });
+```
+- Import browser worker with Promise.
+
+```tsx
+import { PropsWithChildren, use } from "react";
+
+export const MSWProviderContent = ({ children }: PropsWithChildren) => {
+  use(initWorkerPromise);
+  return children;
+};
+```
+- To resolve the Promise, use `use` hook.
+
+```tsx
+import { Suspense } from "react";
+
+<Suspense fallback={null}>
+  <MSWProviderContent>
+    {children}
+  </MSWProviderContent>
+</Suspense>
+```
+- Wrap with `Suspense` to process the Promise.
+
+
+2. **Add webpack config in `next.config.ts`**
 
 ```ts
 webpack: (config, { isServer }) => {
@@ -117,8 +163,9 @@ webpack: (config, { isServer }) => {
   return config;
 }
 ```
+
+- `msw/browser` has no export in node env. So we need to exclude it from the build process.
 - This works fine, as it only ignores validation during the build process.
-- I'm looking into ways to make it simpler for you to use.
 
 
 ### 3. Add DevTool UI

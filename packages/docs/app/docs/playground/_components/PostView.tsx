@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react";
 import { PostCard } from "./PostCard";
 import { Post } from "@/types/api";
-import { useLoadMSWContext } from "@/app/_components/MSWProvider";
 import { PostViewSkeleton } from "./PostViewSkeleton";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { usePostStore } from "@/store/postStore";
@@ -14,7 +13,6 @@ const POSTS_PER_PAGE = 6;
 
 export const PostView = () => {
   const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
-  const { isLoading: isMSWLoading } = useLoadMSWContext();
   const [currentPage, setCurrentPage] = useState(1);
 
   const { postsQuery } = usePostStore();
@@ -51,7 +49,7 @@ export const PostView = () => {
     }
   };
 
-  if (isLoading || isMSWLoading) return <PostViewSkeleton />;
+  if (isLoading) return <PostViewSkeleton />;
 
   if (error) return <ErrorFallback error={error} />;
 

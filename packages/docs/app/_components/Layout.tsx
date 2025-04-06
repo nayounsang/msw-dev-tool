@@ -29,7 +29,7 @@ export const footer = (
       className="x:focus-visible:nextra-focus flex items-center gap-1"
       target="_blank"
       rel="noreferrer"
-      title="vercel.com homepage"
+      title="nextra homepage"
       href="https://nextra.site/"
     >
       Powered by nextra

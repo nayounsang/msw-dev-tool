@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import { Dispatch, SetStateAction, useEffect } from "react";
 import { XIcon } from "lucide-react";
-import { useLoadMSWContext } from "@/app/_components/MSWProvider";
 import { PostCardSkeleton } from "./PostCardSkeleton";
 import { usePostStore } from "@/store/postStore";
 import { ErrorFallback } from "./ErrorFallback";
@@ -14,8 +13,6 @@ interface PostCardProps {
 }
 
 export const PostCard = ({ postId, setPostId }: PostCardProps) => {
-  const { isLoading: isMSWLoading } = useLoadMSWContext();
-
   const { setPost, postQuery } = usePostStore();
 
   const { data: post, isLoading, error } = postQuery;
@@ -24,7 +21,7 @@ export const PostCard = ({ postId, setPostId }: PostCardProps) => {
     setPost(postId);
   }, [postId, setPost]);
 
-  if (isLoading || isMSWLoading) {
+  if (isLoading) {
     return <PostCardSkeleton setPostId={setPostId} />;
   }
 
