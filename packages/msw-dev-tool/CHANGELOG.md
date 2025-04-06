@@ -1,5 +1,13 @@
 # msw-dev-tool
 
+## 3.1.1
+
+### Patch Changes
+
+- 47d82a2: - Write Next.js integration in docs.
+  - Show two ways to load worker in nextjs.
+  - Migrate to new integration way in docs.
+
 ## 3.1.0
 
 ### Minor Changes
