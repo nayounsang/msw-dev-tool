@@ -1,5 +1,5 @@
 {
   "buildCommand": "yarn build",
   "outputDirectory": "packages/docs/.next",
-  "installCommand": "corepack enable && corepack prepare yarn@4.5.3 --activate && yarn install"
+  "installCommand": "yarn set version 4.5.3 && yarn install"
 }
