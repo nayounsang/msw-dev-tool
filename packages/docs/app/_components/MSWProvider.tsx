@@ -1,19 +1,27 @@
 "use client";
 
-import { createContext, PropsWithChildren, useContext } from "react";
-import { useStartMSW } from "../_hooks/useStartMSW";
+import { PropsWithChildren, use, Suspense } from "react";
 
-export const LoadMSWContext = createContext<{ isLoading: boolean }>({
-  isLoading: true,
-});
+export const initWorkerPromise =
+  typeof window === "undefined"
+    ? Promise.resolve()
+    : import("../../mock/browser")
+        .then(async (mod) => await mod.worker)
+        .then((worker) => {
+          worker.start({
+            onUnhandledRequest: "bypass",
+          });
+        });
 
-export const MSWProvider = ({ children }: PropsWithChildren) => {
-  const { isLoading } = useStartMSW();
-  return (
-    <LoadMSWContext.Provider value={{ isLoading }}>
-      {children}
-    </LoadMSWContext.Provider>
-  );
+export const MSWProviderContent = ({ children }: PropsWithChildren) => {
+  use(initWorkerPromise);
+  return children;
 };
 
-export const useLoadMSWContext = () => useContext(LoadMSWContext);
+export const MSWProvider = ({ children }: PropsWithChildren) => {
+  return (
+    <Suspense fallback={null}>
+      <MSWProviderContent>{children}</MSWProviderContent>
+    </Suspense>
+  );
+};

@@ -6,6 +6,8 @@
   ],
   "scripts": {
     "build": "yarn workspace msw-dev-tool build && yarn workspace docs build",
+    "build:msw-dev-tool": "yarn workspace msw-dev-tool build",
+    "build:docs": "yarn workspace docs build",
     "dev": "yarn workspace docs dev",
     "version-packages": "yarn changeset version",
     "changeset": "changeset",
