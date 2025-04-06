@@ -1,5 +1,11 @@
 # msw-dev-tool
 
+## 3.1.2
+
+### Patch Changes
+
+- 8f63d0a: Remove unused packages: immer, lodash
+
 ## 3.1.1
 
 ### Patch Changes
