@@ -1,5 +1,5 @@
 {
-  "buildCommand": "yarn workspace msw-dev-tool build && yarn workspace docs build",
+  "buildCommand": "yarn build",
   "outputDirectory": "packages/docs/.next",
-  "installCommand": "yarn install"
+  "installCommand": "corepack enable && corepack prepare yarn@4.5.3 --activate && yarn install"
 }
