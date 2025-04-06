@@ -1,6 +1,5 @@
 {
   "buildCommand": "yarn workspace msw-dev-tool build && yarn workspace docs build",
   "outputDirectory": "packages/docs/.next",
-  "includeFiles": ["packages/msw-dev-tool/**", "packages/docs/**"],
   "installCommand": "yarn install"
 }
