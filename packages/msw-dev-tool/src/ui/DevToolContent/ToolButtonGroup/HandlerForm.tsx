@@ -62,9 +62,14 @@ export const HandlerForm = ({ onClose }: HandlerFormProps) => {
   return (
     <form
       onSubmit={validateForm}
-      style={{ overflowY: "scroll", flexGrow: 1, paddingRight: "1.5rem" }}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "var(--space-5)",
+        overflow: "hidden",
+      }}
     >
-      <Flex gap="5" direction="column">
+      <Flex gap="5" direction="column" overflow="scroll" flexGrow={"1"}>
         <SelectFormField
           label="Method"
           name="method"
@@ -90,11 +95,11 @@ export const HandlerForm = ({ onClose }: HandlerFormProps) => {
           }}
           required
         />
-        <Button type="submit">
-          <PlusIcon />
-          Add
-        </Button>
       </Flex>
+      <Button type="submit">
+        <PlusIcon />
+        Add
+      </Button>
     </form>
   );
 };

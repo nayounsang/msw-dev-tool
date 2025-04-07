@@ -1,8 +1,4 @@
-import {
-  Button,
-  Dialog,
-  Flex,
-} from "@radix-ui/themes";
+import { Button, Dialog, Flex } from "@radix-ui/themes";
 import React, { useState } from "react";
 import { useHandlerStore } from "../../../lib/handlerStore";
 import { PlusIcon, ReloadIcon } from "@radix-ui/react-icons";
@@ -17,6 +13,7 @@ import {
 } from "@radix-ui/react-dialog";
 import { ThemeProvider } from "../../ThemeProvider";
 import { HandlerForm } from "./HandlerForm";
+import { CloseButton } from "../CloseButton";
 
 export const ToolButtonGroup = () => {
   const { resetMSWDevTool } = useHandlerStore();
@@ -57,17 +54,8 @@ export const ToolButtonGroup = () => {
             >
               <Flex align="center" justify="between">
                 <DialogTitle>Add Temp Handler</DialogTitle>
-                <DialogClose
-                  style={{
-                    fontSize: "1.5rem",
-                    backgroundColor: "transparent",
-                    width: "2rem",
-                    height: "2rem",
-                    padding: 0,
-                    textAlign: "center",
-                  }}
-                >
-                  X
+                <DialogClose asChild>
+                  <CloseButton />
                 </DialogClose>
               </Flex>
               <DialogDescription>

@@ -24,12 +24,12 @@ export const FormFieldBase = ({
           <span style={{ color: "red", marginLeft: "0.2rem" }}>*</span>
         )}
       </Label>
-      {children}
       {error && (
         <Text size="1" color="red" weight="medium">
           {error}
         </Text>
       )}
+      {children}
     </Flex>
   );
 };

@@ -7,6 +7,7 @@ import { HandlerDebugger } from "./DevToolContent/HandlerDebugger";
 import { ThemeProvider } from "./ThemeProvider";
 import { ToolButtonGroup } from "./DevToolContent/ToolButtonGroup";
 import { DefaultDevToolTrigger } from "./Trigger";
+import { CloseButton } from "./DevToolContent/CloseButton";
 
 interface MSWDevToolProps {
   trigger?: ReactNode;
@@ -47,23 +48,11 @@ export const MSWDevTool = ({ trigger }: MSWDevToolProps) => {
                 >
                   MSW DEV TOOL
                 </Drawer.Title>
-                <Drawer.Close
-                  style={{
-                    fontSize: "1.5rem",
-                    backgroundColor: "transparent",
-                    width: "2rem",
-                    height: "2rem",
-                    padding: 0,
-                    textAlign: "center",
-                  }}
-                >
-                  X
+                <Drawer.Close asChild>
+                  <CloseButton />
                 </Drawer.Close>
               </Flex>
-              <DialogDescription
-                className="msw-dt-sub-text"
-                style={{ display: "none" }}
-              >
+              <DialogDescription hidden className="msw-dt-sub-text">
                 Dev tool to control mock logic, and monitor handler logic calls.
               </DialogDescription>
               <ToolButtonGroup />
