@@ -1,5 +1,13 @@
 # msw-dev-tool
 
+## 3.1.3
+
+### Patch Changes
+
+- 8516a83: Improve UI
+  - Close button with Icon
+  - Add handler form layout, only scroll form field
+
 ## 3.1.2
 
 ### Patch Changes
