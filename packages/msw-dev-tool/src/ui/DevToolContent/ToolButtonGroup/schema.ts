@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { isValidJson, isValidUrl } from "./util";
-import { HttpMethod } from "../../../lib/type";
+import { isValidJson, isValidUrl, isValidXml, isValidHtml } from "./util";
+import { HttpMethod, MimeType, HttpStatusCode } from "../../../lib/type";
 import { isDuplicateHandler } from "../../../lib/handlerStore";
 import { getRowId } from "../../../lib/util";
 
@@ -9,11 +9,37 @@ export const handlerSchema = z
     path: z.string().refine(isValidUrl, {
       message: "Invalid URL format",
     }),
-    response: z
-      .string()
-      .refine(isValidJson, { message: "Invalid JSON format" }),
+    delay: z.number().min(0),
+    accept: z.nativeEnum(MimeType),
+    status: z.nativeEnum(HttpStatusCode),
+    response: z.string(),
     method: z.nativeEnum(HttpMethod),
+    header: z
+      .string()
+      .refine((data) => isValidJson(data))
+      .transform((data) => {
+        return JSON.parse(data);
+      }),
   })
+  .refine(
+    (data) => {
+      const mimeType = data.accept;
+      if (mimeType === MimeType.APPLICATION_JSON) {
+        return isValidJson(data.response);
+      }
+      if (mimeType === MimeType.APPLICATION_XML) {
+        return isValidXml(data.response);
+      }
+      if (mimeType === MimeType.TEXT_HTML) {
+        return isValidHtml(data.response);
+      }
+      return true;
+    },
+    {
+      message: "Invalid response body",
+      path: ["response", "accept"],
+    }
+  )
   .refine(
     (data) => {
       const id = getRowId({

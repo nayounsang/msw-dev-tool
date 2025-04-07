@@ -93,3 +93,11 @@ export const HttpMethod = {
   CONNECT: "CONNECT",
 } as const;
 export type HttpMethod = ValueUnion<typeof HttpMethod>;
+
+export const MimeType = {
+  APPLICATION_JSON: "application/json",
+  APPLICATION_XML: "application/xml",
+  TEXT_PLAIN: "text/plain",
+  TEXT_HTML: "text/html",
+} as const;
+export type MimeType = ValueUnion<typeof MimeType>;
