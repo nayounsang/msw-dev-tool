@@ -1,0 +1,78 @@
+---
+description: Utility tools for msw-dev-tool
+---
+
+import { Table } from "nextra/components";
+
+# Tools
+
+Utility tools for msw-dev-tool
+
+## Reset Dev tool
+
+Button to reset the dev tool to the initial state.
+
+- Set all behaviors to default
+- Remove all temp handlers you added.
+
+## Add Temp Handler
+
+Dialog to add a temporary handler stored in the browser's session storage.
+
+### Field
+
+You can add the following fields to the temporary handler.
+
+<Table>
+  <thead>
+    <Table.Tr>
+      <Table.Th>Field</Table.Th>
+      <Table.Th>Description</Table.Th>
+      <Table.Th>Validation</Table.Th>
+    </Table.Tr>
+  </thead>
+  <tbody>
+    <Table.Tr>
+      <Table.Td>Method</Table.Td>
+      <Table.Td>HTTP method, Default: GET</Table.Td>
+      <Table.Td></Table.Td>
+    </Table.Tr>
+    <Table.Tr>
+      <Table.Td>[Path](https://mswjs.io/docs/network-behavior/rest#request-handler)</Table.Td>
+      <Table.Td>
+        Path to mock
+      </Table.Td>
+      <Table.Td>Required</Table.Td>
+    </Table.Tr>
+    <Table.Tr>
+      <Table.Td>[Delay](https://mswjs.io/docs/api/delay/)</Table.Td>
+      <Table.Td>Delay time in milliseconds, Default: 0</Table.Td>
+      <Table.Td></Table.Td>
+    </Table.Tr>
+    <Table.Tr>
+      <Table.Td>Status</Table.Td>
+      <Table.Td>Status code: 2xx, 4xx and 5xx, Default: 200</Table.Td>
+      <Table.Td></Table.Td>
+    </Table.Tr>
+    <Table.Tr>
+      <Table.Td>Status Text</Table.Td>
+      <Table.Td>Status message for for status code</Table.Td>
+      <Table.Td></Table.Td>
+    </Table.Tr>
+    <Table.Tr>
+      <Table.Td>Content Type</Table.Td>
+      <Table.Td>MIME type of response body, Default: JSON</Table.Td>
+      <Table.Td></Table.Td>
+    </Table.Tr>
+    <Table.Tr>
+      <Table.Td>Response Body</Table.Td>
+      <Table.Td>Response body</Table.Td>
+      <Table.Td>Appropriate to Content Type</Table.Td>
+    </Table.Tr>
+    <Table.Tr>
+      <Table.Td>Header</Table.Td>
+      <Table.Td>Response header</Table.Td>
+      <Table.Td>JSON format</Table.Td>
+    </Table.Tr>
+  </tbody>
+</Table>

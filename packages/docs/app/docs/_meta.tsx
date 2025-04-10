@@ -13,6 +13,9 @@ const meta: MetaRecord = {
     title: <Separator>FEATURES</Separator>,
     type: "separator",
   },
+  tools: {
+    title: "Tools",
+  },
   "handler-table": {
     title: "Handler Table",
   },
