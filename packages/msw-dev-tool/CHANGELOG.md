@@ -1,5 +1,14 @@
 # msw-dev-tool
 
+## 3.2.0
+
+### Minor Changes
+
+- 650fb91: - Add advanced temporary handler
+  - Status code, mime types, header
+  - Add form field and validation logic
+  - Split type declaration
+
 ## 3.1.3
 
 ### Patch Changes
