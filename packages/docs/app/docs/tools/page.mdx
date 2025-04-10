@@ -3,8 +3,17 @@ description: Utility tools for msw-dev-tool
 ---
 
 import { Table } from "nextra/components";
+import { ExampleImage } from "@/app/_components/ExampleImage";
 
 # Tools
+
+<ExampleImage
+  src="/msw-dev-tool-tools.webp"
+  alt="msw-dev-tool tools"
+  width={730}
+  height={122}
+  className="!w-[50%]"
+/>
 
 Utility tools for msw-dev-tool
 
@@ -16,6 +25,14 @@ Button to reset the dev tool to the initial state.
 - Remove all temp handlers you added.
 
 ## Add Temp Handler
+
+<ExampleImage
+  src="/msw-dev-tool-handler-form.webp"
+  alt="msw-dev-tool add temp handler"
+  width={718}
+  height={1034}
+  className="max-w-[350px] !w-[50%]"
+/>
 
 Dialog to add a temporary handler stored in the browser's session storage.
 
@@ -38,10 +55,10 @@ You can add the following fields to the temporary handler.
       <Table.Td></Table.Td>
     </Table.Tr>
     <Table.Tr>
-      <Table.Td>[Path](https://mswjs.io/docs/network-behavior/rest#request-handler)</Table.Td>
       <Table.Td>
-        Path to mock
+        [Path](https://mswjs.io/docs/network-behavior/rest#request-handler)
       </Table.Td>
+      <Table.Td>Path to mock</Table.Td>
       <Table.Td>Required</Table.Td>
     </Table.Tr>
     <Table.Tr>
@@ -56,7 +73,7 @@ You can add the following fields to the temporary handler.
     </Table.Tr>
     <Table.Tr>
       <Table.Td>Status Text</Table.Td>
-      <Table.Td>Status message for for status code</Table.Td>
+      <Table.Td>Status message for status code</Table.Td>
       <Table.Td></Table.Td>
     </Table.Tr>
     <Table.Tr>

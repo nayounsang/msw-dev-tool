@@ -1,14 +1,15 @@
+import clsx from "clsx";
 import Image, { ImageProps } from "next/image";
 import { forwardRef } from "react";
 
 export const ExampleImage = forwardRef<HTMLImageElement | null, ImageProps>(
-  ({ alt, ...attr }, ref) => {
+  ({ alt, width, height, className, ...attr }, ref) => {
     return (
       <Image
         alt={alt}
-        className="w-full h-auto my-2"
-        width={800}
-        height={300}
+        className={clsx("w-full h-auto my-2", className)}
+        width={width ?? 800}
+        height={height ?? 300}
         {...attr}
         ref={ref}
       />
