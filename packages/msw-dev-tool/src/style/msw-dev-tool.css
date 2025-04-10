@@ -129,11 +129,23 @@
   text-overflow: ellipsis;
 }
 
-.dialog-overlay {
-  position: fixed;
+.msw-dt-dialog-overlay {
   top: 0;
   right: 0;
   bottom: 0;
   left: 0;
   background-color: rgba(0, 0, 0, 0.4);
+}
+
+.msw-dt-dialog-content {
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  color: #000;
+  z-index: 1000;
+}
+
+.msw-dt-dialog-layout {
+  position: fixed;
+  z-index: 1000;
 }

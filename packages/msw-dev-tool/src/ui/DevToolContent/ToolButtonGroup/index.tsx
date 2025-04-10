@@ -34,18 +34,14 @@ export const ToolButtonGroup = () => {
         </DialogTrigger>
         <DialogPortal>
           <ThemeProvider>
-            <DialogOverlay className="dialog-overlay" />
+            <DialogOverlay className="msw-dt-dialog-overlay msw-dt-dialog-layout" />
             <DialogContent
+              className="msw-dt-dialog-content msw-dt-dialog-layout"
               style={{
-                position: "fixed",
                 top: "50%",
                 left: "50%",
                 transform: "translate(-50%, -50%)",
-                backgroundColor: "#FFF",
                 padding: "1rem 2rem",
-                display: "flex",
-                flexDirection: "column",
-                color: "#000",
                 borderRadius: "1rem",
                 maxHeight: "90vh",
                 maxWidth: "90vw",

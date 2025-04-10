@@ -26,20 +26,16 @@ export const MSWDevTool = ({ trigger }: MSWDevToolProps) => {
         )}
         <Drawer.Portal>
           <ThemeProvider>
-            <Drawer.Overlay className="dialog-overlay" />
+            <Drawer.Overlay className="msw-dt-dialog-overlay msw-dt-dialog-layout" />
             <Drawer.Content
+              className="msw-dt-dialog-content msw-dt-dialog-layout"
               style={{
-                position: "fixed",
                 bottom: 0,
                 left: 0,
                 right: 0,
                 height: "80%",
-                backgroundColor: "#FFF",
                 outline: "none",
                 padding: "2rem",
-                display: "flex",
-                flexDirection: "column",
-                color: "#000",
               }}
             >
               <Flex align="center" justify="between">
