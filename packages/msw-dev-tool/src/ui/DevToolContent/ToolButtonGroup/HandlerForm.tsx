@@ -1,67 +1,51 @@
 import { PlusIcon } from "@radix-ui/react-icons";
-import { Button, Flex, TextArea, TextField, Text } from "@radix-ui/themes";
-import React, { useState } from "react";
-import { HandlerSchema, handlerSchema } from "./schema";
-import { Label } from "@radix-ui/react-label";
-import { HttpMethod } from "../../../lib/type";
-import { Select } from "../Form/Select";
+import { Button, Flex } from "@radix-ui/themes";
+import React from "react";
+import { HandlerSchema, handlerSchema } from "../../../schema/handler";
+import { HttpMethod, MimeType, StringHttpStatusCode } from "../../../lib/types";
 import { InputFormField } from "../Form/InputFormField";
 import { TextAreaFormField } from "../Form/TextAreaFormField";
 import { SelectFormField } from "../Form/SelectFormField";
 import { useHandlerStore } from "../../../lib/handlerStore";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { getOptions } from "./util";
 
 interface HandlerFormProps {
   onClose?: () => void;
 }
 
-type FormErrors = {
-  [K in keyof HandlerSchema]?: string;
-};
+const methodOptions = getOptions(HttpMethod);
 
-const options = Object.values(HttpMethod).map((method) => ({
-  label: method,
-  value: method,
-}));
+const statusOptions = getOptions(StringHttpStatusCode);
+
+const mimeTypeOptions = getOptions(MimeType);
 
 export const HandlerForm = ({ onClose }: HandlerFormProps) => {
   const { addTempHandler } = useHandlerStore();
 
-  const [errors, setErrors] = useState<FormErrors>({});
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<HandlerSchema>({
+    resolver: zodResolver(handlerSchema),
+    defaultValues: {
+      method: HttpMethod.GET,
+      status: StringHttpStatusCode.OK,
+      contentType: MimeType.APPLICATION_JSON,
+      delay: 0,
+    },
+  });
 
-  const validateForm = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const formData = new FormData(e.currentTarget);
-    const data = {
-      method: formData.get("method") as HttpMethod,
-      path: formData.get("path") as string,
-      response: formData.get("response") as string,
-    };
-
-    const result = handlerSchema.safeParse(data);
-
-    if (!result.success) {
-      const formattedErrors: FormErrors = {};
-
-      result.error.issues.forEach((issue) => {
-        issue.path.forEach((path) => {
-          const key = path as keyof HandlerSchema;
-          formattedErrors[key] = issue.message;
-        });
-      });
-
-      setErrors(formattedErrors);
-      return;
-    }
-
-    setErrors({});
-    addTempHandler(result.data);
+  const onSubmit = handleSubmit((data) => {
+    addTempHandler({ data });
     onClose?.();
-  };
+  });
 
   return (
     <form
-      onSubmit={validateForm}
+      onSubmit={onSubmit}
       style={{
         display: "flex",
         flexDirection: "column",
@@ -72,28 +56,63 @@ export const HandlerForm = ({ onClose }: HandlerFormProps) => {
       <Flex gap="5" direction="column" overflow="scroll" flexGrow={"1"}>
         <SelectFormField
           label="Method"
-          name="method"
-          error={errors.method}
-          options={options}
-          required
+          {...register("method")}
+          error={errors.method?.message}
+          options={methodOptions}
           defaultValue={HttpMethod.GET}
         />
         <InputFormField
           label="Path"
-          name="path"
-          error={errors.path}
+          {...register("path")}
+          error={errors.path?.message}
           placeholder="api end point"
           required
         />
+        <InputFormField
+          label="Delay"
+          {...register("delay", { setValueAs: Number })}
+          error={errors.delay?.message}
+          placeholder="delay time (ms)"
+          type="number"
+          onWheel={(e) => e.currentTarget.blur()}
+        />
+        <SelectFormField
+          label="Status Code"
+          {...register("status")}
+          defaultValue={StringHttpStatusCode.OK}
+          error={errors.status?.message}
+          options={statusOptions}
+        />
+        <InputFormField
+          label="Status Text"
+          {...register("statusText")}
+          error={errors.statusText?.message}
+          placeholder="status text for status code"
+        />
+        <SelectFormField
+          label="Content Type (MIME types)"
+          {...register("contentType")}
+          defaultValue={MimeType.APPLICATION_JSON}
+          error={errors.contentType?.message}
+          options={mimeTypeOptions}
+        />
         <TextAreaFormField
           label="Response"
-          name="response"
-          error={errors.response}
-          placeholder="JSON response"
+          {...register("response")}
+          error={errors.response?.message}
+          placeholder="response body with 'content-type'"
           style={{
             minHeight: "225px",
           }}
-          required
+        />
+        <TextAreaFormField
+          label="Header"
+          {...register("header")}
+          error={errors.header?.message}
+          placeholder="header with JSON format"
+          style={{
+            minHeight: "225px",
+          }}
         />
       </Flex>
       <Button type="submit">

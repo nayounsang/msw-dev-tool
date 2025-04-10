@@ -1,5 +1,3 @@
-import { MimeType } from "../../../lib/type";
-
 export const isValidUrl = (input: string) => {
   try {
     new URL(input, window.location.href);
@@ -36,4 +34,11 @@ export const isValidXml = (input: string) => {
 
 export const isValidHtml = (input: string) => {
   return isValidMarkup(input, "text/html");
+};
+
+export const getOptions = (enumObj: Record<string, string>) => {
+  return Object.values(enumObj).map((value) => ({
+    label: value,
+    value: value,
+  }));
 };

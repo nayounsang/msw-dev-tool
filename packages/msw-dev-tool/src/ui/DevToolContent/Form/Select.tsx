@@ -1,4 +1,10 @@
-import React, { ForwardedRef, PropsWithChildren, useState } from "react";
+import React, {
+  ForwardedRef,
+  PropsWithChildren,
+  useState,
+  forwardRef,
+  CSSProperties,
+} from "react";
 import {
   Select as _Select,
   SelectProps as _SelectProps,
@@ -25,59 +31,60 @@ interface SelectProps extends _SelectProps {
   options: { label: string | number; value: string }[];
   placeholder?: string | number;
   label?: string;
-  id?:string;
+  id?: string;
+  style?: CSSProperties;
 }
 
-export const Select = ({
-  options,
-  placeholder,
-  label,
-  id,
-  ...rest
-}: SelectProps) => {
-  return (
-    <_Select data-theme="light" data-radix-color-scheme="light" {...rest}>
-      <SelectTrigger
-        className="msw-dt-select-trigger"
-        aria-label={label ?? "select"}
-        onClick={(e) => e.stopPropagation()}
-        id={id}
-      >
-        <SelectValue
-          placeholder={placeholder}
-          className="msw-dt-text-ellipsis"
-        />
-        <SelectIcon className="msw-dt-select-icon">
-          <ChevronDownIcon />
-        </SelectIcon>
-      </SelectTrigger>
-      <SelectPortal>
-        <SelectContent
-          className="msw-dt-select-content"
-          style={{ zIndex: 10000 }}
-          data-theme="light"
-          data-radix-color-scheme="light"
+export const Select = forwardRef<HTMLButtonElement, SelectProps>(
+  ({ options, placeholder, label, id, style, ...rest }, ref) => {
+    return (
+      <_Select data-theme="light" data-radix-color-scheme="light" {...rest}>
+        <SelectTrigger
+          className="msw-dt-select-trigger"
+          aria-label={label ?? "select"}
+          onClick={(e) => e.stopPropagation()}
+          id={id}
+          ref={ref}
+          style={style}
         >
-          <SelectScrollUpButton className="msw-dt-select-scroll-button">
-            <ChevronUpIcon />
-          </SelectScrollUpButton>
-          <SelectViewport className="msw-dt-select-viewport">
-            {options.map((opt) => {
-              return (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              );
-            })}
-          </SelectViewport>
-          <SelectScrollDownButton className="msw-dt-select-scroll-button">
+          <SelectValue
+            placeholder={placeholder}
+            className="msw-dt-text-ellipsis"
+          />
+          <SelectIcon className="msw-dt-select-icon">
             <ChevronDownIcon />
-          </SelectScrollDownButton>
-        </SelectContent>
-      </SelectPortal>
-    </_Select>
-  );
-};
+          </SelectIcon>
+        </SelectTrigger>
+        <SelectPortal>
+          <SelectContent
+            className="msw-dt-select-content"
+            style={{ zIndex: 10000 }}
+            data-theme="light"
+            data-radix-color-scheme="light"
+          >
+            <SelectScrollUpButton className="msw-dt-select-scroll-button">
+              <ChevronUpIcon />
+            </SelectScrollUpButton>
+            <SelectViewport className="msw-dt-select-viewport">
+              {options.map((opt) => {
+                return (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                );
+              })}
+            </SelectViewport>
+            <SelectScrollDownButton className="msw-dt-select-scroll-button">
+              <ChevronDownIcon />
+            </SelectScrollDownButton>
+          </SelectContent>
+        </SelectPortal>
+      </_Select>
+    );
+  }
+);
+
+Select.displayName = "Select";
 
 const SelectItem = React.forwardRef(
   (
