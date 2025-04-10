@@ -1,6 +1,6 @@
 import { Row } from "@tanstack/react-table";
 import { FlattenHandler } from "../../../lib";
-import { HttpHandlerBehavior } from "../../../lib/type";
+import { HttpHandlerBehavior } from "../../../lib/types";
 import { useHandlerStore } from "../../../lib/handlerStore";
 import { Select } from "../Form/Select";
 import React from "react";

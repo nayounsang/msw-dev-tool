@@ -5,19 +5,22 @@ import {
   Handler,
   HttpHandler,
   HttpHandlerBehavior,
-  HttpMethod,
-} from "./type";
+  HttpStatusCode,
+  MimeType,
+} from "./types";
 import {
   getHandlerResponseByBehavior,
   getRowId,
   initMSWDevToolStore,
   isHttpHandler,
   mergeStorageData,
-} from "./util";
+} from "./utils";
 import { setupWorker as _setupWorker } from "../utils/mswBrowser";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { STORAGE_KEY } from "./const";
-import { http } from "msw";
+import { http, HttpResponse } from "msw";
+import { HandlerSchema } from "../schema/handler";
+import { delay } from "msw";
 
 export interface HandlerStoreState {
   /**
@@ -33,11 +36,7 @@ export interface HandlerStoreState {
   flattenHandlers: FlattenHandler[];
   setupDevToolWorker: (...handlers: Handler[]) => Promise<SetupWorker>;
   resetMSWDevTool: () => void;
-  addTempHandler: (handler: {
-    method: HttpMethod;
-    path: string;
-    response: string;
-  }) => void;
+  addTempHandler: (handler: { data: HandlerSchema }) => void;
   getWorker: () => SetupWorker;
   getFlattenHandlerById: (id: string) => FlattenHandler | undefined;
   getHandlerBehavior: (id: string) => HttpHandlerBehavior | undefined;
@@ -108,17 +107,51 @@ export const useHandlerStore = create<HandlerStoreState>()(
           restHandlers: unsupportedHandlers,
         });
       },
-      addTempHandler: ({ method, path, response }) => {
+      addTempHandler: (arg) => {
+        const { data } = arg;
+        const {
+          path,
+          method,
+          response,
+          status,
+          contentType,
+          delay: _delay,
+          statusText,
+          header,
+        } = data;
+
+        const contentLength = {
+          [MimeType.APPLICATION_JSON]: response
+            ? new Blob([response]).size.toString()
+            : "0",
+        } as Record<MimeType, string>;
+
         const id = getRowId({
-          path: path,
-          method: method,
+          path,
+          method,
         });
 
-        const handler = http.get(path, async () => {
+        const headers = {
+          "Content-Type": contentType,
+          ...(contentLength?.[contentType]
+            ? { "Content-Length": contentLength[contentType] }
+            : {}),
+          ...(header ? JSON.parse(header) : {}),
+        };
+
+        const res = new HttpResponse(response, {
+          status: Number(status),
+          statusText: statusText,
+          headers,
+        });
+
+        const handler = http[method](path, async () => {
           const behavior = get().getHandlerBehavior(id);
-          return await getHandlerResponseByBehavior(behavior, () =>
-            Response.json(JSON.parse(response))
-          );
+          return await getHandlerResponseByBehavior(behavior, async () => {
+            await delay(_delay);
+
+            return res;
+          });
         }) as HttpHandler;
 
         const worker = get().getWorker();

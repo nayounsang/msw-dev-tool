@@ -37,9 +37,9 @@
   gap: 5px;
   border: 1px solid var(--gray-6);
   color: var(--gray-11);
-  width: 90px;
   background-color: #fff;
   box-sizing: border-box;
+  width: 100%;
 }
 .msw-dt-select-trigger:hover {
   background-color: var(--mauve-3);

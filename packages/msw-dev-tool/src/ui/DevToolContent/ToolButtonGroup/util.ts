@@ -15,3 +15,30 @@ export const isValidJson = (input: string) => {
     return false;
   }
 };
+
+export const isValidMarkup = (
+  input: string,
+  mimeType: DOMParserSupportedType
+) => {
+  try {
+    new DOMParser().parseFromString(input, mimeType);
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
+
+export const isValidXml = (input: string) => {
+  return isValidMarkup(input, "application/xml");
+};
+
+export const isValidHtml = (input: string) => {
+  return isValidMarkup(input, "text/html");
+};
+
+export const getOptions = (enumObj: Record<string, string>) => {
+  return Object.values(enumObj).map((value) => ({
+    label: value,
+    value: value,
+  }));
+};

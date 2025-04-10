@@ -5,9 +5,9 @@ import {
   HttpHandler,
   HttpHandlerBehavior,
   HttpMethod,
-  HttpStatusCode,
+  HttpErrorStatusCode,
   StorageData,
-} from "./type";
+} from "../types";
 import { SetupWorker } from "msw/lib/browser";
 import {
   AsyncResponseResolverReturnType,
@@ -15,7 +15,7 @@ import {
   HttpResponse,
   passthrough,
 } from "msw";
-import { STORAGE_KEY } from "./const";
+import { STORAGE_KEY } from "../const";
 
 export const getRowId = ({ path, method }: { path: string; method: string }) =>
   JSON.stringify({
@@ -90,7 +90,7 @@ export const getHandlerResponseByBehavior = async (
     return HttpResponse.error();
   }
 
-  for (const code of Object.values(HttpStatusCode)) {
+  for (const code of Object.values(HttpErrorStatusCode)) {
     if (behavior === code) {
       return new HttpResponse(null, {
         status: code,
