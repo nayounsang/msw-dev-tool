@@ -1,5 +1,12 @@
 # msw-dev-tool
 
+## 3.2.1
+
+### Patch Changes
+
+- 5ea7857: - Fix layout for msw-dev-tool ui
+  - Refactor duplicated style
+
 ## 3.2.0
 
 ### Minor Changes
