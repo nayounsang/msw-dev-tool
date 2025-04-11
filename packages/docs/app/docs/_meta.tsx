@@ -36,6 +36,9 @@ const meta: MetaRecord = {
   playground: {
     title: "Playground",
   },
+  "temp-handler": {
+    title: "Temp Handler",
+  },
 };
 
 export default meta;
