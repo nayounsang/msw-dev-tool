@@ -4,25 +4,30 @@ description: "Things that will change and be added in the future in msw-dev-tool
 
 # Roadmap
 
-Things that will change and be added in the future in msw-dev-tool
+Things that will change and be added in the future in msw-dev-tool.
+
 There is no priority for this yet, but I plan to prioritize it given your feedback.
 [Please give me feedback!](https://github.com/nayounsang/msw-dev-tool/issues)
 
 
-1. Separation of packages
+1. **Separation of packages**
+
 I will separate the packages into core and ui.
 The core package will be a peer dependency of the ui package.
 I'm thinking of names like `@msw-dev-tool/core` and `@msw-dev-tool/react`.
 This will hopefully solve the code quality issues and make it possible to use the logic of msw-dev-tool headless.
 
-2. More flexible response customization 
-Currently, simple response settings are possible via behavior.
-However, I plan to enable more specialized logic setup, such as `add temp handler`.
+2. **More flexible response customization**
 
-3. Disable full mocking
+Currently, simple response settings are possible via behavior.
+However, I plan to enable more specialized logic setup, such as [add temp handler](/docs/tools#add-temp-handler).
+
+3. **Disable full mocking**
+
 With the addition of mock disable to behavior, the disable logic utilizing checkboxes is gone.
 I plan to keep this, and make it possible to disable the mock entirely with a switch-like ui.
 
-4. Style isolation
+4. **Style isolation**  
+
 Due to a chronic bug in the UI, the UI style of the existing project and msw-dev-tool conflict.
 Currently, a solution to this is being considered.
