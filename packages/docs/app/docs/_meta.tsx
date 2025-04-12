@@ -9,6 +9,9 @@ const meta: MetaRecord = {
   "get-started": {
     title: "Getting Started",
   },
+  roadmap: {
+    title: "Roadmap",
+  },
   features: {
     title: <Separator>FEATURES</Separator>,
     type: "separator",
