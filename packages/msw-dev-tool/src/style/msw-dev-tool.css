@@ -81,6 +81,11 @@
   transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
 }
 
+.msw-dt-select-item:hover {
+  background-color: var(--gray-12);
+  color: var(--gray-1);
+}
+
 .msw-dt-select-item[data-disabled] {
   color: var(--mauve-8);
   pointer-events: none;

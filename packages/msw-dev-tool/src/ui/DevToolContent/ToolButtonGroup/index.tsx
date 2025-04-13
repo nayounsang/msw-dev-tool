@@ -49,12 +49,16 @@ export const ToolButtonGroup = () => {
               }}
             >
               <Flex align="center" justify="between">
-                <DialogTitle>Add Temp Handler</DialogTitle>
+                <DialogTitle
+                  style={{ margin: 0, fontSize: "1.5rem", fontWeight: "bold" }}
+                >
+                  Add Temp Handler
+                </DialogTitle>
                 <DialogClose asChild>
                   <CloseButton />
                 </DialogClose>
               </Flex>
-              <DialogDescription>
+              <DialogDescription style={{ margin: "1rem 0" }}>
                 Temp handler is stored in the session storage. If you{" "}
                 <span style={{ fontWeight: "600" }}>reset dev tool</span>, it
                 will be <span style={{ color: "red" }}>deleted</span>.

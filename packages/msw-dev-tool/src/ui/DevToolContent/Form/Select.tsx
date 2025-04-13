@@ -26,6 +26,7 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
 } from "@radix-ui/react-icons";
+import { ThemeProvider } from "../../ThemeProvider";
 
 interface SelectProps extends _SelectProps {
   options: { label: string | number; value: string }[];
@@ -56,28 +57,30 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           </SelectIcon>
         </SelectTrigger>
         <SelectPortal>
-          <SelectContent
-            className="msw-dt-select-content"
-            style={{ zIndex: 10000 }}
-            data-theme="light"
-            data-radix-color-scheme="light"
-          >
-            <SelectScrollUpButton className="msw-dt-select-scroll-button">
-              <ChevronUpIcon />
-            </SelectScrollUpButton>
-            <SelectViewport className="msw-dt-select-viewport">
-              {options.map((opt) => {
-                return (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                );
-              })}
-            </SelectViewport>
-            <SelectScrollDownButton className="msw-dt-select-scroll-button">
-              <ChevronDownIcon />
-            </SelectScrollDownButton>
-          </SelectContent>
+          <ThemeProvider>
+            <SelectContent
+              className="msw-dt-select-content"
+              style={{ zIndex: 10000 }}
+              data-theme="light"
+              data-radix-color-scheme="light"
+            >
+              <SelectScrollUpButton className="msw-dt-select-scroll-button">
+                <ChevronUpIcon />
+              </SelectScrollUpButton>
+              <SelectViewport className="msw-dt-select-viewport">
+                {options.map((opt) => {
+                  return (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  );
+                })}
+              </SelectViewport>
+              <SelectScrollDownButton className="msw-dt-select-scroll-button">
+                <ChevronDownIcon />
+              </SelectScrollDownButton>
+            </SelectContent>
+          </ThemeProvider>
         </SelectPortal>
       </_Select>
     );
