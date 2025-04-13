@@ -1,5 +1,11 @@
 # msw-dev-tool
 
+## 3.2.2
+
+### Patch Changes
+
+- e12a9a9: Temp fix: style
+
 ## 3.2.1
 
 ### Patch Changes
