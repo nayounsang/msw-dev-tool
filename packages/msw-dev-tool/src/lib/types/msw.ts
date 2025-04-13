@@ -1,4 +1,10 @@
-import { PathParams, RequestHandler, ResponseResolver,WebSocketHandler,HttpHandler as _HttpHandler } from "msw";
+import {
+  PathParams,
+  RequestHandler,
+  ResponseResolver,
+  WebSocketHandler,
+  HttpHandler as _HttpHandler,
+} from "msw";
 
 export type HttpRequestResolverExtras<Params extends PathParams> = {
   params: Params;

@@ -1,7 +1,6 @@
 import React, {
   ForwardedRef,
   PropsWithChildren,
-  useState,
   forwardRef,
   CSSProperties,
 } from "react";
@@ -26,7 +25,7 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
 } from "@radix-ui/react-icons";
-import { ThemeProvider } from "../../ThemeProvider";
+import { usePortalContainer } from "../../PortalContainerProvider";
 
 interface SelectProps extends _SelectProps {
   options: { label: string | number; value: string }[];
@@ -38,6 +37,7 @@ interface SelectProps extends _SelectProps {
 
 export const Select = forwardRef<HTMLButtonElement, SelectProps>(
   ({ options, placeholder, label, id, style, ...rest }, ref) => {
+    const container = usePortalContainer()
     return (
       <_Select data-theme="light" data-radix-color-scheme="light" {...rest}>
         <SelectTrigger
@@ -56,8 +56,8 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
             <ChevronDownIcon />
           </SelectIcon>
         </SelectTrigger>
-        <SelectPortal>
-          <ThemeProvider>
+        {container && (
+          <SelectPortal container={container}>
             <SelectContent
               className="msw-dt-select-content"
               style={{ zIndex: 10000 }}
@@ -80,8 +80,8 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
                 <ChevronDownIcon />
               </SelectScrollDownButton>
             </SelectContent>
-          </ThemeProvider>
-        </SelectPortal>
+          </SelectPortal>
+        )}
       </_Select>
     );
   }

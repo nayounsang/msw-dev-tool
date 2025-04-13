@@ -1,4 +1,4 @@
-import React, { ReactNode } from "react";
+import React, { ReactNode, useState } from "react";
 import { Flex } from "@radix-ui/themes";
 import { Drawer } from "vaul";
 import { HandlerTable } from "./DevToolContent/HandlerTable";
@@ -8,24 +8,27 @@ import { ThemeProvider } from "./ThemeProvider";
 import { ToolButtonGroup } from "./DevToolContent/ToolButtonGroup";
 import { DefaultDevToolTrigger } from "./Trigger";
 import { CloseButton } from "./DevToolContent/CloseButton";
+import { PortalContainerProvider } from "./PortalContainerProvider";
 
 interface MSWDevToolProps {
   trigger?: ReactNode;
 }
 
 export const MSWDevTool = ({ trigger }: MSWDevToolProps) => {
+  const [container, setContainer] = useState<HTMLDivElement | null>(null);
+
   return (
-    <ThemeProvider>
-      <Drawer.Root>
-        {trigger ? (
-          <Drawer.Trigger asChild>{trigger}</Drawer.Trigger>
-        ) : (
-          <Drawer.Trigger asChild>
-            <DefaultDevToolTrigger />
-          </Drawer.Trigger>
-        )}
-        <Drawer.Portal>
-          <ThemeProvider>
+    <Drawer.Root autoFocus>
+      {trigger ? (
+        <Drawer.Trigger asChild>{trigger}</Drawer.Trigger>
+      ) : (
+        <Drawer.Trigger asChild>
+          <DefaultDevToolTrigger />
+        </Drawer.Trigger>
+      )}
+      <Drawer.Portal>
+        <ThemeProvider ref={setContainer}>
+          <PortalContainerProvider container={container}>
             <Drawer.Overlay className="msw-dt-dialog-overlay msw-dt-dialog-layout" />
             <Drawer.Content
               className="msw-dt-dialog-content msw-dt-dialog-layout"
@@ -40,7 +43,11 @@ export const MSWDevTool = ({ trigger }: MSWDevToolProps) => {
             >
               <Flex align="center" justify="between">
                 <Drawer.Title
-                  style={{ margin: 0, fontSize: "1.5rem", fontWeight: "bold" }}
+                  style={{
+                    margin: 0,
+                    fontSize: "1.5rem",
+                    fontWeight: "bold",
+                  }}
                 >
                   MSW DEV TOOL
                 </Drawer.Title>
@@ -57,9 +64,9 @@ export const MSWDevTool = ({ trigger }: MSWDevToolProps) => {
                 <HandlerDebugger />
               </Flex>
             </Drawer.Content>
-          </ThemeProvider>
-        </Drawer.Portal>
-      </Drawer.Root>
-    </ThemeProvider>
+          </PortalContainerProvider>
+        </ThemeProvider>
+      </Drawer.Portal>
+    </Drawer.Root>
   );
 };

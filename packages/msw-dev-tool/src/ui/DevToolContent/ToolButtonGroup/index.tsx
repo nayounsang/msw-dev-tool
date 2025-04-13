@@ -1,4 +1,4 @@
-import { Button, Dialog, Flex } from "@radix-ui/themes";
+import { Button, Flex } from "@radix-ui/themes";
 import React, { useState } from "react";
 import { useHandlerStore } from "../../../lib/handlerStore";
 import { PlusIcon, ReloadIcon } from "@radix-ui/react-icons";
@@ -10,14 +10,17 @@ import {
   DialogPortal,
   DialogTitle,
   DialogTrigger,
+  Root as DialogRoot,
 } from "@radix-ui/react-dialog";
-import { ThemeProvider } from "../../ThemeProvider";
 import { HandlerForm } from "./HandlerForm";
 import { CloseButton } from "../CloseButton";
+import { usePortalContainer } from "../../PortalContainerProvider";
 
 export const ToolButtonGroup = () => {
   const { resetMSWDevTool } = useHandlerStore();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const container = usePortalContainer()
 
   return (
     <Flex gap="6" py="4">
@@ -25,15 +28,15 @@ export const ToolButtonGroup = () => {
         <ReloadIcon />
         Reset Dev tool
       </Button>
-      <Dialog.Root open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <DialogRoot open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogTrigger asChild>
           <Button>
             <PlusIcon />
             Add Temp Handler
           </Button>
         </DialogTrigger>
-        <DialogPortal>
-          <ThemeProvider>
+        {container && (
+          <DialogPortal container={container}>
             <DialogOverlay className="msw-dt-dialog-overlay msw-dt-dialog-layout" />
             <DialogContent
               className="msw-dt-dialog-content msw-dt-dialog-layout"
@@ -65,9 +68,9 @@ export const ToolButtonGroup = () => {
               </DialogDescription>
               <HandlerForm onClose={() => setIsDialogOpen(false)} />
             </DialogContent>
-          </ThemeProvider>
-        </DialogPortal>
-      </Dialog.Root>
+          </DialogPortal>
+        )}
+      </DialogRoot>
     </Flex>
   );
 };

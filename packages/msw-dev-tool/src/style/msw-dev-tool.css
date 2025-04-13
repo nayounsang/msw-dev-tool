@@ -147,10 +147,29 @@
   display: flex;
   flex-direction: column;
   color: #000;
-  z-index: 1000;
 }
 
 .msw-dt-dialog-layout {
   position: fixed;
-  z-index: 1000;
+  z-index: 9999;
+}
+
+.msw-dt-default-trigger {
+  background-color: #ea580c;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  color: white;
+  margin: 1rem;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  z-index: 9999;
+  cursor: pointer;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.msw-dt-default-trigger:hover {
+  background-color: #fb923c;
 }
