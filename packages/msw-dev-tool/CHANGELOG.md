@@ -1,5 +1,11 @@
 # msw-dev-tool
 
+## 3.2.3
+
+### Patch Changes
+
+- 3df4d37: Remove duplicated ThemeProvider and change default trigger ui
+
 ## 3.2.2
 
 ### Patch Changes
