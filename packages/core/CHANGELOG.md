@@ -1,5 +1,11 @@
 # @msw-dev-tool/core
 
+## 0.0.2
+
+### Patch Changes
+
+- f5c341a: Publish @msw-dev-tool/core
+
 ## 1.0.0
 
 ### Major Changes
