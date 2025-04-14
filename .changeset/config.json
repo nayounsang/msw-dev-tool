@@ -7,5 +7,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["docs", "example", "@msw-dev-tool/core"]
+  "ignore": ["docs", "example"]
 }
