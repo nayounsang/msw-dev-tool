@@ -4,6 +4,23 @@
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/types/index.d.ts",
+  "repository": "https://github.com/nayounsang/msw-dev-tool",
+  "keywords": [
+    "msw",
+    "mock",
+    "service",
+    "worker",
+    "devtool",
+    "tool",
+    "test",
+    "api"
+  ],
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "description": "msw-dev-tool is a powerful library that enhances the Mock Service Worker (MSW) experience in React by providing an intuitive UI to control mock logic dynamically. It allows developers to modify mock data, adjust response statuses, and monitor API requests in real-time, making API mocking and debugging more seamless and efficient. 🚀",
   "scripts": {
     "build": "rollup -c",
     "clean": "rm -rf dist && rm -rf node_modules"

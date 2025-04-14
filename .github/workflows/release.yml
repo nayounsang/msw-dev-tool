@@ -34,7 +34,7 @@ jobs:
         run: yarn install
 
       - name: Build Packages
-        run: yarn build:msw-dev-tool
+        run: yarn build:packages
 
       - name: Create .npmrc file
         run: |
