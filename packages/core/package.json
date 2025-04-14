@@ -1,0 +1,28 @@
+{
+  "name": "@msw-dev-tool/core",
+  "version": "0.0.1",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/types/index.d.ts",
+  "scripts": {
+    "build": "rollup -c",
+    "clean": "rm -rf dist && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-typescript": "^12.1.2",
+    "msw": "^2.7.0",
+    "rollup": "^4.40.0",
+    "rollup-plugin-dts": "^6.2.1",
+    "typescript": "^5.8.3",
+    "zustand": "^5.0.2"
+  },
+  "peerDependencies": {
+    "msw": "^2.7.0",
+    "zustand": "^5.0.2"
+  },
+  "dependencies": {
+    "zod": "^3.24.2"
+  }
+}
