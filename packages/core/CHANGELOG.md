@@ -1,5 +1,11 @@
 # @msw-dev-tool/core
 
+## 1.0.1
+
+### Patch Changes
+
+- 99ddc24: - Change build script and add info in package.json
+
 ## 1.0.0
 
 ### Major Changes
