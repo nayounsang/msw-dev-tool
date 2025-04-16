@@ -6,9 +6,10 @@
   ],
   "scripts": {
     "build": "yarn build:packages && yarn build:docs",
-    "build:packages": "yarn build:core && yarn build:msw-dev-tool",
+    "build:packages": "yarn build:core && yarn build:msw-dev-tool && yarn build:react",
     "build:msw-dev-tool": "yarn workspace msw-dev-tool build",
     "build:core": "yarn workspace @msw-dev-tool/core build",
+    "build:react": "yarn workspace @msw-dev-tool/react build",
     "build:docs": "yarn workspace docs build",
     "dev": "yarn workspace docs dev",
     "version-packages": "yarn changeset version",

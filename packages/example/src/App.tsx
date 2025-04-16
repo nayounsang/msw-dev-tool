@@ -1,6 +1,6 @@
 import "./App.css";
-import { MSWDevTool } from "msw-dev-tool";
-import "msw-dev-tool/msw-dev-tool.css";
+import { MSWDevTool } from "@msw-dev-tool/react";
+import "@msw-dev-tool/react/msw-dev-tool.css";
 import { useMsw } from "./hooks/useMsw";
 import { UserList } from "./components/UserList";
 import { UserInfo } from "./components/UserInfo";
