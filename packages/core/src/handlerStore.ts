@@ -198,3 +198,5 @@ export const handlerStore = create<HandlerStoreState>()(
     }
   )
 );
+
+export const setupDevToolWorker = handlerStore.getState().setupDevToolWorker;
