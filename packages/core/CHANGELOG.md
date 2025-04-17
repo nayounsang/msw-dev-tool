@@ -1,5 +1,11 @@
 # @msw-dev-tool/core
 
+## 1.0.2
+
+### Patch Changes
+
+- 40bc24c: - export setupDevtoolWorker
+
 ## 1.0.1
 
 ### Patch Changes
