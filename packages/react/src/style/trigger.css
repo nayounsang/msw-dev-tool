@@ -1,0 +1,19 @@
+.msw-dt-default-trigger {
+  background-color: rgb(234 88 12);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  color: white;
+  margin: 1rem;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  z-index: 9999;
+  cursor: pointer;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.msw-dt-default-trigger:hover {
+  background-color: rgb(249 115 22);
+}

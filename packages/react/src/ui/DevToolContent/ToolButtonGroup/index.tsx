@@ -4,7 +4,6 @@ import {
   DialogClose,
   DialogContent,
   DialogDescription,
-  DialogOverlay,
   DialogPortal,
   DialogTitle,
   DialogTrigger,
@@ -17,6 +16,7 @@ import { handlerStore } from "@msw-dev-tool/core";
 import { Flex } from "../../Components/Flex";
 import { Button } from "../../Components/Button";
 import clsx from "clsx";
+import { DialogOverlay } from "../../Components/DialogOverlay";
 
 export const ToolButtonGroup = () => {
   const { resetMSWDevTool } = handlerStore();
@@ -39,7 +39,7 @@ export const ToolButtonGroup = () => {
         </DialogTrigger>
         {container && (
           <DialogPortal container={container}>
-            <DialogOverlay className="msw-dt-dialog-overlay msw-dt-dialog-layout" />
+            <DialogOverlay/>
             <DialogContent
               className={clsx(
                 "msw-dt-dialog-content msw-dt-dialog-layout",
