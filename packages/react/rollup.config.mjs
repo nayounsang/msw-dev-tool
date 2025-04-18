@@ -44,7 +44,9 @@ export default [
         declaration: false,
       }),
       postcss({
-        extract: "msw-dev-tool.css",
+        extract: false,
+        inject: false,
+        modules: false,
         minimize: true,
         plugins: [tailwind()],
       }),

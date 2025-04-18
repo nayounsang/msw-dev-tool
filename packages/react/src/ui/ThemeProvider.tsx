@@ -1,29 +1,19 @@
 //import { Theme } from "@radix-ui/themes";
 import React, { PropsWithChildren, forwardRef } from "react";
+import root from "react-shadow";
+import styles from "../style/msw-dev-tool.css";
 
-/**
- * - Because of `portal`, It should be used when rendering in an independent area.
- * - `Theme` has its own size, so the size must be cleared.
- */
 export const ThemeProvider = forwardRef<HTMLDivElement, PropsWithChildren>(
   ({ children }, ref) => {
     return (
-      <div
-        //appearance="light"
-        ref={ref}
-        style={{
-          // minHeight: 0,
-          // minWidth: 0,
-          // maxHeight: "fit-content",
-          // maxWidth: "fit-content",
-          width: 0,
-          height: 0,
-          backgroundColor: "transparent",
-          zIndex: "inherit",
-        }}
-      >
-        {children}
-      </div>
+      <>
+        <root.div id="msw-dev-tool-shadow-root">
+          <div ref={ref} className="fixed z-[9999] inset-0">
+            {ref && children}
+          </div>
+          <style type="text/css">{styles}</style>
+        </root.div>
+      </>
     );
   }
 );

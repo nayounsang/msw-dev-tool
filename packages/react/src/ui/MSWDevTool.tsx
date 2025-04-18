@@ -8,6 +8,9 @@ import { CloseButton } from "./Components/CloseButton";
 import { PortalContainerProvider } from "./PortalContainerProvider";
 import { ThemeProvider } from "./ThemeProvider";
 import { Flex } from "./Components/Flex";
+import clsx from "clsx";
+import { DialogOverlay } from "./Components/DialogOverlay";
+import { RemoveScroll } from "react-remove-scroll";
 
 interface MSWDevToolProps {
   trigger?: ReactNode;
@@ -28,32 +31,33 @@ export const MSWDevTool = ({ trigger }: MSWDevToolProps) => {
       <Drawer.Portal>
         <ThemeProvider ref={setContainer}>
           <PortalContainerProvider container={container}>
-            <Drawer.Overlay className="msw-dt-dialog-overlay msw-dt-dialog-layout" />
-            <Drawer.Content
-              className="msw-dt-dialog-content msw-dt-dialog-layout"
-              style={{
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: "80%",
-                outline: "none",
-                padding: "2rem",
-              }}
-            >
-              <Flex align="center" justify="space-between">
-                <Drawer.Title className="m-0 text-2xl font-bold">
-                  MSW DEV TOOL
-                </Drawer.Title>
-                <Drawer.Close asChild>
-                  <CloseButton />
-                </Drawer.Close>
-              </Flex>
-              <ToolButtonGroup />
-              <Flex gap={4} className="flex-grow overflow-hidden">
-                <HandlerTable />
-                <HandlerDebugger />
-              </Flex>
-            </Drawer.Content>
+            <DialogOverlay />
+            <RemoveScroll>
+              <Drawer.Content
+                className={clsx(
+                  "fixed bottom-0 left-0 right-0",
+                  "h-[80vh]",
+                  "overflow-y-scroll",
+                  "p-8",
+                  "bg-white flex flex-col text-gray-900",
+                  "outline-none"
+                )}
+              >
+                <Flex align="center" justify="space-between">
+                  <Drawer.Title className="m-0 text-2xl font-bold">
+                    MSW DEV TOOL
+                  </Drawer.Title>
+                  <Drawer.Close asChild>
+                    <CloseButton />
+                  </Drawer.Close>
+                </Flex>
+                <ToolButtonGroup />
+                <Flex gap={4} className="flex-grow overflow-hidden">
+                  <HandlerTable />
+                  <HandlerDebugger />
+                </Flex>
+              </Drawer.Content>
+            </RemoveScroll>
           </PortalContainerProvider>
         </ThemeProvider>
       </Drawer.Portal>

@@ -124,11 +124,3 @@
 .msw-dt-dialog-layout {
   @apply fixed z-[9999];
 }
-
-.msw-dt-default-trigger {
-  @apply bg-orange-600 rounded-lg p-2 text-white m-4 fixed bottom-0 left-0 z-[9999] cursor-pointer flex gap-2 items-center;
-}
-
-.msw-dt-default-trigger:hover {
-  @apply bg-orange-500;
-}
