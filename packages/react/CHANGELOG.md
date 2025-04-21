@@ -1,5 +1,11 @@
 # @msw-dev-tool/react
 
+## 1.2.1
+
+### Patch Changes
+
+- 4994c7b: Apply logo to default trigger
+
 ## 1.2.0
 
 ### Minor Changes
