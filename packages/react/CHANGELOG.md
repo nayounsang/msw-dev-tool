@@ -1,5 +1,13 @@
 # @msw-dev-tool/react
 
+## 1.2.0
+
+### Minor Changes
+
+- 4339a62: - Moved the debugger ui to a Dialog.
+  - Made it possible to interact with the debugger when clicking on a debug column.
+  - Add debug icon
+
 ## 1.1.0
 
 ### Minor Changes
