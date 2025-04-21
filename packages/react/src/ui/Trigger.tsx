@@ -1,6 +1,6 @@
 import React, { ComponentProps, forwardRef } from "react";
-import { CodeIcon } from "@radix-ui/react-icons";
 import styles from "../style/trigger.css";
+import { MSWDevToolLogo } from "./Components/Logo";
 
 export const DefaultDevToolTrigger = forwardRef<
   HTMLButtonElement,
@@ -8,9 +8,8 @@ export const DefaultDevToolTrigger = forwardRef<
 >((props, ref) => {
   return (
     <>
-      <button ref={ref} className="msw-dt-default-trigger" {...props}>
-        <CodeIcon width={"1rem"} height={"1rem"} />
-        msw
+      <button ref={ref} className="msw-dt-default-trigger" name="msw-dev-tool trigger" {...props}>
+        <MSWDevToolLogo size={"3rem"} backgroundColor="currentColor" />
       </button>
       <style type="text/css">{styles}</style>
     </>
