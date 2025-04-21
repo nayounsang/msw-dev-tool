@@ -29,20 +29,9 @@
 /* ===== Misc ===== */
 @source inline("bg-transparent underline");
 
-.msw-dt-http-control-row {
-  @apply cursor-pointer transition-colors duration-200 ease-in-out;
-}
-
-.msw-dt-http-control-row:hover {
-  @apply bg-gray-100;
-}
-
-.msw-dt-current-row {
-  @apply bg-gray-200;
-}
 
 .msw-dt-sub-text {
-  @apply text-sm text-gray-900;
+  @apply text-sm text-gray-800;
 }
 
 .msw-dt-text-ellipsis {
@@ -113,14 +102,12 @@
   @apply whitespace-nowrap overflow-hidden text-ellipsis;
 }
 
-.msw-dt-dialog-overlay {
-  @apply top-0 right-0 bottom-0 left-0 bg-black/40;
-}
 
-.msw-dt-dialog-content {
+
+.dialog-content {
   @apply bg-white flex flex-col text-gray-900;
-}
-
-.msw-dt-dialog-layout {
   @apply fixed z-[9999];
+  @apply top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%];
+  @apply max-h-[85vh] max-w-[70vw];
+  @apply overflow-hidden rounded-lg px-[1rem] py-[2rem] box-border;
 }

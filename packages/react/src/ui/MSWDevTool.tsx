@@ -1,7 +1,6 @@
-import React, { ReactNode, useState } from "react";
+import React, { ReactNode, useId, useState } from "react";
 import { Drawer } from "vaul";
 import { HandlerTable } from "./DevToolContent/HandlerTable";
-import { HandlerDebugger } from "./DevToolContent/HandlerDebugger";
 import { ToolButtonGroup } from "./DevToolContent/ToolButtonGroup";
 import { DefaultDevToolTrigger } from "./Trigger";
 import { CloseButton } from "./Components/CloseButton";
@@ -18,6 +17,7 @@ interface MSWDevToolProps {
 
 export const MSWDevTool = ({ trigger }: MSWDevToolProps) => {
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
+  const titleId = useId();
 
   return (
     <Drawer.Root autoFocus>
@@ -42,9 +42,10 @@ export const MSWDevTool = ({ trigger }: MSWDevToolProps) => {
                   "bg-white flex flex-col text-gray-900",
                   "outline-none"
                 )}
+                aria-labelledby={titleId}
               >
                 <Flex align="center" justify="space-between">
-                  <Drawer.Title className="m-0 text-2xl font-bold">
+                  <Drawer.Title id={titleId} className="m-0 text-2xl font-bold">
                     MSW DEV TOOL
                   </Drawer.Title>
                   <Drawer.Close asChild>
@@ -52,10 +53,7 @@ export const MSWDevTool = ({ trigger }: MSWDevToolProps) => {
                   </Drawer.Close>
                 </Flex>
                 <ToolButtonGroup />
-                <Flex gap={4} className="flex-grow overflow-hidden">
-                  <HandlerTable />
-                  <HandlerDebugger />
-                </Flex>
+                <HandlerTable />
               </Drawer.Content>
             </RemoveScroll>
           </PortalContainerProvider>

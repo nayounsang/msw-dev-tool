@@ -7,6 +7,21 @@ import {
 import React, { useMemo } from "react";
 import { BehaviorSelect } from "../HandlerTable/BehaviorSelect";
 import { FlattenHandler, handlerStore } from "@msw-dev-tool/core";
+import { DebugIcon } from "../../Components/DebugIcon";
+import { usePortalContainer } from "../../PortalContainerProvider";
+import {
+  Root as Dialog,
+  Trigger,
+  Portal,
+  Content,
+  Title,
+  Close,
+} from "@radix-ui/react-dialog";
+import { DialogOverlay } from "../../Components/DialogOverlay";
+import { Button } from "../../Components/Button";
+import { HandlerDebugger } from "../HandlerDebugger";
+import { Flex } from "../../Components/Flex";
+import { CloseButton } from "../../Components/CloseButton";
 
 export const useFlattenHandlersTable = () => {
   const { flattenHandlers } = handlerStore();
@@ -46,6 +61,36 @@ export const useFlattenHandlersTable = () => {
         header: "Behavior",
         cell: ({ row }) => {
           return <BehaviorSelect row={row} />;
+        },
+      }),
+      columnHelper.display({
+        header: "Debug",
+        cell: ({ row }) => {
+          const container = usePortalContainer();
+
+          return (
+            <Dialog>
+              <Trigger asChild>
+                <Button variant="ghost">
+                  <DebugIcon />
+                </Button>
+              </Trigger>
+              <Portal container={container}>
+                <DialogOverlay />
+                <Content className="dialog-content h-[600px] w-[800px] flex flex-col">
+                  <Flex align="center" justify="space-between">
+                    <Title className="m-1 text-xl font-semibold">
+                      Debugger
+                    </Title>
+                    <Close asChild>
+                      <CloseButton />
+                    </Close>
+                  </Flex>
+                  <HandlerDebugger handler={row.original.handler} />
+                </Content>
+              </Portal>
+            </Dialog>
+          );
         },
       }),
     ];

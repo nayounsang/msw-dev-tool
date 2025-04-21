@@ -15,7 +15,6 @@ import { usePortalContainer } from "../../PortalContainerProvider";
 import { handlerStore } from "@msw-dev-tool/core";
 import { Flex } from "../../Components/Flex";
 import { Button } from "../../Components/Button";
-import clsx from "clsx";
 import { DialogOverlay } from "../../Components/DialogOverlay";
 
 export const ToolButtonGroup = () => {
@@ -41,22 +40,17 @@ export const ToolButtonGroup = () => {
           <DialogPortal container={container}>
             <DialogOverlay/>
             <DialogContent
-              className={clsx(
-                "msw-dt-dialog-content msw-dt-dialog-layout",
-                "top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%]",
-                "max-h-[90vh] max-w-[90vw]",
-                "overflow-hidden rounded-lg px-[1rem] py-[2rem] box-border"
-              )}
+              className="dialog-content"
             >
               <Flex align="center" justify="space-between">
-                <DialogTitle className="m-0 text-2xl font-bold">
+                <DialogTitle className="m-1 text-xl font-semibold">
                   Add Temp Handler
                 </DialogTitle>
                 <DialogClose asChild>
                   <CloseButton />
                 </DialogClose>
               </Flex>
-              <DialogDescription className="m-0">
+              <DialogDescription className="m-0 my-2.5">
                 Temp handler is stored in the session storage. If you{" "}
                 <span className="font-bold">reset dev tool</span>, it will be{" "}
                 <span style={{ color: "red" }}>deleted</span>.
