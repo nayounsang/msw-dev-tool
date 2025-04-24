@@ -2,8 +2,8 @@ import React from "react";
 
 export const MSWDevToolLogo = ({
   size = "28",
-  backgroundColor = "#101010",
-  color = "#FF6600",
+  backgroundColor = "#000",
+  color = "#FF6A33",
   className,
 }: {
   size?: string | number;

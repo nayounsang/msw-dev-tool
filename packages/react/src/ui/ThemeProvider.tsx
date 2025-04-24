@@ -1,7 +1,7 @@
 //import { Theme } from "@radix-ui/themes";
 import React, { PropsWithChildren, forwardRef } from "react";
 import root from "react-shadow";
-import styles from "../style/msw-dev-tool.css";
+import { devToolStyleChunks } from "../style/splitCss";
 
 export const ThemeProvider = forwardRef<HTMLDivElement, PropsWithChildren>(
   ({ children }, ref) => {
@@ -11,7 +11,11 @@ export const ThemeProvider = forwardRef<HTMLDivElement, PropsWithChildren>(
           <div ref={ref} className="fixed z-[9999] inset-0">
             {ref && children}
           </div>
-          <style type="text/css">{styles}</style>
+          {devToolStyleChunks.map((chunk, index) => (
+            <style key={index} type="text/css">
+              {chunk}
+            </style>
+          ))}
         </root.div>
       </>
     );

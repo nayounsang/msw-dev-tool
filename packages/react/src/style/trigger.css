@@ -21,7 +21,8 @@
 .msw-dt-default-trigger svg {
   border: 1px solid #c7c7c7;
   border-radius: 1rem;
-  color: #101010;
+  color: #000;
+  transition: color 0.2s ease-in-out;
 }
 
 .msw-dt-default-trigger svg:hover {

@@ -47,7 +47,7 @@ export default [
         extract: false,
         inject: false,
         modules: false,
-        minimize: true,
+        //minimize: true,
         plugins: [tailwind()],
       }),
     ],
