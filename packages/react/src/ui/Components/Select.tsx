@@ -41,7 +41,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
   ({ options, placeholder, label, id, style, className, ...rest }, ref) => {
     const container = usePortalContainer()
     return (
-      <_Select data-theme="light" data-radix-color-scheme="light" {...rest}>
+      <_Select {...rest}>
         <SelectTrigger
           className={clsx("msw-dt-select-trigger", className)}
           aria-label={label ?? "select"}
@@ -62,9 +62,6 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           <SelectPortal container={container}>
             <SelectContent
               className="msw-dt-select-content"
-              style={{ zIndex: 10000 }}
-              data-theme="light"
-              data-radix-color-scheme="light"
             >
               <SelectScrollUpButton className="msw-dt-select-scroll-button">
                 <ChevronUpIcon />
