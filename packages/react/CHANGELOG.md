@@ -1,5 +1,12 @@
 # @msw-dev-tool/react
 
+## 1.2.2
+
+### Patch Changes
+
+- a8c9e38: - Fix bug: tailwind's `@property` is not applied in shadow dom. So, an issue occurred where `border` and `shadow` not applied.
+  - So, I parse css style and extract `@property`. And add these to shadow root's style sheet.
+
 ## 1.2.1
 
 ### Patch Changes
