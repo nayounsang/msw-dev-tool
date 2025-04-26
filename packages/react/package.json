@@ -80,6 +80,7 @@
     "clsx": "^2.1.1",
     "react-hook-form": "^7.55.0",
     "react-remove-scroll": "^2.6.3",
+    "react-shadow": "^20.6.0",
     "vaul": "^1.1.2",
     "zod": "^3.24.2"
   },

@@ -14,14 +14,15 @@
     "dev": "yarn workspace docs dev",
     "version-packages": "yarn changeset version",
     "changeset": "changeset",
-    "clean": "yarn workspace msw-dev-tool clean && yarn workspace docs clean && rm -rf node_modules"
+    "clean": "yarn workspace msw-dev-tool clean && yarn workspace docs clean && rm -rf node_modules",
+    "resolve-workspace-protocol": "ts-node scripts/resolve-workspace-protocol.ts"
   },
   "devDependencies": {
-    "typescript": "^5.0.0"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
   },
   "packageManager": "yarn@4.5.3",
   "dependencies": {
-    "@changesets/cli": "^2.28.1",
-    "react-shadow": "^20.6.0"
+    "@changesets/cli": "^2.28.1"
   }
 }

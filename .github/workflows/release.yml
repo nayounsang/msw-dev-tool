@@ -45,7 +45,7 @@ jobs:
         uses: changesets/action@v1
         with:
           version: yarn version-packages
-          publish: yarn changeset publish
+          publish: yarn resolve-workspace-protocol && yarn changeset publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
