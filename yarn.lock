@@ -1414,7 +1414,6 @@ __metadata:
     zustand: "npm:^5.0.2"
   peerDependencies:
     msw: ^2.7.0
-    zustand: ^5.0.2
   languageName: unknown
   linkType: soft
 
