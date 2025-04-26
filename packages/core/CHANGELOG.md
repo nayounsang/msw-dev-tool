@@ -1,5 +1,11 @@
 # @msw-dev-tool/core
 
+## 1.0.3
+
+### Patch Changes
+
+- 9e75cfd: Move `zustand` from `peer dep` to `dep`. No need to put this as peer dep
+
 ## 1.0.2
 
 ### Patch Changes
