@@ -1,5 +1,12 @@
 # @msw-dev-tool/react
 
+## 1.2.3
+
+### Patch Changes
+
+- b02ad6d: - Resolve workspace protocol when publish package
+  - Move `react-shadow` dep root to `@msw-dev-tool/react`
+
 ## 1.2.2
 
 ### Patch Changes
