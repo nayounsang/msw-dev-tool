@@ -33,6 +33,9 @@ jobs:
       - name: Install Dependencies
         run: yarn install
 
+      - name: Resolve Workspace Protocol
+        run: yarn resolve-workspace-protocol
+
       - name: Build Packages
         run: yarn build:packages
 
@@ -45,7 +48,7 @@ jobs:
         uses: changesets/action@v1
         with:
           version: yarn version-packages
-          publish: yarn resolve-workspace-protocol && yarn changeset publish
+          publish: yarn changeset publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
