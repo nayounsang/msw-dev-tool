@@ -1,5 +1,5 @@
 import React, { ReactNode, useId, useState } from "react";
-import { Drawer } from "vaul";
+import * as Dialog from "@radix-ui/react-dialog";
 import { HandlerTable } from "./DevToolContent/HandlerTable";
 import { ToolButtonGroup } from "./DevToolContent/ToolButtonGroup";
 import { DefaultDevToolTrigger } from "./Trigger";
@@ -20,20 +20,20 @@ export const MSWDevTool = ({ trigger }: MSWDevToolProps) => {
   const titleId = useId();
 
   return (
-    <Drawer.Root autoFocus>
+    <Dialog.Root>
       {trigger ? (
-        <Drawer.Trigger asChild>{trigger}</Drawer.Trigger>
+        <Dialog.Trigger asChild>{trigger}</Dialog.Trigger>
       ) : (
-        <Drawer.Trigger asChild>
+        <Dialog.Trigger asChild>
           <DefaultDevToolTrigger />
-        </Drawer.Trigger>
+        </Dialog.Trigger>
       )}
-      <Drawer.Portal>
+      <Dialog.Portal>
         <ThemeProvider ref={setContainer}>
           <PortalContainerProvider container={container}>
             <DialogOverlay />
             <RemoveScroll>
-              <Drawer.Content
+              <Dialog.Content
                 className={clsx(
                   "fixed bottom-0 left-0 right-0",
                   "h-[80vh]",
@@ -45,20 +45,20 @@ export const MSWDevTool = ({ trigger }: MSWDevToolProps) => {
                 aria-labelledby={titleId}
               >
                 <Flex align="center" justify="space-between">
-                  <Drawer.Title id={titleId} className="m-0 text-2xl font-bold">
+                  <Dialog.Title id={titleId} className="m-0 text-2xl font-bold">
                     MSW DEV TOOL
-                  </Drawer.Title>
-                  <Drawer.Close asChild>
+                  </Dialog.Title>
+                  <Dialog.Close asChild>
                     <CloseButton />
-                  </Drawer.Close>
+                  </Dialog.Close>
                 </Flex>
                 <ToolButtonGroup />
                 <HandlerTable />
-              </Drawer.Content>
+              </Dialog.Content>
             </RemoveScroll>
           </PortalContainerProvider>
         </ThemeProvider>
-      </Drawer.Portal>
-    </Drawer.Root>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 };

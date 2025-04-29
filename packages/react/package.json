@@ -41,8 +41,8 @@
   "peerDependencies": {
     "@msw-dev-tool/core": "workspace:*",
     "msw": "^2.7.0",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0",
     "zustand": "^5.0.2"
   },
   "devDependencies": {
@@ -81,7 +81,6 @@
     "react-hook-form": "^7.55.0",
     "react-remove-scroll": "^2.6.3",
     "react-shadow": "^20.6.0",
-    "vaul": "^1.1.2",
     "zod": "^3.24.2"
   },
   "publishConfig": {
