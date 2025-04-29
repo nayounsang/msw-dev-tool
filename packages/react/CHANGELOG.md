@@ -1,5 +1,12 @@
 # @msw-dev-tool/react
 
+## 1.2.5
+
+### Patch Changes
+
+- 469395e: - remove `vaul` drawer, replace with `radix` dialog.
+  - So, It supports `react19`.
+
 ## 1.2.4
 
 ### Patch Changes
