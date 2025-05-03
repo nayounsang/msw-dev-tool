@@ -74,11 +74,11 @@ const getVariantClasses = (
         color.bg.replace("bg-", "border-"),
         color.bg.replace("bg-", "text-"),
       ],
-      hover: ["hover:bg-opacity-10", color.bg],
+      hover: ["hover:bg-gray-50", color.bg],
     }),
     ghost: (color) => ({
       base: ["bg-transparent", color.bg.replace("bg-", "text-"), "border-none"],
-      hover: ["hover:bg-opacity-10", color.bg],
+      hover: ["hover:bg-gray-50", color.bg],
     }),
     link: (color) => ({
       base: [

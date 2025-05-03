@@ -79,6 +79,7 @@ export const HandlerForm = ({ onClose }: HandlerFormProps) => {
           error={errors.delay?.message}
           placeholder="delay time (ms)"
           type="number"
+          min={0}
           onWheel={(e) => e.currentTarget.blur()}
         />
         <SelectFormField
