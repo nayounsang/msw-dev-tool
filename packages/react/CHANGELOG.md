@@ -1,5 +1,16 @@
 # @msw-dev-tool/react
 
+## 1.2.8
+
+### Patch Changes
+
+- d036bb5: Fixed a bug where nothing happens when hovering a button
+- dbc7c01: Update readme
+- 53de587: - fix bug: invisible select because of `z-index` of dialog
+- Updated dependencies [7ea2769]
+- Updated dependencies [dbc7c01]
+  - @msw-dev-tool/core@1.0.4
+
 ## 1.2.7
 
 ### Patch Changes
