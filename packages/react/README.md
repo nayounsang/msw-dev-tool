@@ -3,19 +3,19 @@
 - npm:
 
 ```bash
-npm i msw-dev-tool --save-dev
+npm i @msw-dev-tool/core @msw-dev-tool/react --save-dev
 ```
 
 - yarn:
 
 ```bash
-yarn add msw-dev-tool --dev
+yarn add @msw-dev-tool/core @msw-dev-tool/react --dev
 ```
 
 - pnpm:
 
 ```bash
-pnpm add msw-dev-tool --save-dev
+pnpm add @msw-dev-tool/core @msw-dev-tool/react --save-dev
 ```
 
 # How to use?
