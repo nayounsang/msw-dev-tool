@@ -1,5 +1,11 @@
 # @msw-dev-tool/react
 
+## 1.2.7
+
+### Patch Changes
+
+- b36a548: remove unused dep: `zustand`
+
 ## 1.2.6
 
 ### Patch Changes
