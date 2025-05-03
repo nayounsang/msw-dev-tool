@@ -1,5 +1,12 @@
 # @msw-dev-tool/core
 
+## 1.0.4
+
+### Patch Changes
+
+- 7ea2769: Remove the temp handler
+- dbc7c01: Update readme
+
 ## 1.0.3
 
 ### Patch Changes
