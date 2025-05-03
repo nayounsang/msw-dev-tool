@@ -39,14 +39,14 @@
     "lint": "eslint --fix"
   },
   "peerDependencies": {
-    "@msw-dev-tool/core": "workspace:*",
+    "@msw-dev-tool/core": "1.0.4",
     "msw": "^2.7.0",
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",
-    "@msw-dev-tool/core": "workspace:*",
+    "@msw-dev-tool/core": "1.0.4",
     "@rollup/plugin-commonjs": "^24.0.1",
     "@rollup/plugin-node-resolve": "^15.3.1",
     "@rollup/plugin-typescript": "^11.1.3",
