@@ -1454,13 +1454,11 @@ __metadata:
     typescript: "npm:^5.2.2"
     typescript-eslint: "npm:^8.30.1"
     zod: "npm:^3.24.2"
-    zustand: "npm:^5.0.2"
   peerDependencies:
     "@msw-dev-tool/core": "workspace:*"
     msw: ^2.7.0
     react: ^18.0.0 || ^19.0.0
     react-dom: ^18.0.0 || ^19.0.0
-    zustand: ^5.0.2
   languageName: unknown
   linkType: soft
 
