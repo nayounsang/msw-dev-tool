@@ -53,7 +53,7 @@ export const ToolButtonGroup = () => {
               <DialogDescription className="m-0 my-2.5">
                 Temp handler is stored in the session storage. If you{" "}
                 <span className="font-bold">reset dev tool</span>, it will be{" "}
-                <span style={{ color: "red" }}>deleted</span>.
+                <span className="text-red-500">deleted</span>.
               </DialogDescription>
               <HandlerForm onClose={() => setIsDialogOpen(false)} />
             </DialogContent>
