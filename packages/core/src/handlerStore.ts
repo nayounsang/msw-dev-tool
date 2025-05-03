@@ -38,6 +38,7 @@ export interface HandlerStoreState {
   getFlattenHandlerById: (id: string) => FlattenHandler | undefined;
   getHandlerBehavior: (id: string) => HttpHandlerBehavior | undefined;
   setHandlerBehavior: (id: string, behavior: HttpHandlerBehavior) => void;
+  removeTempHandler: (id: string) => void;
 }
 
 export const handlerStore = create<HandlerStoreState>()(
@@ -186,6 +187,20 @@ export const handlerStore = create<HandlerStoreState>()(
             }
             return handler;
           }),
+        });
+      },
+      removeTempHandler: (id: string) => {
+        const handler = get().flattenHandlers.find((h) => h.id === id);
+        if (!handler) {
+          throw new Error(`Handler not found for the given id: ${id}`);
+        }
+        if (handler.type !== "temp") {
+          throw new Error(
+            `Handlers generated from codebase cannot be deleted (id: ${id}). You can only disable them.`
+          );
+        }
+        set({
+          flattenHandlers: get().flattenHandlers.filter((h) => h.id !== id),
         });
       },
     }),
