@@ -2,6 +2,7 @@ import { REPO_URL } from "@/const/link";
 import { SquareTerminal } from "lucide-react";
 import Link from "next/link";
 import { GitHubIcon } from "nextra/icons";
+import Image from "next/image";
 
 export default function Home() {
   return (
@@ -10,8 +11,18 @@ export default function Home() {
         <div className="max-w-3xl mx-auto">
           {/* Hero Section */}
           <div className="space-y-6 mb-12">
-            <h1 className="text-4xl md:text-6xl font-bold animate-fadeIn">
-              <span className="text-orange-500 animate-pulse">MSW</span> DEV TOOL
+            <h1 className="text-4xl md:text-6xl font-bold animate-fadeIn flex items-center justify-center gap-3">
+              <Image
+                src="/msw-dev-tool-logo.svg"
+                alt="MSW Dev Tool Logo"
+                width={40}
+                height={40}
+                className="rounded-lg shadow-lg"
+                priority
+              />
+              <span>
+                <span className="text-orange-500 animate-pulse">MSW</span> DEV TOOL
+              </span>
             </h1>
             <h2 className="text-xl md:text-2xl font-extralight text-neutral-200 leading-relaxed animate-fadeIn animation-delay-200">
               Dev tool to control mock logic, modify responses, and monitor API calls

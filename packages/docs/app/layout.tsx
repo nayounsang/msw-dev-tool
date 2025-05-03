@@ -45,6 +45,20 @@ export const metadata: Metadata = {
   ],
   other: {
     "google-site-verification":"nZV_ZdGfP7qnS6DjjdRD9T6a6XLWkdKXYYpphQg-w2s"
+  },
+  icons: {
+    icon: [
+      { url: "/favicon/favicon.ico" },
+      { url: "/favicon/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon/favicon-16x16.png", sizes: "16x16", type: "image/png" }
+    ],
+    apple: [
+      { url: "/favicon/apple-touch-icon.png", sizes: "180x180" }
+    ],
+    shortcut: ["/favicon/favicon.ico"],
+    other: [
+      { rel: "manifest", url: "/favicon/site.webmanifest" }
+    ]
   }
 };
 
