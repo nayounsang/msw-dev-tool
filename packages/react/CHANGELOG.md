@@ -1,5 +1,11 @@
 # @msw-dev-tool/react
 
+## 1.2.6
+
+### Patch Changes
+
+- 971916f: resolve workspace protocol of `@msw-dev-tool/core`
+
 ## 1.2.5
 
 ### Patch Changes
