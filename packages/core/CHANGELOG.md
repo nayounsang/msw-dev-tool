@@ -1,5 +1,11 @@
 # @msw-dev-tool/core
 
+## 1.0.5
+
+### Patch Changes
+
+- 53af3bf: `useHandlerStore`: React state management api, use store in vanilla js & react correctly. To implement this, add optional peer dep: `react`.
+
 ## 1.0.4
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @msw-dev-tool/react
 
+## 1.2.9
+
+### Patch Changes
+
+- 6dffa68: use `useHandlerStore` api from core package
+- Updated dependencies [53af3bf]
+  - @msw-dev-tool/core@1.0.5
+
 ## 1.2.8
 
 ### Patch Changes
