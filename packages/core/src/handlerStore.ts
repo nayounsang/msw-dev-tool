@@ -1,5 +1,5 @@
 import { setupWorker, SetupWorker } from "msw/browser";
-import { create } from "zustand";
+import { createStore } from "zustand";
 import {
   FlattenHandler,
   Handler,
@@ -41,7 +41,7 @@ export interface HandlerStoreState {
   removeTempHandler: (id: string) => void;
 }
 
-export const handlerStore = create<HandlerStoreState>()(
+export const handlerStore = createStore<HandlerStoreState>()(
   persist(
     (set, get) => ({
       flattenHandlers: [],
