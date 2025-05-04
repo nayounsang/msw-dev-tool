@@ -12,13 +12,13 @@ import {
 import { HandlerForm } from "./HandlerForm";
 import { CloseButton } from "../../Components/CloseButton";
 import { usePortalContainer } from "../../PortalContainerProvider";
-import { handlerStore } from "@msw-dev-tool/core";
+import { useHandlerStore } from "@msw-dev-tool/core";
 import { Flex } from "../../Components/Flex";
 import { Button } from "../../Components/Button";
 import { DialogOverlay } from "../../Components/DialogOverlay";
 
 export const ToolButtonGroup = () => {
-  const { resetMSWDevTool } = handlerStore();
+  const resetMSWDevTool = useHandlerStore((state)=>state.resetMSWDevTool);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const container = usePortalContainer();

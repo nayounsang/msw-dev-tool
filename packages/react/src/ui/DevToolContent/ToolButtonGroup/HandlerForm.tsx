@@ -9,7 +9,7 @@ import { getOptions } from "./util";
 import {
   handlerSchema,
   HandlerSchema,
-  handlerStore,
+  useHandlerStore,
   HttpMethod,
   StringHttpStatusCode,
   MimeType,
@@ -28,7 +28,7 @@ const statusOptions = getOptions(StringHttpStatusCode);
 const mimeTypeOptions = getOptions(MimeType);
 
 export const HandlerForm = ({ onClose }: HandlerFormProps) => {
-  const { addTempHandler } = handlerStore();
+  const addTempHandler = useHandlerStore((state)=>state.addTempHandler);
 
   const {
     register,

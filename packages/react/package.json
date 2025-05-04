@@ -41,8 +41,8 @@
   "peerDependencies": {
     "@msw-dev-tool/core": "workspace:*",
     "msw": "^2.7.0",
-    "react": "^18.0.0 || ^19.0.0",
-    "react-dom": "^18.0.0 || ^19.0.0"
+    "react": "^18 || ^19",
+    "react-dom": "^18 || ^19"
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",
@@ -51,8 +51,8 @@
     "@rollup/plugin-node-resolve": "^15.3.1",
     "@rollup/plugin-typescript": "^11.1.3",
     "@tailwindcss/postcss": "^4.1.4",
-    "@types/react": "^18.3.18",
-    "@types/react-dom": "^18.3.5",
+    "@types/react": "^18 || ^19",
+    "@types/react-dom": "^18 || ^19",
     "eslint": "^9.24.0",
     "eslint-plugin-react": "^7.37.5",
     "globals": "^16.0.0",

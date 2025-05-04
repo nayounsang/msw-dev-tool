@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-table";
 import React, { useMemo } from "react";
 import { BehaviorSelect } from "../HandlerTable/BehaviorSelect";
-import { FlattenHandler, handlerStore } from "@msw-dev-tool/core";
+import { FlattenHandler, useHandlerStore } from "@msw-dev-tool/core";
 import { DebugIcon } from "../../Components/DebugIcon";
 import { usePortalContainer } from "../../PortalContainerProvider";
 import {
@@ -22,11 +22,16 @@ import { Button } from "../../Components/Button";
 import { HandlerDebugger } from "../HandlerDebugger";
 import { Flex } from "../../Components/Flex";
 import { CloseButton } from "../../Components/CloseButton";
+import { TrashIcon } from "@radix-ui/react-icons";
+
+const columnHelper = createColumnHelper<FlattenHandler>();
+
 
 export const useFlattenHandlersTable = () => {
-  const { flattenHandlers } = handlerStore();
+  const flattenHandlers = useHandlerStore((state)=>state.flattenHandlers);
+  const removeTempHandler = useHandlerStore((state)=>state.removeTempHandler);
+  const container = usePortalContainer();
 
-  const columnHelper = createColumnHelper<FlattenHandler>();
   const columns: ColumnDef<FlattenHandler, any>[] = useMemo(() => {
     return [
       columnHelper.accessor("path", {
@@ -66,7 +71,6 @@ export const useFlattenHandlersTable = () => {
       columnHelper.display({
         header: "Debug",
         cell: ({ row }) => {
-          const container = usePortalContainer();
 
           return (
             <Dialog>
@@ -93,8 +97,33 @@ export const useFlattenHandlersTable = () => {
           );
         },
       }),
+      columnHelper.display({
+        header: "Delete",
+        cell: ({ row }) => {
+          const isTemp = row.original.type === "temp";
+          return (
+            <Button
+              variant="ghost"
+              color="danger"
+              onClick={() => {
+                removeTempHandler(row.original.id);
+              }}
+              disabled={!isTemp}
+              title={
+                isTemp
+                  ? "Delete this handler"
+                  : "Handlers generated from codebase cannot be deleted"
+              }
+              className={isTemp ? "text-red-500" : "text-gray-300 cursor-not-allowed"}
+            >
+              <TrashIcon />
+            </Button>
+          );
+        },
+        id: "delete",
+      }),
     ];
-  }, [flattenHandlers]);
+  }, [flattenHandlers, removeTempHandler]);
 
   const table = useReactTable({
     columns,
