@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@msw-dev-tool/core": "workspace:*",
-    "@msw-dev-tool/react": "workspace:*",
+    "@msw-dev-tool/core": "1.0.5",
+    "@msw-dev-tool/react": "1.2.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

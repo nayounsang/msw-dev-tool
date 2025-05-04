@@ -16,7 +16,7 @@
     "framer-motion": "^12.5.0",
     "lucide-react": "^0.479.0",
     "msw": "^2.7.0",
-    "msw-dev-tool": "workspace:*",
+    "msw-dev-tool": "3.2.3",
     "next": "15.2.1",
     "next-sitemap": "^4.2.3",
     "nextra": "^4.2.16",
