@@ -4,6 +4,23 @@
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./browser": {
+      "types": "./dist/types/browser/index.d.ts",
+      "import": "./dist/esm/browser/index.js",
+      "require": "./dist/cjs/browser/index.js"
+    },
+    "./node": {
+      "types": "./dist/types/node/index.d.ts",
+      "import": "./dist/esm/node/index.js",
+      "require": "./dist/cjs/node/index.js"
+    }
+  },
   "repository": "https://github.com/nayounsang/msw-dev-tool",
   "keywords": [
     "msw",
@@ -23,17 +40,20 @@
   "description": "msw-dev-tool is a powerful library that enhances the Mock Service Worker (MSW) experience in React by providing an intuitive UI to control mock logic dynamically. It allows developers to modify mock data, adjust response statuses, and monitor API requests in real-time, making API mocking and debugging more seamless and efficient. 🚀",
   "scripts": {
     "build": "rollup -c",
-    "clean": "rm -rf dist && rm -rf node_modules"
+    "clean": "rm -rf dist && rm -rf node_modules",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.3",
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-typescript": "^12.1.2",
     "@types/react": "^18 || ^19",
+    "happy-dom": "^20.11.1",
     "msw": "^2.7.0",
     "rollup": "^4.40.0",
     "rollup-plugin-dts": "^6.2.1",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^4.1.10"
   },
   "peerDependencies": {
     "@types/react": "^18 || ^19",

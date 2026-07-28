@@ -1,18 +1,14 @@
-import { STORAGE_KEY } from "../const";
 import { StorageData } from "../types";
 
-export const getStorageData = (): StorageData => {
-  const storage = sessionStorage.getItem(STORAGE_KEY);
-  if (!storage) return { flattenHandlers: [] };
-  return JSON.parse(storage).state;
-};
+/**
+ * Pure merge of saved storage data with handlers from the current runtime.
+ */
+export const mergeStorageData = (
+  { flattenHandlers: newFlattenHandlers }: StorageData,
+  saved: StorageData
+) => {
+  const { flattenHandlers: savedFlattenHandlers } = saved;
 
-export const mergeStorageData = ({
-  flattenHandlers: newFlattenHandlers,
-}: StorageData) => {
-  const { flattenHandlers: savedFlattenHandlers } = getStorageData();
-
-  // Merge with saved and new element based on worker's default handlers
   const flattenHandlers = newFlattenHandlers.map((newHandler) => {
     const savedHandler = savedFlattenHandlers.find(
       (h) => h.id === newHandler.id
@@ -27,7 +23,6 @@ export const mergeStorageData = ({
     return newHandler;
   });
 
-  // Merge with temp handlers
   savedFlattenHandlers.forEach((handler) => {
     if (handler.type === "temp") {
       flattenHandlers.push(handler);

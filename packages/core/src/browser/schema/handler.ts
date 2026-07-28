@@ -1,13 +1,13 @@
 import { z } from "zod";
-import { HttpMethod, StringHttpStatusCode, MimeType } from "../types";
+import { HttpMethod, StringHttpStatusCode, MimeType } from "../../shared/types";
+import { getRowId } from "../../shared/utils/store";
+import { getStorageData } from "../storage";
 import {
-  getRowId,
-  getStorageData,
   isValidHtml,
   isValidJson,
   isValidUrl,
   isValidXml,
-} from "../utils";
+} from "../validate";
 
 export const handlerSchema = z
   .object({

@@ -1,4 +1,3 @@
-import { SetupWorker } from "msw/browser";
 import {
   FlattenHandler,
   Handler,
@@ -7,6 +6,10 @@ import {
   HttpMethod,
 } from "../types";
 import { isHttpHandler } from "./validate";
+
+export type ListHandlersRuntime = {
+  listHandlers: () => readonly Handler[];
+};
 
 export const getRowId = ({ path, method }: { path: string; method: string }) =>
   JSON.stringify({
@@ -20,7 +23,6 @@ export const getObjFromRowId = (rowId: string) =>
 export const convertHandlers = (handlers: Handler[]) => {
   const unsupportedHandlers: Handler[] = [];
   const flattenHandlers: FlattenHandler[] = handlers.reduce((acc, _handler) => {
-    // Current, GraphQL & WebSocketHandler is not supported.
     const handler = _handler as HttpHandler;
     if (!isHttpHandler(handler)) {
       unsupportedHandlers.push(handler);
@@ -43,9 +45,11 @@ export const convertHandlers = (handlers: Handler[]) => {
   return { flattenHandlers, unsupportedHandlers };
 };
 
-export const initMSWDevToolStore = (worker: SetupWorker) => {
-  const handlers = worker.listHandlers() as Handler[];
+export const initMSWDevToolStore = <T extends ListHandlersRuntime>(
+  runtime: T
+) => {
+  const handlers = runtime.listHandlers() as Handler[];
   const { flattenHandlers, unsupportedHandlers } = convertHandlers(handlers);
 
-  return { worker, flattenHandlers, unsupportedHandlers };
+  return { worker: runtime, flattenHandlers, unsupportedHandlers };
 };
