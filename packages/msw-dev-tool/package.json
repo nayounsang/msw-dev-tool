@@ -34,7 +34,8 @@
   },
   "scripts": {
     "build": "rollup -c",
-    "clean": "rm -rf dist && rm -rf node_modules"
+    "clean": "rm -rf dist && rm -rf node_modules",
+    "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
     "msw": "^2.7.0",
