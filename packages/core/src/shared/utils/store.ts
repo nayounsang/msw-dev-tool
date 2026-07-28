@@ -1,14 +1,13 @@
 import {
   FlattenHandler,
-  Handler,
-  HttpHandler,
   HttpHandlerBehavior,
   HttpMethod,
 } from "../types";
+import { httpMethodSchema, rowIdSchema } from "../schema";
 import { isHttpHandler } from "./validate";
 
 export type ListHandlersRuntime = {
-  listHandlers: () => readonly Handler[];
+  listHandlers: () => readonly unknown[];
 };
 
 export const getRowId = ({ path, method }: { path: string; method: string }) =>
@@ -18,37 +17,42 @@ export const getRowId = ({ path, method }: { path: string; method: string }) =>
   });
 
 export const getObjFromRowId = (rowId: string) =>
-  JSON.parse(rowId) as { path: string; method: string };
+  rowIdSchema.parse(JSON.parse(rowId));
 
-export const convertHandlers = (handlers: Handler[]) => {
-  const unsupportedHandlers: Handler[] = [];
-  const flattenHandlers: FlattenHandler[] = handlers.reduce((acc, _handler) => {
-    const handler = _handler as HttpHandler;
+const normalizeHttpMethod = (method: string): HttpMethod =>
+  httpMethodSchema.parse(method.toLowerCase());
+
+export const convertHandlers = (handlers: readonly unknown[]) => {
+  const unsupportedHandlers: unknown[] = [];
+  const flattenHandlers: FlattenHandler[] = [];
+
+  for (const handler of handlers) {
     if (!isHttpHandler(handler)) {
       unsupportedHandlers.push(handler);
-      return acc;
+      continue;
     }
 
     const { method: _method, path: _path } = handler.info;
-    const [method, path] = [_method.toString(), _path.toString()];
-    acc.push({
+    const path = _path.toString();
+    const method = normalizeHttpMethod(_method.toString());
+
+    flattenHandlers.push({
       id: getRowId({ path, method }),
       path,
-      method: method as HttpMethod,
+      method,
       handler,
       behavior: HttpHandlerBehavior.DEFAULT,
       type: "default",
     });
+  }
 
-    return acc;
-  }, [] as FlattenHandler[]);
   return { flattenHandlers, unsupportedHandlers };
 };
 
 export const initMSWDevToolStore = <T extends ListHandlersRuntime>(
   runtime: T
 ) => {
-  const handlers = runtime.listHandlers() as Handler[];
+  const handlers = runtime.listHandlers();
   const { flattenHandlers, unsupportedHandlers } = convertHandlers(handlers);
 
   return { worker: runtime, flattenHandlers, unsupportedHandlers };

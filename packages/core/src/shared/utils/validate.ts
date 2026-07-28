@@ -1,10 +1,8 @@
-import { Handler, HttpHandler } from "../types";
+import { HttpHandler } from "../types";
+import { httpHandlerSchema } from "../schema";
 
-export const isHttpHandler = (handler: Handler): handler is HttpHandler => {
-  return (
-    "info" in handler && "method" in handler.info && "path" in handler.info
-  );
-};
+export const isHttpHandler = (handler: unknown): handler is HttpHandler =>
+  httpHandlerSchema.safeParse(handler).success;
 
 export const isValidJson = (input: string) => {
   try {

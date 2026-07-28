@@ -6,8 +6,10 @@ import {
   MimeType,
   TempHandlerInput,
 } from "../types";
+import { headerRecordSchema } from "../schema";
 import { getHandlerResponseByBehavior } from "../utils/handler";
 import { getRowId } from "../utils/store";
+import { isHttpHandler } from "../utils/validate";
 
 export type { TempHandlerInput };
 
@@ -26,23 +28,27 @@ export const buildTempHandler = (
     header,
   } = data;
 
-  const contentLength = {
+  const contentLength: Partial<Record<MimeType, string>> = {
     [MimeType.APPLICATION_JSON]: response
       ? new Blob([response]).size.toString()
       : "0",
-  } as Record<MimeType, string>;
+  };
 
   const id = getRowId({ path, method });
 
+  const parsedHeader = header
+    ? headerRecordSchema.parse(JSON.parse(header))
+    : undefined;
+
   const headers = {
     "Content-Type": contentType,
-    ...(contentLength?.[contentType]
+    ...(contentLength[contentType]
       ? { "Content-Length": contentLength[contentType] }
       : {}),
-    ...(header ? JSON.parse(header) : {}),
+    ...parsedHeader,
   };
 
-  const handler = http[method](path, async () => {
+  const created = http[method](path, async () => {
     const behavior = getBehavior(id);
     return await getHandlerResponseByBehavior(behavior, async () => {
       await delay(responseDelay);
@@ -53,19 +59,23 @@ export const buildTempHandler = (
         headers,
       });
     });
-  }) as HttpHandler;
+  });
+
+  if (!isHttpHandler(created)) {
+    throw new Error("Expected MSW http handler");
+  }
 
   const flattenHandler: FlattenHandler = {
     id,
     path,
     method,
-    handler,
+    handler: created,
     type: "temp",
     behavior: HttpHandlerBehavior.DEFAULT,
     tempInput: data,
   };
 
-  return { handler, flattenHandler };
+  return { handler: created, flattenHandler };
 };
 
 /**

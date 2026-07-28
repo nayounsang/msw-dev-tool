@@ -43,7 +43,7 @@ export interface HandlerStoreState {
    *
    * **Currently not supported**
    */
-  restHandlers: Handler[];
+  restHandlers: unknown[];
   flattenHandlers: FlattenHandler[];
   setupDevToolWorker: (...handlers: Handler[]) => Promise<SetupWorker>;
   resetMSWDevTool: () => void;

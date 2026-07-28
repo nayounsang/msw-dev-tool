@@ -11,8 +11,10 @@ import {
 } from "../types";
 
 export const getHandlerResponseByBehavior = async (
-  behavior: HttpHandlerBehavior | undefined,
+  behavior: HttpHandlerBehavior | undefined | string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   originalResolverCallback: () => AsyncResponseResolverReturnType<any>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<AsyncResponseResolverReturnType<any>> => {
   if (!behavior || behavior === CustomBehavior.DEFAULT) {
     return originalResolverCallback();
