@@ -1,4 +1,9 @@
-import { HttpErrorStatusCode, HttpMethod } from "./http";
+import {
+  HttpErrorStatusCode,
+  HttpMethod,
+  MimeType,
+  StringHttpStatusCode,
+} from "./http";
 import { HttpHandler } from "./msw";
 import { ValueUnion } from "./utils";
 
@@ -17,6 +22,18 @@ export const HttpHandlerBehavior = {
 } as const;
 export type HttpHandlerBehavior = ValueUnion<typeof HttpHandlerBehavior>;
 
+/** Serializable input for rebuilding temporary handlers after persistence. */
+export type TempHandlerInput = {
+  path: string;
+  delay?: number;
+  contentType: MimeType;
+  status: StringHttpStatusCode;
+  statusText?: string;
+  response?: string;
+  method: HttpMethod;
+  header?: string;
+};
+
 export type FlattenHandler = {
   id: string;
   path: string;
@@ -24,6 +41,8 @@ export type FlattenHandler = {
   handler: HttpHandler;
   behavior: HttpHandlerBehavior;
   type: "temp" | "default";
+  /** Present on temp handlers so they can be rebuilt after JSON persistence. */
+  tempInput?: TempHandlerInput;
 };
 
 export interface StorageData {

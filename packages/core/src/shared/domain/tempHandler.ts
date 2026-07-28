@@ -1,0 +1,89 @@
+import { delay, http, HttpResponse } from "msw";
+import {
+  FlattenHandler,
+  HttpHandler,
+  HttpHandlerBehavior,
+  MimeType,
+  TempHandlerInput,
+} from "../types";
+import { getHandlerResponseByBehavior } from "../utils/handler";
+import { getRowId } from "../utils/store";
+
+export type { TempHandlerInput };
+
+export const buildTempHandler = (
+  data: TempHandlerInput,
+  getBehavior: (id: string) => HttpHandlerBehavior | undefined
+): { handler: HttpHandler; flattenHandler: FlattenHandler } => {
+  const {
+    path,
+    method,
+    response,
+    status,
+    contentType,
+    delay: responseDelay,
+    statusText,
+    header,
+  } = data;
+
+  const contentLength = {
+    [MimeType.APPLICATION_JSON]: response
+      ? new Blob([response]).size.toString()
+      : "0",
+  } as Record<MimeType, string>;
+
+  const id = getRowId({ path, method });
+
+  const headers = {
+    "Content-Type": contentType,
+    ...(contentLength?.[contentType]
+      ? { "Content-Length": contentLength[contentType] }
+      : {}),
+    ...(header ? JSON.parse(header) : {}),
+  };
+
+  const handler = http[method](path, async () => {
+    const behavior = getBehavior(id);
+    return await getHandlerResponseByBehavior(behavior, async () => {
+      await delay(responseDelay);
+      // Create a fresh response per request — body streams are single-use.
+      return new HttpResponse(response, {
+        status: Number(status),
+        statusText: statusText,
+        headers,
+      });
+    });
+  }) as HttpHandler;
+
+  const flattenHandler: FlattenHandler = {
+    id,
+    path,
+    method,
+    handler,
+    type: "temp",
+    behavior: HttpHandlerBehavior.DEFAULT,
+    tempInput: data,
+  };
+
+  return { handler, flattenHandler };
+};
+
+/**
+ * Rebuild executable temp handlers from persisted `tempInput`.
+ * Drops temp entries that cannot be reconstructed.
+ */
+export const rehydrateTempHandlers = (
+  handlers: FlattenHandler[],
+  getBehavior: (id: string) => HttpHandlerBehavior | undefined
+): FlattenHandler[] => {
+  return handlers.flatMap((entry) => {
+    if (entry.type !== "temp") {
+      return [entry];
+    }
+    if (!entry.tempInput) {
+      return [];
+    }
+    const { flattenHandler } = buildTempHandler(entry.tempInput, getBehavior);
+    return [{ ...flattenHandler, behavior: entry.behavior }];
+  });
+};
