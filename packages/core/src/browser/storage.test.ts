@@ -7,7 +7,7 @@ import {
 } from "../shared/types";
 import { getRowId } from "../shared/utils";
 import { getStorageData, mergeStorageData } from "./storage";
-import type { FlattenHandler, HttpHandler } from "../shared/types";
+import { createFlattenHandler } from "../shared/testing/createHttpHandler";
 
 describe("getStorageData", () => {
   beforeEach(() => {
@@ -73,16 +73,17 @@ describe("mergeStorageData", () => {
       })
     );
 
-    const incoming: FlattenHandler = {
+    const incoming = createFlattenHandler({
       id,
       path: "/a",
       method: HttpMethod.GET,
-      handler: {} as HttpHandler,
       behavior: HttpHandlerBehavior.DEFAULT,
       type: "default",
-    };
+    });
 
-    expect(mergeStorageData({ flattenHandlers: [incoming] }).flattenHandlers[0]
-      .behavior).toBe(CustomBehavior.NETWORK_ERROR);
+    expect(
+      mergeStorageData({ flattenHandlers: [incoming] }).flattenHandlers[0]
+        .behavior
+    ).toBe(CustomBehavior.NETWORK_ERROR);
   });
 });

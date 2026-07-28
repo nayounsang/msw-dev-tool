@@ -8,17 +8,9 @@ import {
 } from "../types";
 import { getRowId } from "./store";
 import { mergeStorageData } from "./storage";
-import type { FlattenHandler, HttpHandler } from "../types";
+import { createFlattenHandler } from "../testing/createHttpHandler";
 
-const makeFlatten = (
-  overrides: Partial<FlattenHandler> & Pick<FlattenHandler, "id" | "path" | "method">
-): FlattenHandler => ({
-  handler: {} as HttpHandler,
-  behavior: HttpHandlerBehavior.DEFAULT,
-  type: "default",
-  ...overrides,
-});
-
+const makeFlatten = createFlattenHandler;
 describe("mergeStorageData", () => {
   it("overlays saved behavior and type onto matching handlers", () => {
     const id = getRowId({ path: "/a", method: "get" });

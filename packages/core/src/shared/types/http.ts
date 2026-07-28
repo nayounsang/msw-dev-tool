@@ -1,4 +1,4 @@
-import { getStringifyEnumObj, ValueUnion } from "./utils";
+import { ValueUnion } from "./utils";
 
 /**
  * Comment out rarely used status codes until the user requests them.
@@ -53,7 +53,27 @@ export type HttpStatusCode = ValueUnion<typeof HttpStatusCode>;
 /**
  * This is string status code to use in the form.
  */
-export const StringHttpStatusCode = getStringifyEnumObj(HttpStatusCode);
+export const StringHttpStatusCode = {
+  OK: `${HttpStatusCode.OK}`,
+  CREATED: `${HttpStatusCode.CREATED}`,
+  ACCEPTED: `${HttpStatusCode.ACCEPTED}`,
+  NO_CONTENT: `${HttpStatusCode.NO_CONTENT}`,
+  BAD_REQUEST: `${HttpStatusCode.BAD_REQUEST}`,
+  UNAUTHORIZED: `${HttpStatusCode.UNAUTHORIZED}`,
+  FORBIDDEN: `${HttpStatusCode.FORBIDDEN}`,
+  NOT_FOUND: `${HttpStatusCode.NOT_FOUND}`,
+  METHOD_NOT_ALLOWED: `${HttpStatusCode.METHOD_NOT_ALLOWED}`,
+  NOT_ACCEPTABLE: `${HttpStatusCode.NOT_ACCEPTABLE}`,
+  CONFLICT: `${HttpStatusCode.CONFLICT}`,
+  PRECONDITION_FAILED: `${HttpStatusCode.PRECONDITION_FAILED}`,
+  PAYLOAD_TOO_LARGE: `${HttpStatusCode.PAYLOAD_TOO_LARGE}`,
+  UNSUPPORTED_MEDIA_TYPE: `${HttpStatusCode.UNSUPPORTED_MEDIA_TYPE}`,
+  TOO_MANY_REQUESTS: `${HttpStatusCode.TOO_MANY_REQUESTS}`,
+  INTERNAL_SERVER_ERROR: `${HttpStatusCode.INTERNAL_SERVER_ERROR}`,
+  BAD_GATEWAY: `${HttpStatusCode.BAD_GATEWAY}`,
+  SERVICE_UNAVAILABLE: `${HttpStatusCode.SERVICE_UNAVAILABLE}`,
+  GATEWAY_TIMEOUT: `${HttpStatusCode.GATEWAY_TIMEOUT}`,
+} as const;
 export type StringHttpStatusCode = ValueUnion<typeof StringHttpStatusCode>;
 
 export const HttpMethod = {
