@@ -106,4 +106,18 @@ describe("appendFlattenHandler", () => {
     expect(next).toHaveLength(2);
     expect(handlers).toHaveLength(1);
   });
+
+  it("rejects duplicate ids", () => {
+    const id = getRowId({ path: "/a", method: "get" });
+    const handlers = [
+      makeHandler({ id, path: "/a", method: HttpMethod.GET }),
+    ];
+
+    expect(() =>
+      appendFlattenHandler(
+        handlers,
+        makeHandler({ id, path: "/a", method: HttpMethod.GET, type: "temp" })
+      )
+    ).toThrow(/Duplicate handler id/);
+  });
 });

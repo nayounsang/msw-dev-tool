@@ -3,6 +3,8 @@ import {
   CustomBehavior,
   HttpHandlerBehavior,
   HttpMethod,
+  MimeType,
+  StringHttpStatusCode,
 } from "../types";
 import { getRowId } from "./store";
 import { mergeStorageData } from "./storage";
@@ -62,7 +64,7 @@ describe("mergeStorageData", () => {
     expect(merged.flattenHandlers[0]).toEqual(incoming);
   });
 
-  it("appends saved temp handlers that are not in the incoming list", () => {
+  it("appends saved temp handlers that have rebuildable tempInput", () => {
     const defaultId = getRowId({ path: "/a", method: "get" });
     const tempId = getRowId({ path: "/temp", method: "post" });
 
@@ -84,6 +86,13 @@ describe("mergeStorageData", () => {
             method: HttpMethod.POST,
             type: "temp",
             behavior: CustomBehavior.DISABLE,
+            tempInput: {
+              path: "/temp",
+              method: HttpMethod.POST,
+              contentType: MimeType.APPLICATION_JSON,
+              status: StringHttpStatusCode.OK,
+              response: "{}",
+            },
           }),
         ],
       }
@@ -94,6 +103,36 @@ describe("mergeStorageData", () => {
       tempId,
     ]);
     expect(merged.flattenHandlers[1].type).toBe("temp");
+  });
+
+  it("skips saved temp handlers without tempInput", () => {
+    const defaultId = getRowId({ path: "/a", method: "get" });
+    const tempId = getRowId({ path: "/temp", method: "post" });
+
+    const merged = mergeStorageData(
+      {
+        flattenHandlers: [
+          makeFlatten({
+            id: defaultId,
+            path: "/a",
+            method: HttpMethod.GET,
+          }),
+        ],
+      },
+      {
+        flattenHandlers: [
+          makeFlatten({
+            id: tempId,
+            path: "/temp",
+            method: HttpMethod.POST,
+            type: "temp",
+          }),
+        ],
+      }
+    );
+
+    expect(merged.flattenHandlers).toHaveLength(1);
+    expect(merged.flattenHandlers[0].id).toBe(defaultId);
   });
 
   it("does not append saved default handlers that are missing from incoming", () => {

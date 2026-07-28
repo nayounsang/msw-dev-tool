@@ -6,6 +6,7 @@ import {
   buildTempHandler,
   getFlattenHandlerById as findFlattenHandlerById,
   getHandlerBehavior as findHandlerBehavior,
+  rehydrateTempHandlers,
   removeTempHandler as removeTempHandlerFromList,
   setHandlerBehavior as applyHandlerBehavior,
   wrapHandlersWithBehavior,
@@ -19,6 +20,18 @@ import {
 import { initMSWDevToolStore } from "../shared/utils";
 import { mergeStorageData } from "./storage";
 import { HandlerSchema } from "./schema";
+
+const registerTempHandlers = (
+  worker: SetupWorker,
+  flattenHandlers: FlattenHandler[]
+) => {
+  const tempHandlers = flattenHandlers
+    .filter((handler) => handler.type === "temp")
+    .map((handler) => handler.handler);
+  if (tempHandlers.length > 0) {
+    worker.use(...tempHandlers);
+  }
+};
 
 export interface HandlerStoreState {
   /**
@@ -64,9 +77,15 @@ export const handlerStore = createStore<HandlerStoreState>()(
             flattenHandlers,
           });
 
+          const rehydratedHandlers = rehydrateTempHandlers(
+            mergedHandlers,
+            lookupBehavior
+          );
+          registerTempHandlers(worker, rehydratedHandlers);
+
           set({
             worker,
-            flattenHandlers: mergedHandlers,
+            flattenHandlers: rehydratedHandlers,
             restHandlers: unsupportedHandlers,
           });
 
@@ -91,14 +110,15 @@ export const handlerStore = createStore<HandlerStoreState>()(
             lookupBehavior
           );
           const worker = get().getWorker();
+          const flattenHandlers = appendFlattenHandler(
+            get().flattenHandlers,
+            flattenHandler
+          );
           worker.use(handler);
 
           set({
             worker,
-            flattenHandlers: appendFlattenHandler(
-              get().flattenHandlers,
-              flattenHandler
-            ),
+            flattenHandlers,
           });
         },
         getWorker: () => {
@@ -119,11 +139,20 @@ export const handlerStore = createStore<HandlerStoreState>()(
           });
         },
         removeTempHandler: (id) => {
+          const worker = get().getWorker();
+          const flattenHandlers = removeTempHandlerFromList(
+            get().flattenHandlers,
+            id
+          );
+
+          // MSW has no single-handler unregister — reset runtime handlers
+          // and re-register remaining temps.
+          worker.resetHandlers();
+          registerTempHandlers(worker, flattenHandlers);
+
           set({
-            flattenHandlers: removeTempHandlerFromList(
-              get().flattenHandlers,
-              id
-            ),
+            worker,
+            flattenHandlers,
           });
         },
       };
@@ -132,7 +161,9 @@ export const handlerStore = createStore<HandlerStoreState>()(
       name: STORAGE_KEY,
       storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({
-        flattenHandlers: state.flattenHandlers,
+        flattenHandlers: state.flattenHandlers.map(
+          ({ handler: _handler, ...rest }) => rest
+        ),
       }),
     }
   )

@@ -47,5 +47,10 @@ export const appendFlattenHandler = (
   handlers: FlattenHandler[],
   entry: FlattenHandler
 ): FlattenHandler[] => {
+  if (handlers.some((handler) => handler.id === entry.id)) {
+    throw new Error(
+      `Duplicate handler id: ${entry.id}. Change method or path.`
+    );
+  }
   return [...handlers, entry];
 };

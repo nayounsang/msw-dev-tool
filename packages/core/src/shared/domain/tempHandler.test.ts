@@ -1,19 +1,26 @@
 import { describe, expect, it, vi } from "vitest";
-import { HttpMethod, MimeType, StringHttpStatusCode } from "../types";
+import {
+  CustomBehavior,
+  HttpMethod,
+  MimeType,
+  StringHttpStatusCode,
+} from "../types";
 import { getRowId } from "../utils/store";
-import { buildTempHandler } from "./tempHandler";
+import { buildTempHandler, rehydrateTempHandlers } from "./tempHandler";
+
+const baseInput = {
+  path: "/temp",
+  method: HttpMethod.POST,
+  contentType: MimeType.APPLICATION_JSON,
+  status: StringHttpStatusCode.OK,
+  response: '{"ok":true}',
+} as const;
 
 describe("buildTempHandler", () => {
   it("builds http handler and flatten entry from input", () => {
     const getBehavior = vi.fn();
     const { handler, flattenHandler } = buildTempHandler(
-      {
-        path: "/temp",
-        method: HttpMethod.POST,
-        contentType: MimeType.APPLICATION_JSON,
-        status: StringHttpStatusCode.OK,
-        response: '{"ok":true}',
-      },
+      baseInput,
       getBehavior
     );
 
@@ -24,8 +31,78 @@ describe("buildTempHandler", () => {
       method: HttpMethod.POST,
       type: "temp",
       behavior: "default",
+      tempInput: baseInput,
     });
     expect(flattenHandler.handler).toBe(handler);
     expect(handler.info.path).toBe("/temp");
+  });
+
+  it("returns a fresh response body on each resolver call", async () => {
+    const getBehavior = vi.fn(() => CustomBehavior.DEFAULT);
+    const { handler } = buildTempHandler(baseInput, getBehavior);
+
+    const first = await handler.resolver({
+      request: new Request("http://localhost/temp", { method: "POST" }),
+      requestId: "1",
+      params: {},
+      cookies: {},
+    } as never);
+    const second = await handler.resolver({
+      request: new Request("http://localhost/temp", { method: "POST" }),
+      requestId: "2",
+      params: {},
+      cookies: {},
+    } as never);
+
+    expect(first).toBeInstanceOf(Response);
+    expect(second).toBeInstanceOf(Response);
+    expect(first).not.toBe(second);
+    expect(await (first as Response).text()).toBe('{"ok":true}');
+    expect(await (second as Response).text()).toBe('{"ok":true}');
+  });
+});
+
+describe("rehydrateTempHandlers", () => {
+  it("rebuilds temp handlers from tempInput and drops broken temps", () => {
+    const getBehavior = vi.fn();
+    const defaultId = getRowId({ path: "/a", method: "get" });
+    const tempId = getRowId({ path: "/temp", method: HttpMethod.POST });
+
+    const result = rehydrateTempHandlers(
+      [
+        {
+          id: defaultId,
+          path: "/a",
+          method: HttpMethod.GET,
+          handler: {} as never,
+          type: "default",
+          behavior: CustomBehavior.DEFAULT,
+        },
+        {
+          id: tempId,
+          path: "/temp",
+          method: HttpMethod.POST,
+          handler: {} as never,
+          type: "temp",
+          behavior: CustomBehavior.DISABLE,
+          tempInput: baseInput,
+        },
+        {
+          id: "broken",
+          path: "/broken",
+          method: HttpMethod.GET,
+          handler: {} as never,
+          type: "temp",
+          behavior: CustomBehavior.DEFAULT,
+        },
+      ],
+      getBehavior
+    );
+
+    expect(result).toHaveLength(2);
+    expect(result[0].id).toBe(defaultId);
+    expect(result[1].id).toBe(tempId);
+    expect(result[1].behavior).toBe(CustomBehavior.DISABLE);
+    expect(typeof result[1].handler.resolver).toBe("function");
   });
 });

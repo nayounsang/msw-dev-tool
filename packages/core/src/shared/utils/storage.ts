@@ -24,7 +24,8 @@ export const mergeStorageData = (
   });
 
   savedFlattenHandlers.forEach((handler) => {
-    if (handler.type === "temp") {
+    // Only restore temps that still have serializable input for rebuild.
+    if (handler.type === "temp" && handler.tempInput) {
       flattenHandlers.push(handler);
     }
   });
