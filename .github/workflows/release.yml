@@ -5,6 +5,8 @@ on:
     branches:
       - main
 
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
 jobs:
   release:
     name: Release
@@ -12,15 +14,15 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      packages: write
+      id-token: write
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           registry-url: "https://registry.npmjs.org"
@@ -31,31 +33,17 @@ jobs:
           corepack prepare yarn@4.5.3 --activate
 
       - name: Install Dependencies
-        run: yarn install
+        run: yarn install --immutable
 
-      - name: Resolve Workspace Protocol
-        run: yarn resolve-workspace-protocol
-
-      - name: Build Packages
-        run: yarn build:packages
-
-      - name: Create .npmrc file
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
-
-      - name: Commit Changes
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "chore: resolve workspace protocol dependencies" || true
-
-      - name: Publish
+      - name: Create Version PR or Publish
         id: changesets
         uses: changesets/action@v1
         with:
           version: yarn version-packages
-          publish: yarn changeset publish
+          publish: yarn release
+          title: "chore: version packages"
+          commit: "chore: version packages"
+          createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
