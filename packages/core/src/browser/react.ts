@@ -5,16 +5,19 @@ import type { HandlerStoreState } from "./handlerStore";
 export const useHandlerStore = <T>(
   selector: (state: HandlerStoreState) => T
 ): T => {
+  const stateRef = useRef(handlerStore.getState());
   const selectorRef = useRef(selector);
-  selectorRef.current = selector;
-
   const sliceRef = useRef<T>(selector(handlerStore.getState()));
 
   const getSnapshot = () => {
-    const nextSlice = selectorRef.current(handlerStore.getState());
-    if (!Object.is(sliceRef.current, nextSlice)) {
-      sliceRef.current = nextSlice;
+    const state = handlerStore.getState();
+
+    if (state !== stateRef.current || selector !== selectorRef.current) {
+      stateRef.current = state;
+      selectorRef.current = selector;
+      sliceRef.current = selectorRef.current(state);
     }
+
     return sliceRef.current;
   };
 
