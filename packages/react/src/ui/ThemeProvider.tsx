@@ -3,8 +3,6 @@ import root from "react-shadow";
 import styles from "../style/msw-dev-tool.css";
 import { getCssPropertiesStyleSheet } from "../utils/style";
 
-const shadowSheet = getCssPropertiesStyleSheet(styles);
-
 export const ThemeProvider = forwardRef<HTMLDivElement, PropsWithChildren>(
   ({ children }, ref) => {
     const shadowHostRef = useRef<HTMLDivElement>(null);
@@ -12,11 +10,20 @@ export const ThemeProvider = forwardRef<HTMLDivElement, PropsWithChildren>(
     /**
      * - `@property` is not supported in shadow dom.
      * - So we need to use `adoptedStyleSheets` to apply the properties forcefully.
+     * - Create the stylesheet only in the browser; CSSStyleSheet is unavailable during SSR.
      */
     useEffect(() => {
-      if (shadowHostRef?.current?.shadowRoot) {
-        shadowHostRef.current.shadowRoot.adoptedStyleSheets = [shadowSheet];
+      const shadowRoot = shadowHostRef.current?.shadowRoot;
+      if (!shadowRoot) {
+        return;
       }
+
+      const shadowSheet = getCssPropertiesStyleSheet(styles);
+      if (!shadowSheet) {
+        return;
+      }
+
+      shadowRoot.adoptedStyleSheets = [shadowSheet];
     }, []);
 
     return (

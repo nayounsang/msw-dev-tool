@@ -1,8 +1,7 @@
 "use client";
 
-import { MSWDevTool } from "msw-dev-tool";
+import { MSWDevTool } from "@msw-dev-tool/react";
 import { Button } from "nextra/components";
-import "msw-dev-tool/msw-dev-tool.css";
 import { Terminal } from "lucide-react";
 
 export const DevToolTrigger = () => {

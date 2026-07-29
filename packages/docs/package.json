@@ -11,12 +11,13 @@
     "clean": "rm -rf .next && rm -rf node_modules"
   },
   "dependencies": {
+    "@msw-dev-tool/core": "workspace:*",
+    "@msw-dev-tool/react": "workspace:*",
     "@next/third-parties": "^15.2.4",
     "clsx": "^2.1.1",
     "framer-motion": "^12.5.0",
     "lucide-react": "^0.479.0",
     "msw": "^2.7.0",
-    "msw-dev-tool": "workspace:*",
     "next": "15.2.1",
     "next-sitemap": "^4.2.3",
     "nextra": "^4.2.16",

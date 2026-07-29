@@ -40,6 +40,7 @@
   "description": "msw-dev-tool is a powerful library that enhances the Mock Service Worker (MSW) experience in React by providing an intuitive UI to control mock logic dynamically. It allows developers to modify mock data, adjust response statuses, and monitor API requests in real-time, making API mocking and debugging more seamless and efficient. 🚀",
   "scripts": {
     "build": "rollup -c",
+    "dev": "rollup -c -w",
     "clean": "rm -rf dist && rm -rf node_modules",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
