@@ -1,8 +1,14 @@
-import { delay, http, HttpResponse } from "msw";
+import {
+  delay,
+  HttpHandler as MswHttpHandler,
+  HttpMethods,
+  HttpResponse,
+} from "msw";
 import {
   FlattenHandler,
   HttpHandler,
   HttpHandlerBehavior,
+  HttpMethod,
   MimeType,
   TempHandlerInput,
 } from "../types";
@@ -12,6 +18,25 @@ import { getRowId } from "../utils/store";
 import { isHttpHandler } from "../utils/validate";
 
 export type { TempHandlerInput };
+
+const toMswMethod = (method: HttpMethod): HttpMethods => {
+  switch (method) {
+    case HttpMethod.GET:
+      return HttpMethods.GET;
+    case HttpMethod.POST:
+      return HttpMethods.POST;
+    case HttpMethod.PUT:
+      return HttpMethods.PUT;
+    case HttpMethod.DELETE:
+      return HttpMethods.DELETE;
+    case HttpMethod.PATCH:
+      return HttpMethods.PATCH;
+    case HttpMethod.OPTIONS:
+      return HttpMethods.OPTIONS;
+    case HttpMethod.HEAD:
+      return HttpMethods.HEAD;
+  }
+};
 
 export const buildTempHandler = (
   data: TempHandlerInput,
@@ -48,7 +73,7 @@ export const buildTempHandler = (
     ...parsedHeader,
   };
 
-  const created = http[method](path, async () => {
+  const created = new MswHttpHandler(toMswMethod(method), path, async () => {
     const behavior = getBehavior(id);
     return await getHandlerResponseByBehavior(behavior, async () => {
       await delay(responseDelay);

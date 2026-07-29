@@ -1,4 +1,4 @@
-import { http, HttpResponse } from "msw";
+import { http, HttpResponse, HttpResponseResolver } from "msw";
 import type { FlattenHandler, HttpHandler, HttpMethod } from "../types";
 import { HttpHandlerBehavior } from "../types";
 import { isHttpHandler } from "../utils/validate";
@@ -6,7 +6,7 @@ import { isHttpHandler } from "../utils/validate";
 export const createHttpHandler = (
   method: HttpMethod,
   path: string,
-  resolver: HttpHandler["resolver"] = async () => HttpResponse.json({})
+  resolver: HttpResponseResolver = async () => HttpResponse.json({})
 ): HttpHandler => {
   const handler = http[method](path, resolver);
   if (!isHttpHandler(handler)) {

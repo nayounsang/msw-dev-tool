@@ -1,21 +1,17 @@
+import { delay, HttpResponse, passthrough } from "msw";
 import {
-  AsyncResponseResolverReturnType,
-  delay,
-  HttpResponse,
-  passthrough,
-} from "msw";
-import {
+  BehaviorResolverResult,
   CustomBehavior,
   HttpErrorStatusCode,
   HttpHandlerBehavior,
 } from "../types";
 
+export type { BehaviorResolverResult };
+
 export const getHandlerResponseByBehavior = async (
   behavior: HttpHandlerBehavior | undefined | string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  originalResolverCallback: () => AsyncResponseResolverReturnType<any>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): Promise<AsyncResponseResolverReturnType<any>> => {
+  originalResolverCallback: () => BehaviorResolverResult
+): Promise<BehaviorResolverResult> => {
   if (!behavior || behavior === CustomBehavior.DEFAULT) {
     return originalResolverCallback();
   }
@@ -26,7 +22,7 @@ export const getHandlerResponseByBehavior = async (
 
   if (behavior === CustomBehavior.DELAY) {
     await delay("infinite");
-    return new Response();
+    return new HttpResponse(null);
   }
 
   if (behavior === CustomBehavior.RETURN_NULL) {
