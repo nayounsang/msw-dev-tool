@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   ci:
-    name: Typecheck, Lint & Build
+    name: Build, Typecheck, Lint & Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
@@ -39,3 +39,6 @@ jobs:
 
       - name: Lint
         run: yarn lint
+
+      - name: Test
+        run: yarn test
