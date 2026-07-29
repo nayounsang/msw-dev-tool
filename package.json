@@ -12,7 +12,7 @@
     "build:react": "yarn workspace @msw-dev-tool/react build",
     "build:docs": "yarn workspace docs build",
     "dev": "yarn workspace docs dev",
-    "typecheck": "yarn workspace @msw-dev-tool/core typecheck && yarn workspace @msw-dev-tool/react typecheck && yarn workspace msw-dev-tool typecheck",
+    "typecheck": "yarn build:core && yarn workspace @msw-dev-tool/core typecheck && yarn workspace @msw-dev-tool/react typecheck && yarn workspace msw-dev-tool typecheck",
     "lint": "yarn workspace @msw-dev-tool/core lint && yarn workspace @msw-dev-tool/react lint",
     "version-packages": "yarn changeset version",
     "changeset": "changeset",
