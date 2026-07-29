@@ -33,10 +33,6 @@ export default function Home() {
               <a href="https://mswjs.io/" target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:text-orange-300 underline underline-offset-2">
                 msw
               </a>
-              {" "}and{" "}
-              <a href="https://zustand-demo.pmnd.rs/" target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:text-orange-300 underline underline-offset-2">
-                zustand
-              </a>
             </p>
           </div>
 

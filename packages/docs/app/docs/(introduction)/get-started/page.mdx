@@ -72,47 +72,59 @@ The `msw-dev-tool` package is now **legacy** and will be deprecated in the futur
 Currently, msw-dev-tool is not compatible with React 19.
 </Callout>
 
-> **Note** To use msw-dev-tool, you need to install the following peer dependencies:
+#### New Package Structure (`@msw-dev-tool/core` + `@msw-dev-tool/react`)
+
+> **Note** Install the following peer dependencies:
 
 <Tabs items={["pnpm", "npm", "yarn"]}>
   <Tabs.Tab>
   ```bash copy
-  # If you don't use zustand
   pnpm add react react-dom
-  pnpm add -D zustand msw
-
-  # If you already use zustand
-  pnpm add react react-dom zustand
   pnpm add -D msw
   ```
   </Tabs.Tab>
   <Tabs.Tab>
   ```bash copy
-  # If you don't use zustand
   npm install react react-dom
-  npm install --save-dev zustand msw
-
-  # If you already use zustand
-  npm install react react-dom zustand
   npm install --save-dev msw
   ```
   </Tabs.Tab>
   <Tabs.Tab>
   ```bash copy
-  # If you don't use zustand
+  yarn add react react-dom
+  yarn add -D msw
+  ```
+  </Tabs.Tab>
+</Tabs>
+
+#### Legacy Package (`msw-dev-tool`)
+
+> **Note** The legacy package still requires `zustand` as a peer dependency:
+
+<Tabs items={["pnpm", "npm", "yarn"]}>
+  <Tabs.Tab>
+  ```bash copy
+  pnpm add react react-dom
+  pnpm add -D zustand msw
+  ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```bash copy
+  npm install react react-dom
+  npm install --save-dev zustand msw
+  ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```bash copy
   yarn add react react-dom
   yarn add -D zustand msw
-
-  # If you already use zustand
-  yarn add react react-dom zustand
-  yarn add -D msw
   ```
   </Tabs.Tab>
 </Tabs>
 
 For detailed setup instructions:
 - [MSW Setup Guide](https://mswjs.io/docs/getting-started/install)
-- [Zustand Setup Guide](https://zustand.docs.pmnd.rs/getting-started/introduction)
+- [Zustand Setup Guide](https://zustand.docs.pmnd.rs/getting-started/introduction) (legacy package only)
 
 ## Setup
 

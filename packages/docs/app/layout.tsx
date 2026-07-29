@@ -27,7 +27,6 @@ export const metadata: Metadata = {
     "Dev tool to control mock logic, modify responses, and monitor API calls with msw.",
   keywords: [
     "msw",
-    "zustand",
     "mock",
     "service",
     "worker",
