@@ -30,6 +30,7 @@ export const createStore = <T>(
   const setState: SetState<T> = (partial) => {
     const nextPartial =
       typeof partial === "function"
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         ? (partial as (state: T) => Partial<T>)(state)
         : partial;
     state = { ...state, ...nextPartial };
@@ -71,6 +72,7 @@ const readPersistedState = <T>(name: string): T | undefined => {
   try {
     const raw = sessionStorage.getItem(name);
     if (!raw) return undefined;
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     return JSON.parse(raw).state as T;
   } catch {
     return undefined;
