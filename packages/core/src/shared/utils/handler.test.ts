@@ -41,11 +41,15 @@ describe("getHandlerResponseByBehavior", () => {
   });
 
   it("returns null JSON body for RETURN_NULL", async () => {
-    const result = (await getHandlerResponseByBehavior(
+    const result = await getHandlerResponseByBehavior(
       CustomBehavior.RETURN_NULL,
       async () => HttpResponse.json({ shouldNot: true })
-    )) as Response;
+    );
 
+    expect(result).toBeInstanceOf(Response);
+    if (!(result instanceof Response)) {
+      throw new Error("Expected Response");
+    }
     expect(result.status).toBe(200);
     expect(await result.json()).toBeNull();
   });
@@ -59,18 +63,22 @@ describe("getHandlerResponseByBehavior", () => {
   });
 
   it("returns HttpResponse with status for error status codes", async () => {
-    const result = (await getHandlerResponseByBehavior(
+    const result = await getHandlerResponseByBehavior(
       HttpErrorStatusCode.NOT_FOUND,
       async () => HttpResponse.json({})
-    )) as Response;
+    );
 
+    expect(result).toBeInstanceOf(Response);
+    if (!(result instanceof Response)) {
+      throw new Error("Expected Response");
+    }
     expect(result.status).toBe(404);
     expect(result.statusText).toContain("404");
   });
 
   it("falls back to original resolver for unknown behavior", async () => {
     const original = vi.fn(async () => HttpResponse.json({ fallback: true }));
-    await getHandlerResponseByBehavior("unknown" as never, original);
+    await getHandlerResponseByBehavior("unknown", original);
     expect(original).toHaveBeenCalledOnce();
   });
 });

@@ -6,6 +6,7 @@ import {
   StringHttpStatusCode,
 } from "../types";
 import { getRowId } from "../utils/store";
+import { createFlattenHandler } from "../testing/createHttpHandler";
 import { buildTempHandler, rehydrateTempHandlers } from "./tempHandler";
 
 const baseInput = {
@@ -46,19 +47,24 @@ describe("buildTempHandler", () => {
       requestId: "1",
       params: {},
       cookies: {},
-    } as never);
+    });
     const second = await handler.resolver({
       request: new Request("http://localhost/temp", { method: "POST" }),
       requestId: "2",
       params: {},
       cookies: {},
-    } as never);
+    });
 
     expect(first).toBeInstanceOf(Response);
     expect(second).toBeInstanceOf(Response);
     expect(first).not.toBe(second);
-    expect(await (first as Response).text()).toBe('{"ok":true}');
-    expect(await (second as Response).text()).toBe('{"ok":true}');
+
+    if (!(first instanceof Response) || !(second instanceof Response)) {
+      throw new Error("Expected Response instances");
+    }
+
+    expect(await first.text()).toBe('{"ok":true}');
+    expect(await second.text()).toBe('{"ok":true}');
   });
 });
 
@@ -70,31 +76,28 @@ describe("rehydrateTempHandlers", () => {
 
     const result = rehydrateTempHandlers(
       [
-        {
+        createFlattenHandler({
           id: defaultId,
           path: "/a",
           method: HttpMethod.GET,
-          handler: {} as never,
           type: "default",
           behavior: CustomBehavior.DEFAULT,
-        },
-        {
+        }),
+        createFlattenHandler({
           id: tempId,
           path: "/temp",
           method: HttpMethod.POST,
-          handler: {} as never,
           type: "temp",
           behavior: CustomBehavior.DISABLE,
           tempInput: baseInput,
-        },
-        {
+        }),
+        createFlattenHandler({
           id: "broken",
           path: "/broken",
           method: HttpMethod.GET,
-          handler: {} as never,
           type: "temp",
           behavior: CustomBehavior.DEFAULT,
-        },
+        }),
       ],
       getBehavior
     );

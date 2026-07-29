@@ -36,7 +36,9 @@
   "scripts": {
     "build": "rollup -c",
     "clean": "rm -rf dist && rm -rf node_modules",
-    "lint": "eslint --fix"
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
     "@msw-dev-tool/core": "workspace:*",

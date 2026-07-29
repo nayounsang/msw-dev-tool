@@ -1,45 +1,54 @@
 import { describe, expect, it, vi } from "vitest";
 import { HttpResponse } from "msw";
-import { CustomBehavior } from "../types";
+import { CustomBehavior, HttpMethod } from "../types";
 import { getRowId } from "../utils/store";
-import type { HttpHandler } from "../types";
+import { createHttpHandler } from "../testing/createHttpHandler";
 import { wrapHandlersWithBehavior } from "./wrapHandlers";
 
 describe("wrapHandlersWithBehavior", () => {
   it("leaves non-http handlers unchanged", () => {
-    const other = { kind: "ws" } as unknown as HttpHandler;
+    const other = { kind: "ws" };
     const getBehavior = vi.fn();
-    const result = wrapHandlersWithBehavior([other as never], getBehavior);
+    const result = wrapHandlersWithBehavior([other], getBehavior);
     expect(result[0]).toBe(other);
     expect(getBehavior).not.toHaveBeenCalled();
   });
 
   it("resolves through injected getBehavior", async () => {
-    const id = getRowId({ path: "/x", method: "GET" });
+    const id = getRowId({ path: "/x", method: HttpMethod.GET });
     const original = vi.fn(async () => HttpResponse.json({ ok: true }));
-    const handler = {
-      info: { method: "GET", path: "/x" },
-      resolver: original,
-    } as unknown as HttpHandler;
+    const handler = createHttpHandler(HttpMethod.GET, "/x", original);
 
     const getBehavior = vi.fn(() => CustomBehavior.RETURN_NULL);
     wrapHandlersWithBehavior([handler], getBehavior);
 
-    const result = (await handler.resolver({} as never)) as Response;
+    const result = await handler.resolver({
+      request: new Request("http://localhost/x"),
+      requestId: "1",
+      params: {},
+      cookies: {},
+    });
+
     expect(getBehavior).toHaveBeenCalledWith(id);
     expect(original).not.toHaveBeenCalled();
+    expect(result).toBeInstanceOf(Response);
+    if (!(result instanceof Response)) {
+      throw new Error("Expected Response");
+    }
     expect(await result.json()).toBeNull();
   });
 
   it("falls through to original resolver for default behavior", async () => {
     const original = vi.fn(async () => HttpResponse.json({ ok: true }));
-    const handler = {
-      info: { method: "GET", path: "/x" },
-      resolver: original,
-    } as unknown as HttpHandler;
+    const handler = createHttpHandler(HttpMethod.GET, "/x", original);
 
     wrapHandlersWithBehavior([handler], () => CustomBehavior.DEFAULT);
-    await handler.resolver({} as never);
+    await handler.resolver({
+      request: new Request("http://localhost/x"),
+      requestId: "1",
+      params: {},
+      cookies: {},
+    });
     expect(original).toHaveBeenCalledOnce();
   });
 });

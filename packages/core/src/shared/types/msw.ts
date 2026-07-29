@@ -1,21 +1,26 @@
 import {
-  PathParams,
+  AsyncResponseResolverReturnType,
+  DefaultBodyType,
   RequestHandler,
-  ResponseResolver,
   WebSocketHandler,
   HttpHandler as _HttpHandler,
+  HttpResponseResolver,
 } from "msw";
 
-export type HttpRequestResolverExtras<Params extends PathParams> = {
-  params: Params;
-  cookies: Record<string, string>;
-};
+export type BehaviorResolverResult =
+  | AsyncResponseResolverReturnType<DefaultBodyType>
+  | Response;
 
 /**
  * To use private method: `resolver`.
+ * Includes plain `Response` so `HttpResponse.error()` (network error) stays returnable.
  */
+export type DevToolResponseResolver = (
+  info: Parameters<HttpResponseResolver>[0]
+) => BehaviorResolverResult | PromiseLike<BehaviorResolverResult>;
+
 export type HttpHandler = _HttpHandler & {
-  resolver: ResponseResolver<HttpRequestResolverExtras<any>, any, any>;
+  resolver: DevToolResponseResolver;
 };
 
 export type Handler = RequestHandler | WebSocketHandler;

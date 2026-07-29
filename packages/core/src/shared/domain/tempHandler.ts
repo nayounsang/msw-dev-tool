@@ -1,15 +1,42 @@
-import { delay, http, HttpResponse } from "msw";
+import {
+  delay,
+  HttpHandler as MswHttpHandler,
+  HttpMethods,
+  HttpResponse,
+} from "msw";
 import {
   FlattenHandler,
   HttpHandler,
   HttpHandlerBehavior,
+  HttpMethod,
   MimeType,
   TempHandlerInput,
 } from "../types";
+import { headerRecordSchema } from "../schema";
 import { getHandlerResponseByBehavior } from "../utils/handler";
 import { getRowId } from "../utils/store";
+import { isHttpHandler } from "../utils/validate";
 
 export type { TempHandlerInput };
+
+const toMswMethod = (method: HttpMethod): HttpMethods => {
+  switch (method) {
+    case HttpMethod.GET:
+      return HttpMethods.GET;
+    case HttpMethod.POST:
+      return HttpMethods.POST;
+    case HttpMethod.PUT:
+      return HttpMethods.PUT;
+    case HttpMethod.DELETE:
+      return HttpMethods.DELETE;
+    case HttpMethod.PATCH:
+      return HttpMethods.PATCH;
+    case HttpMethod.OPTIONS:
+      return HttpMethods.OPTIONS;
+    case HttpMethod.HEAD:
+      return HttpMethods.HEAD;
+  }
+};
 
 export const buildTempHandler = (
   data: TempHandlerInput,
@@ -26,23 +53,27 @@ export const buildTempHandler = (
     header,
   } = data;
 
-  const contentLength = {
+  const contentLength: Partial<Record<MimeType, string>> = {
     [MimeType.APPLICATION_JSON]: response
       ? new Blob([response]).size.toString()
       : "0",
-  } as Record<MimeType, string>;
+  };
 
   const id = getRowId({ path, method });
 
+  const parsedHeader = header
+    ? headerRecordSchema.parse(JSON.parse(header))
+    : undefined;
+
   const headers = {
     "Content-Type": contentType,
-    ...(contentLength?.[contentType]
+    ...(contentLength[contentType]
       ? { "Content-Length": contentLength[contentType] }
       : {}),
-    ...(header ? JSON.parse(header) : {}),
+    ...parsedHeader,
   };
 
-  const handler = http[method](path, async () => {
+  const created = new MswHttpHandler(toMswMethod(method), path, async () => {
     const behavior = getBehavior(id);
     return await getHandlerResponseByBehavior(behavior, async () => {
       await delay(responseDelay);
@@ -53,19 +84,23 @@ export const buildTempHandler = (
         headers,
       });
     });
-  }) as HttpHandler;
+  });
+
+  if (!isHttpHandler(created)) {
+    throw new Error("Expected MSW http handler");
+  }
 
   const flattenHandler: FlattenHandler = {
     id,
     path,
     method,
-    handler,
+    handler: created,
     type: "temp",
     behavior: HttpHandlerBehavior.DEFAULT,
     tempInput: data,
   };
 
-  return { handler, flattenHandler };
+  return { handler: created, flattenHandler };
 };
 
 /**
