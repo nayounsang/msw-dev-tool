@@ -14,80 +14,83 @@ const externalPackages = [
   ...Object.keys(pkg.peerDependencies || {}),
   "msw/browser",
 ];
-export default [
-  {
-    input: "src/index.ts",
-    output: [
-      {
-        dir: "dist/cjs",
-        format: "cjs",
-        sourcemap: true,
-        preserveModules: true,
-        preserveModulesRoot: "src",
-        exports: "named",
-      },
-      {
-        dir: "dist/esm",
-        format: "esm",
-        sourcemap: true,
-        preserveModules: true,
-        preserveModulesRoot: "src",
-      },
-    ],
-    external: [...externalPackages],
-    plugins: [
-      peerDepsExternal(),
-      resolve(),
-      commonjs(),
-      typescript({
-        tsconfig: "./tsconfig.json",
-        declaration: false,
-      }),
-      postcss({
-        extract: false,
-        inject: false,
-        modules: false,
-        minimize: true,
-        plugins: [tailwind()],
-      }),
-    ],
-    onwarn(warning, warn) {
-      if (
-        warning.code === "MODULE_LEVEL_DIRECTIVE" &&
-        warning.message.includes("use client")
-      ) {
-        return;
-      }
+const isWatch = !!process.env.ROLLUP_WATCH;
 
-      /**
-       * FIXME: Silence warnings caused by the following issues
-       * @see {@link https://github.com/radix-ui/primitives/issues/3281}
-       */
-      if (
-        warning.code === "SOURCEMAP_ERROR" &&
-        warning.loc.file.includes("@radix-ui") &&
-        warning.loc.line === 1
-      ) {
-        return;
-      }
+const jsConfig = {
+  input: "src/index.ts",
+  output: [
+    {
+      dir: "dist/cjs",
+      format: "cjs",
+      sourcemap: true,
+      preserveModules: true,
+      preserveModulesRoot: "src",
+      exports: "named",
+    },
+    {
+      dir: "dist/esm",
+      format: "esm",
+      sourcemap: true,
+      preserveModules: true,
+      preserveModulesRoot: "src",
+    },
+  ],
+  external: [...externalPackages],
+  plugins: [
+    peerDepsExternal(),
+    resolve(),
+    commonjs(),
+    typescript({
+      tsconfig: "./tsconfig.json",
+      declaration: false,
+    }),
+    postcss({
+      extract: false,
+      inject: false,
+      modules: false,
+      minimize: true,
+      plugins: [tailwind()],
+    }),
+  ],
+  onwarn(warning, warn) {
+    if (
+      warning.code === "MODULE_LEVEL_DIRECTIVE" &&
+      warning.message.includes("use client")
+    ) {
+      return;
+    }
 
-      warn(warning);
-    },
+    /**
+     * FIXME: Silence warnings caused by the following issues
+     * @see {@link https://github.com/radix-ui/primitives/issues/3281}
+     */
+    if (
+      warning.code === "SOURCEMAP_ERROR" &&
+      warning.loc.file.includes("@radix-ui") &&
+      warning.loc.line === 1
+    ) {
+      return;
+    }
+
+    warn(warning);
   },
-  {
-    input: "src/index.ts",
-    output: {
-      file: "dist/types/index.d.ts",
-      format: "es",
-    },
-    external: [/\.css$/, ...externalPackages],
-    plugins: [
-      dts({
-        compilerOptions: {
-          preserveSymlinks: false,
-          skipLibCheck: true,
-        },
-      }),
-    ],
+};
+
+const dtsConfig = {
+  input: "src/index.ts",
+  output: {
+    file: "dist/types/index.d.ts",
+    format: "es",
   },
-];
+  external: [/\.css$/, ...externalPackages],
+  plugins: [
+    dts({
+      compilerOptions: {
+        preserveSymlinks: false,
+        skipLibCheck: true,
+      },
+    }),
+  ],
+};
+
+export default isWatch ? [jsConfig] : [jsConfig, dtsConfig];

@@ -62,4 +62,6 @@ const dtsConfigs = entries.map(({ input, file }) => ({
   external: externalPackages,
 }));
 
-export default defineConfig([...jsConfigs, ...dtsConfigs]);
+const isWatch = !!process.env.ROLLUP_WATCH;
+
+export default defineConfig(isWatch ? jsConfigs : [...jsConfigs, ...dtsConfigs]);

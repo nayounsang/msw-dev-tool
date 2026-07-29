@@ -35,6 +35,7 @@
   },
   "scripts": {
     "build": "rollup -c",
+    "dev": "rollup -c -w",
     "clean": "rm -rf dist && rm -rf node_modules",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
