@@ -12,7 +12,6 @@ const externalPackages = [
   ...Object.keys(pkg.peerDependencies || {}),
   ...Object.keys(pkg.dependencies || {}),
   "msw/browser",
-  "zustand/middleware",
 ];
 
 const entries = [

@@ -11,7 +11,7 @@
     "build:core": "yarn workspace @msw-dev-tool/core build",
     "build:react": "yarn workspace @msw-dev-tool/react build",
     "build:docs": "yarn workspace docs build",
-    "dev": "turbo run dev --filter=docs...",
+    "dev": "turbo run dev --filter=docs... --filter=example...",
     "dev:example": "turbo run dev --filter=example...",
     "typecheck": "yarn workspace @msw-dev-tool/core typecheck && yarn workspace @msw-dev-tool/react typecheck && yarn workspace msw-dev-tool typecheck",
     "lint": "yarn workspace @msw-dev-tool/core lint && yarn workspace @msw-dev-tool/react lint",

@@ -156,10 +156,9 @@ export default function App() {
 
 ## Internal Architecture
 
-This project is built on top of two core technologies:
+This project is built on top of:
 
 - **[MSW](https://mswjs.io/)**: The foundation for API mocking using Service Workers
-- **[Zustand](https://zustand.docs.pmnd.rs/)**: State management for the dev tool UI and handler control
 
 ### System Overview
 
@@ -169,19 +168,19 @@ The library consists of two main parts:
    - Wraps MSW's `setupWorker` with `setupDevToolWorker`
    - Manages handler state and behavior modifications
    - Provides APIs for runtime handler control
-   - Uses Zustand for state management
+   - Uses a lightweight store with React `useSyncExternalStore` (`useHandlerStore`)
 
 2. **React UI** (`@msw-dev-tool/react`):
    - React components for the dev tool interface
    - Handler table, debugger, and other UI features
-   - Communicates with core logic through Zustand store
+   - Communicates with core logic through `useHandlerStore`
    - Depends on `@msw-dev-tool/core` as a peer dependency
 
 ### How It Works
 
 1. **Worker Integration**: `setupDevToolWorker` wraps MSW's worker and adds additional capabilities for runtime control
-2. **State Management**: Zustand store maintains the state of all handlers, their behaviors, and API call history
-3. **Runtime Control**: The UI components interact with the Zustand store to modify handler behaviors, which are then applied to the MSW worker
+2. **State Management**: The core store maintains the state of all handlers, their behaviors, and API call history
+3. **Runtime Control**: The UI components interact with the store to modify handler behaviors, which are then applied to the MSW worker
 4. **API Monitoring**: Intercepts and logs all API calls made through MSW handlers
 
 ## Project Structure

@@ -13,7 +13,7 @@ export default defineConfig({
       {
         test: {
           name: "browser",
-          include: ["src/browser/**/*.test.ts"],
+          include: ["src/browser/**/*.test.ts", "src/browser/**/*.test.tsx"],
           environment: "happy-dom",
         },
       },

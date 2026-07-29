@@ -2,7 +2,7 @@
 
 - Internal logic of `msw-dev-tool/react`.
 - Manage core logic, type and schema.
-- It is based on `zustand` and `msw`.
+- It is based on `msw`, with a lightweight store and React `useSyncExternalStore`.
 - Getting ready!
 
 # Install

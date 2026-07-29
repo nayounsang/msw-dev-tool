@@ -18,7 +18,7 @@ describe("getStorageData", () => {
     expect(getStorageData()).toEqual({ flattenHandlers: [] });
   });
 
-  it("parses zustand persist state from sessionStorage", () => {
+  it("parses persisted state from sessionStorage", () => {
     const id = getRowId({ path: "/x", method: "get" });
     sessionStorage.setItem(
       STORAGE_KEY,
