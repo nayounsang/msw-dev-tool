@@ -361,6 +361,7 @@
   display: flex;
   flex-direction: column;
   background-color: #fff;
+  color: #111827;
   border-radius: 0.5rem;
   padding: 1rem 2rem;
   pointer-events: auto;
@@ -448,18 +449,6 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.875rem;
-}
-
-/* ===== Theme Root ===== */
-.msw-dt-root {
-  position: fixed;
-  z-index: 9999;
-  inset: 0;
-  pointer-events: none;
-}
-
-.msw-dt-root > * {
-  pointer-events: auto;
 }
 
 /* ===== Misc ===== */
