@@ -1,4 +1,3 @@
-import { Label } from "@radix-ui/react-label";
 import React, { PropsWithChildren } from "react";
 import { Flex } from "../../Components/Flex";
 
@@ -18,14 +17,14 @@ export const FormFieldBase = ({
 }: PropsWithChildren<FormFieldBaseProps>) => {
   return (
     <Flex gap={2} direction="column">
-      <Label htmlFor={id} className="w-fit">
+      <label htmlFor={id} className="msw-dt-label msw-dt-w-fit">
         {label}
         {required && (
-          <span className="text-red-500 ml-1">*</span>
+          <span className="msw-dt-label-required">*</span>
         )}
-      </Label>
+      </label>
       {error && (
-        <p className="text-red-500 text-sm font-medium">
+        <p className="msw-dt-error-text">
           {error}
         </p>
       )}

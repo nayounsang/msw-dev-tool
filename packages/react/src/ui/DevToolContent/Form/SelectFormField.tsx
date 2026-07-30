@@ -1,17 +1,14 @@
 import { CSSProperties, useId } from "react";
 import { FormFieldBase } from "./FormFieldBase";
 import React, { forwardRef } from "react";
-import { SelectProps } from "@radix-ui/react-select";
 import { ChangeHandler } from "react-hook-form";
-import { Select } from "../../Components/Select";
+import { Select, SelectProps } from "../../Components/Select";
 import clsx from "clsx";
 
-interface SelectFormFieldProps
-  extends Omit<SelectProps, "ref" | "onValueChange"> {
+interface SelectFormFieldProps extends Omit<SelectProps, "onValueChange" | "ref"> {
   label: string;
   error?: string;
   required?: boolean;
-  options: { label: string | number; value: string }[];
   style?: CSSProperties;
   onChange?: ChangeHandler;
   className?: string;
@@ -29,7 +26,7 @@ export const SelectFormField = forwardRef<
         ref={ref}
         {...rest}
         style={style}
-        className={clsx("max-w-[160px]", className)}
+        className={clsx("msw-dt-w-select", className)}
         onValueChange={(val) => {
           onChange?.({
             target: { value: val, name: rest.name },

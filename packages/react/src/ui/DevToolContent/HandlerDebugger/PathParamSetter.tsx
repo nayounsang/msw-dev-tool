@@ -1,4 +1,3 @@
-import { Label } from "@radix-ui/react-label";
 import React from "react";
 import { Flex } from "../../Components/Flex";
 import { Input } from "../../Components/Input";
@@ -11,13 +10,13 @@ export const PathParamSetter = () => {
     pathParam &&
     Object.keys(pathParam).length > 0 && (
       <div>
-        <Label>Path Parameters</Label>
+        <label className="msw-dt-label">Path Parameters</label>
         <Flex direction="column" gap={2} py={2}>
           {Object.entries(pathParam).map(([key, value]) => (
             <Flex align="center" gap={2} key={key}>
-              <Label htmlFor={`param-${key}`} className="w-[160px]">
+              <label htmlFor={`param-${key}`} className="msw-dt-label msw-dt-w-param-label">
                 {key}:
-              </Label>
+              </label>
               <Input
                 id={`param-${key}`}
                 type="text"
@@ -29,7 +28,7 @@ export const PathParamSetter = () => {
                   });
                 }}
                 placeholder="value of path param"
-                className="w-[180px]"
+                className="msw-dt-w-param-input"
               />
             </Flex>
           ))}
