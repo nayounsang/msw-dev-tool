@@ -8,29 +8,18 @@ import React, { useMemo } from "react";
 import { BehaviorSelect } from "../HandlerTable/BehaviorSelect";
 import { FlattenHandler, useHandlerStore } from "@msw-dev-tool/core";
 import { DebugIcon } from "../../Components/DebugIcon";
-import { usePortalContainer } from "../../PortalContainerProvider";
-import {
-  Root as Dialog,
-  Trigger,
-  Portal,
-  Content,
-  Title,
-  Close,
-} from "@radix-ui/react-dialog";
-import { DialogOverlay } from "../../Components/DialogOverlay";
+import { Dialog } from "@base-ui-components/react/dialog";
 import { Button } from "../../Components/Button";
 import { HandlerDebugger } from "../HandlerDebugger";
 import { Flex } from "../../Components/Flex";
 import { CloseButton } from "../../Components/CloseButton";
-import { TrashIcon } from "@radix-ui/react-icons";
+import { Trash2 } from "lucide-react";
 
 const columnHelper = createColumnHelper<FlattenHandler>();
 
-
 export const useFlattenHandlersTable = () => {
-  const flattenHandlers = useHandlerStore((state)=>state.flattenHandlers);
-  const removeTempHandler = useHandlerStore((state)=>state.removeTempHandler);
-  const container = usePortalContainer();
+  const flattenHandlers = useHandlerStore((state) => state.flattenHandlers);
+  const removeTempHandler = useHandlerStore((state) => state.removeTempHandler);
 
   const columns: ColumnDef<FlattenHandler, any>[] = useMemo(() => {
     return [
@@ -71,29 +60,24 @@ export const useFlattenHandlersTable = () => {
       columnHelper.display({
         header: "Debug",
         cell: ({ row }) => {
-
           return (
-            <Dialog>
-              <Trigger asChild>
-                <Button variant="ghost">
-                  <DebugIcon />
-                </Button>
-              </Trigger>
-              <Portal container={container}>
-                <DialogOverlay />
-                <Content className="dialog-content h-[600px] w-[800px] flex flex-col">
-                  <Flex align="center" justify="space-between">
-                    <Title className="m-1 text-xl font-semibold">
-                      Debugger
-                    </Title>
-                    <Close asChild>
-                      <CloseButton />
-                    </Close>
-                  </Flex>
-                  <HandlerDebugger handler={row.original.handler} />
-                </Content>
-              </Portal>
-            </Dialog>
+            <Dialog.Root>
+              <Dialog.Trigger render={<Button variant="ghost"><DebugIcon /></Button>} />
+              <Dialog.Portal>
+                <Dialog.Backdrop className="msw-dt-dialog-backdrop" forceRender />
+                <Dialog.Popup className="msw-dt-dialog-popup-viewport">
+                  <div className="msw-dt-dialog-inner-debugger">
+                    <Flex align="center" justify="space-between">
+                      <Dialog.Title className="msw-dt-dialog-title-sm">
+                        Debugger
+                      </Dialog.Title>
+                      <Dialog.Close render={<CloseButton />} />
+                    </Flex>
+                    <HandlerDebugger handler={row.original.handler} />
+                  </div>
+                </Dialog.Popup>
+              </Dialog.Portal>
+            </Dialog.Root>
           );
         },
       }),
@@ -114,9 +98,9 @@ export const useFlattenHandlersTable = () => {
                   ? "Delete this handler"
                   : "Handlers generated from codebase cannot be deleted"
               }
-              className={isTemp ? "text-red-500" : "text-gray-300 cursor-not-allowed"}
+              className={isTemp ? "msw-dt-danger-text" : "msw-dt-disabled-text"}
             >
-              <TrashIcon />
+              <Trash2 size={16} />
             </Button>
           );
         },

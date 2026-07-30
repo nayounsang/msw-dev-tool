@@ -7,7 +7,6 @@ import { SearchParamSetter } from "./SearchParamSetter";
 import { ResponseViewer } from "./ResponseViewer";
 import { FetchButton } from "./FetchButton";
 import { Flex } from "../../Components/Flex";
-import { DialogDescription } from "@radix-ui/react-dialog";
 
 export const HandlerDebugger = ({ handler }: { handler: HttpHandler }) => {
   const path = handler?.info.path;
@@ -15,24 +14,22 @@ export const HandlerDebugger = ({ handler }: { handler: HttpHandler }) => {
 
   return (
     <DebugProvider url={url} path={path}>
-      <DialogDescription asChild>
-        <p className="msw-dt-sub-text overflow-x-scroll my-2.5">
-          <span className="font-bold mr-4">{handler?.info.method.toString()}</span>
-          {url.toString()}
-        </p>
-      </DialogDescription>
-      <Flex gap={2} className="flex-1 overflow-hidden">
-        <Flex gap={2} direction="column" className="flex-1">
-          <Flex gap={2} direction="column" className="flex-1 overflow-y-auto">
-            <p className="m-0 font-semibold">Params</p>
+      <p className="msw-dt-sub-text msw-dt-overflow-x-scroll msw-dt-my-2">
+        <span className="msw-dt-font-bold msw-dt-mr-4">{handler?.info.method.toString()}</span>
+        {url.toString()}
+      </p>
+      <Flex gap={2} className="msw-dt-flex-1 msw-dt-overflow-hidden">
+        <Flex gap={2} direction="column" className="msw-dt-flex-1">
+          <Flex gap={2} direction="column" className="msw-dt-flex-1 msw-dt-overflow-y-auto">
+            <p className="msw-dt-m-0 msw-dt-font-semibold">Params</p>
             <PathParamSetter />
             <SearchParamSetter />
             <HeaderSetter />
           </Flex>
           <FetchButton />
         </Flex>
-        <Flex gap={2} direction="column" className="flex-1 overflow-y-auto">
-          <p className="m-0 font-semibold">Response</p>
+        <Flex gap={2} direction="column" className="msw-dt-flex-1 msw-dt-overflow-y-auto">
+          <p className="msw-dt-m-0 msw-dt-font-semibold">Response</p>
           <ResponseViewer />
         </Flex>
       </Flex>

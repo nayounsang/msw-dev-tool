@@ -22,10 +22,11 @@ export const BehaviorSelect = ({ row }: { row: Row<FlattenHandler> }) => {
       options={options}
       placeholder={getHandlerBehavior(id) ?? HttpHandlerBehavior.DEFAULT}
       onValueChange={(_value) => {
+        if (!_value) return;
         const value = _value as HttpHandlerBehavior;
         setHandlerBehavior(row.original.id, value);
       }}
-      className="w-[180px]"
+      className="msw-dt-w-behavior-select"
     />
   );
 };

@@ -1,14 +1,10 @@
-import { DialogClose } from "@radix-ui/react-dialog";
 import React from "react";
 
 /**
- * - Fix scroll being removed in shadow dom
- * - It doesn't matter if it's dialog or drawer
+ * Standalone backdrop overlay for use inside Dialog/Drawer portals.
+ * Base UI Dialog.Backdrop handles its own state; this is a simple visual overlay
+ * that closes the dialog when clicked (used as a sibling to Dialog.Popup).
  */
 export const DialogOverlay = () => {
-  return (
-    <DialogClose asChild>
-        <div className="fixed inset-0 bg-black/40" />
-    </DialogClose>
-  );
+  return <div className="msw-dt-dialog-backdrop" />;
 };

@@ -10,7 +10,7 @@ export const HandlerTable = () => {
     <Flex className="overflow-y-auto" direction="column" gap={4}>
       <table
         onDragStart={(e) => e.stopPropagation()}
-        className="user-select-text w-full"
+        className="msw-dt-table"
       >
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (

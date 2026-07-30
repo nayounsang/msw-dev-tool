@@ -1,16 +1,12 @@
 import React from "react";
 import { Button } from "../../Components/Button";
-import { PlayIcon, ReloadIcon } from "@radix-ui/react-icons";
+import { Play, RotateCcw } from "lucide-react";
 import { useDebugContext } from "./DebugProvider";
 import {
   getPathWithParams,
   getSearchParams,
   getTotalUrl,
 } from "../../../utils/url";
-
-export interface FetchButtonProps {
-  url: string;
-}
 
 const getResponseString = async (res: Response): Promise<string> => {
   const contentType = res.headers.get("content-type")?.toLowerCase() || "";
@@ -71,9 +67,9 @@ export const FetchButton = () => {
     <Button
       onClick={handleFetch}
       color="primary"
-      className="flex items-center gap-2"
+      style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
     >
-      {loading ? <ReloadIcon className="animate-spin" /> : <PlayIcon />}
+      {loading ? <RotateCcw size={16} className="msw-dt-spin" /> : <Play size={16} />}
       Send Request
     </Button>
   );

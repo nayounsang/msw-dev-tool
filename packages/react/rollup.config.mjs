@@ -4,7 +4,6 @@ import commonjs from "@rollup/plugin-commonjs";
 import typescript from "@rollup/plugin-typescript";
 import dts from "rollup-plugin-dts";
 import postcss from "rollup-plugin-postcss";
-import tailwind from "@tailwindcss/postcss";
 import { createRequire } from "module";
 
 const require = createRequire(import.meta.url);
@@ -45,29 +44,17 @@ const jsConfig = {
       declaration: false,
     }),
     postcss({
-      extract: false,
+      extract: "msw-dev-tool.css",
       inject: false,
       modules: false,
       minimize: true,
-      plugins: [tailwind()],
+      plugins: [],
     }),
   ],
   onwarn(warning, warn) {
     if (
       warning.code === "MODULE_LEVEL_DIRECTIVE" &&
       warning.message.includes("use client")
-    ) {
-      return;
-    }
-
-    /**
-     * FIXME: Silence warnings caused by the following issues
-     * @see {@link https://github.com/radix-ui/primitives/issues/3281}
-     */
-    if (
-      warning.code === "SOURCEMAP_ERROR" &&
-      warning.loc.file.includes("@radix-ui") &&
-      warning.loc.line === 1
     ) {
       return;
     }

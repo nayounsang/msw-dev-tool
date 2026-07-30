@@ -1,11 +1,11 @@
 "use client";
 
 import { MSWDevTool } from "@msw-dev-tool/react";
+import "@msw-dev-tool/react/msw-dev-tool.css";
 import { Button } from "nextra/components";
 import { Terminal } from "lucide-react";
 
 export const DevToolTrigger = () => {
-
   return (
     <div className="w-full py-4 flex justify-center items-center">
       <MSWDevTool

@@ -1,65 +1,44 @@
 import React, { useState } from "react";
-import { PlusIcon, ReloadIcon } from "@radix-ui/react-icons";
-import {
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogPortal,
-  DialogTitle,
-  DialogTrigger,
-  Root as DialogRoot,
-} from "@radix-ui/react-dialog";
-import { HandlerForm } from "./HandlerForm";
+import { Plus, RotateCcw } from "lucide-react";
+import { Dialog } from "@base-ui-components/react/dialog";
+import { AddTempHandlerForm } from "../AddTempHandler";
 import { CloseButton } from "../../Components/CloseButton";
-import { usePortalContainer } from "../../PortalContainerProvider";
 import { useHandlerStore } from "@msw-dev-tool/core";
 import { Flex } from "../../Components/Flex";
 import { Button } from "../../Components/Button";
-import { DialogOverlay } from "../../Components/DialogOverlay";
 
 export const ToolButtonGroup = () => {
-  const resetMSWDevTool = useHandlerStore((state)=>state.resetMSWDevTool);
+  const resetMSWDevTool = useHandlerStore((state) => state.resetMSWDevTool);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const container = usePortalContainer();
 
   return (
     <Flex gap={6} py={4}>
       <Button onClick={() => resetMSWDevTool()} color="danger">
-        <ReloadIcon />
+        <RotateCcw size={16} />
         Reset Dev tool
       </Button>
-      <DialogRoot open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogTrigger asChild>
-          <Button>
-            <PlusIcon />
-            Add Temp Handler
-          </Button>
-        </DialogTrigger>
-        {container && (
-          <DialogPortal container={container}>
-            <DialogOverlay/>
-            <DialogContent
-              className="dialog-content"
-            >
+      <Dialog.Root open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog.Trigger render={<Button><Plus size={16} />Add Temp Handler</Button>} />
+        <Dialog.Portal>
+          <Dialog.Backdrop className="msw-dt-dialog-backdrop" forceRender />
+          <Dialog.Popup className="msw-dt-dialog-popup-viewport">
+            <div className="msw-dt-dialog-inner-center">
               <Flex align="center" justify="space-between">
-                <DialogTitle className="m-1 text-xl font-semibold">
+                <Dialog.Title className="msw-dt-dialog-title-sm">
                   Add Temp Handler
-                </DialogTitle>
-                <DialogClose asChild>
-                  <CloseButton />
-                </DialogClose>
+                </Dialog.Title>
+                <Dialog.Close render={<CloseButton />} />
               </Flex>
-              <DialogDescription className="m-0 my-2.5">
+              <Dialog.Description className="msw-dt-dialog-description">
                 Temp handler is stored in the session storage. If you{" "}
-                <span className="font-bold">reset dev tool</span>, it will be{" "}
-                <span className="text-red-500">deleted</span>.
-              </DialogDescription>
-              <HandlerForm onClose={() => setIsDialogOpen(false)} />
-            </DialogContent>
-          </DialogPortal>
-        )}
-      </DialogRoot>
+                <span className="msw-dt-font-bold">reset dev tool</span>, it will be{" "}
+                <span className="msw-dt-danger-text">deleted</span>.
+              </Dialog.Description>
+              <AddTempHandlerForm onClose={() => setIsDialogOpen(false)} />
+            </div>
+          </Dialog.Popup>
+        </Dialog.Portal>
+      </Dialog.Root>
     </Flex>
   );
 };

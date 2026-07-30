@@ -1,4 +1,4 @@
-import React, { ComponentProps, forwardRef } from "react";
+import React, { ComponentProps, CSSProperties, forwardRef } from "react";
 import { clsx } from "clsx";
 
 export type FlexProps = ComponentProps<"div"> & {
@@ -13,65 +13,45 @@ export type FlexProps = ComponentProps<"div"> & {
   className?: string;
 };
 
-const getFlexClasses = (props: FlexProps) => {
+const REM = 0.25;
+
+export const Flex = forwardRef<HTMLDivElement, FlexProps>((props, ref) => {
   const {
     gap,
     direction = "row",
+    align,
+    justify,
     wrap = "nowrap",
     py,
     px,
     p,
-  } = props;
-
-  const baseClasses = "flex";
-
-  const directionClasses = {
-    row: "flex-row",
-    column: "flex-col",
-  };
-
-  const wrapClasses = {
-    nowrap: "flex-nowrap",
-    wrap: "flex-wrap",
-    "wrap-reverse": "flex-wrap-reverse",
-  };
-
-  const paddingClasses = [
-    p ? `p-${p}` : "",
-    py ? `py-${py}` : "",
-    px ? `px-${px}` : "",
-  ].filter(Boolean);
-
-  return clsx(
-    baseClasses,
-    directionClasses[direction],
-    wrapClasses[wrap],
-    gap ? `gap-${gap}` : "",
-    paddingClasses
-  );
-};
-
-export const Flex = forwardRef<HTMLDivElement, FlexProps>((props, ref) => {
-  const {
-    align,
-    justify,
     className,
+    style,
+    children,
     ...restProps
   } = props;
 
-  const flexClasses = getFlexClasses(props);
+  const inlineStyle: CSSProperties = {
+    display: "flex",
+    flexDirection: direction === "column" ? "column" : "row",
+    flexWrap: wrap,
+    ...(gap !== undefined && { gap: `${gap * REM}rem` }),
+    ...(align && { alignItems: align }),
+    ...(justify && { justifyContent: justify }),
+    ...(p !== undefined && { padding: `${p * REM}rem` }),
+    ...(py !== undefined && { paddingTop: `${py * REM}rem`, paddingBottom: `${py * REM}rem` }),
+    ...(px !== undefined && { paddingLeft: `${px * REM}rem`, paddingRight: `${px * REM}rem` }),
+    ...style,
+  };
 
   return (
     <div
       ref={ref}
-      className={clsx(flexClasses, className)}
-      style={{
-        alignItems: align,
-        justifyContent: justify,
-      }}
+      className={clsx(className)}
+      style={inlineStyle}
       {...restProps}
     >
-      {props.children}
+      {children}
     </div>
   );
 });

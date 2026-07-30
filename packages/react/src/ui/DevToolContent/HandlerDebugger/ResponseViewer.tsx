@@ -4,33 +4,32 @@ import { useDebugContext } from "./DebugProvider";
 export const ResponseViewer = () => {
   const { response } = useDebugContext();
 
+  const getStatusBadgeClass = (statusCode: number) => {
+    if (statusCode >= 200 && statusCode < 300) return "msw-dt-status-badge msw-dt-status-badge-success";
+    if (statusCode >= 400) return "msw-dt-status-badge msw-dt-status-badge-error";
+    return "msw-dt-status-badge msw-dt-status-badge-warning";
+  };
+
   return (
-    <div className="flex flex-col gap-2">
-      
+    <div className="msw-dt-response-viewer">
       {response.statusCode && (
-        <div className="flex items-center gap-2">
-          <span className="font-medium">Status:</span>
-          <span className={`px-2 py-1 rounded text-sm ${
-            response.statusCode >= 200 && response.statusCode < 300 
-              ? "bg-green-100 text-green-800" 
-              : response.statusCode >= 400 
-                ? "bg-red-100 text-red-800"
-                : "bg-yellow-100 text-yellow-800"
-          }`}>
+        <div className="msw-dt-status-row">
+          <span className="msw-dt-font-medium">Status:</span>
+          <span className={getStatusBadgeClass(response.statusCode)}>
             {response.statusCode} {response.statusText}
           </span>
         </div>
       )}
 
       {response.errorMessage && (
-        <div className="p-3 rounded bg-red-50 text-red-900">
-          <span className="font-medium">Error:</span> {response.errorMessage}
+        <div className="msw-dt-error-box">
+          <span className="msw-dt-font-medium">Error:</span> {response.errorMessage}
         </div>
       )}
 
       {response.data && (
-        <div className="p-3 rounded bg-gray-50">
-          <pre className="text-sm font-mono">
+        <div className="msw-dt-response-box">
+          <pre className="msw-dt-response-pre">
             {response.data}
           </pre>
         </div>
