@@ -1,5 +1,11 @@
 # @msw-dev-tool/core
 
+## 1.1.0
+
+### Minor Changes
+
+- 9c702e0: Remove the `zustand` dependency. Handler state now uses a lightweight store with React `useSyncExternalStore`, so consumers no longer need to install or configure zustand.
+
 ## 1.0.5
 
 ### Patch Changes
