@@ -1,5 +1,15 @@
 # @msw-dev-tool/react
 
+## 2.1.0
+
+### Minor Changes
+
+- 53e71dd: Export `HandlerDebugger`, `HandlerTable`, and `AddTempHandlerForm` for custom composition. Replace Radix UI/Tailwind with Base UI and plain CSS, removing ThemeProvider and PortalContainerProvider.
+
+### Patch Changes
+
+- e7ea3ff: Fix Debugger modal text becoming invisible on dark host pages, and isolate custom triggers from the default floating root overlay styles.
+
 ## 2.0.0
 
 ### Patch Changes
