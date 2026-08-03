@@ -4,6 +4,9 @@
   "workspaces": [
     "packages/*"
   ],
+  "resolutions": {
+    "msw": "2.7.3"
+  },
   "scripts": {
     "build": "yarn build:packages && yarn build:docs",
     "build:packages": "turbo run build --filter=@msw-dev-tool/core --filter=@msw-dev-tool/react --filter=@msw-dev-tool/node-cli --filter=msw-dev-tool",
