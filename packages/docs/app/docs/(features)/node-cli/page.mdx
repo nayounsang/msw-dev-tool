@@ -1,0 +1,101 @@
+---
+description: "Node CLI for AI agents to control msw-dev-tool programmatically"
+---
+
+import { Callout, Tabs } from "nextra/components";
+
+# Node CLI (AI)
+
+<Callout type="info">
+  **`@msw-dev-tool/node-cli` is built for AI agents.** It exposes machine-readable,
+  one-shot commands so an agent can programmatically control an msw-dev-tool Node
+  session. It is not a human interactive TUI.
+</Callout>
+
+## Overview
+
+In the browser, handler state lives in memory and is backed by `sessionStorage`.
+
+In Node, `setupDevToolServer()` owns `SetupServer` and writes a **session snapshot**
+file. The CLI never touches another process's memory — it only reads/writes that
+snapshot. The owner process polls the file and applies changes to MSW.
+
+```text
+App process                         AI / CLI process
+setupDevToolServer()                msw-dev-tool set-behavior ...
+  └ handlerStore (memory)             └ writes snapshot file
+  └ polls snapshot file  <───────────┘
+  └ applies to SetupServer
+```
+
+## Install
+
+<Tabs items={["pnpm", "npm", "yarn"]}>
+  <Tabs.Tab>
+  ```bash copy
+  pnpm add -D @msw-dev-tool/core @msw-dev-tool/node-cli msw
+  ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```bash copy
+  npm i @msw-dev-tool/core @msw-dev-tool/node-cli msw --save-dev
+  ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```bash copy
+  yarn add @msw-dev-tool/core @msw-dev-tool/node-cli msw --dev
+  ```
+  </Tabs.Tab>
+</Tabs>
+
+## App setup (owner process)
+
+```ts copy
+import { setupDevToolServer } from "@msw-dev-tool/core/node";
+import { handlers } from "./handlers";
+
+const server = await setupDevToolServer(...handlers);
+server.listen();
+```
+
+On setup, a session snapshot file is created. Discovery order:
+
+1. `MSW_DEV_TOOL_SESSION` env
+2. `.msw-dev-tool/session` pointer in cwd
+3. Auto-created temp file + cwd pointer
+
+<Callout type="warning">
+  After you change handler code, run `msw-dev-tool reset` so the session
+  snapshot is re-seeded from the updated handlers.
+
+  Wait until `reset` prints `ok` before issuing other CLI commands. Writes that
+  arrive while reset is still applying can be discarded when the owner reseeds
+  from code handlers. The CLI waits ~300ms after the reset request so `ok`
+  usually means the owner has finished applying.
+</Callout>
+
+## CLI commands
+
+All commands print JSON to stdout.
+
+```bash copy
+msw-dev-tool session
+msw-dev-tool list
+msw-dev-tool get '<handler-id>'
+msw-dev-tool set-behavior '<handler-id>' delay
+msw-dev-tool add-temp --json '{"path":"/api/tmp","method":"get","contentType":"application/json","status":"200","response":"{\"ok\":true}"}'
+msw-dev-tool remove-temp '<handler-id>'
+msw-dev-tool reset
+```
+
+Optional: `--session /path/to/snapshot.json`
+
+## Handler id
+
+Handler ids are JSON strings of `{ path, method }`, for example:
+
+```text
+{"path":"/api/items","method":"get"}
+```
+
+Use `msw-dev-tool list` to copy ids safely.

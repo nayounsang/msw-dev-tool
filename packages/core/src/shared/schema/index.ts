@@ -18,3 +18,10 @@ export const httpHandlerSchema = z.object({
     path: z.union([z.string(), z.instanceof(RegExp)]),
   }),
 });
+
+export {
+  tempHandlerSchema,
+  handlerSchema,
+  isValidHandlerPath,
+} from "./handler";
+export type { TempHandlerSchema, HandlerSchema } from "./handler";

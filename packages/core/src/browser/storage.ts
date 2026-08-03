@@ -3,6 +3,11 @@ import { StorageData } from "../shared/types";
 import { mergeStorageData as mergeStorageDataPure } from "../shared/utils/storage";
 
 export const getStorageData = (): StorageData => {
+  // Guard against SSR ReferenceError: sessionStorage is not defined.
+  if (typeof sessionStorage === "undefined") {
+    return { flattenHandlers: [] };
+  }
+
   const storage = sessionStorage.getItem(STORAGE_KEY);
   if (!storage) return { flattenHandlers: [] };
   return JSON.parse(storage).state;

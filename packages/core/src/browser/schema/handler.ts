@@ -1,53 +1,22 @@
 import { z } from "zod";
-import { HttpMethod, StringHttpStatusCode, MimeType } from "../../shared/types";
+import { MimeType } from "../../shared/types";
 import { getRowId } from "../../shared/utils/store";
+import { tempHandlerSchema } from "../../shared/schema";
 import { getStorageData } from "../storage";
-import {
-  isValidHtml,
-  isValidJson,
-  isValidUrl,
-  isValidXml,
-} from "../validate";
+import { isValidHtml, isValidXml } from "../validate";
 
-export const handlerSchema = z
-  .object({
-    path: z
-      .string()
-      .min(1, { message: "Path is required" })
-      .refine(isValidUrl, {
-        message: "Invalid URL format",
-      }),
-    delay: z.number().min(0, { message: "Invalid delay time" }).optional(),
-    contentType: z.nativeEnum(MimeType),
-    status: z.nativeEnum(StringHttpStatusCode),
-    statusText: z.string().optional(),
-    response: z.string().optional(),
-    method: z.nativeEnum(HttpMethod),
-    header: z
-      .string()
-      .optional()
-      .refine((data) => (data ? isValidJson(data) : true), {
-        message: "Invalid header",
-      }),
-  })
+export const handlerSchema = tempHandlerSchema
   .superRefine((data, ctx) => {
-    const mimeType = data.contentType;
+    if (!data.response) return;
 
+    const mimeType = data.contentType;
     const defaultIssueData: z.IssueData = {
       code: z.ZodIssueCode.custom,
       message: `Invalid response body for ${mimeType}`,
       path: ["response"],
     };
 
-    if (!data.response) {
-      return;
-    }
-
-    if (mimeType === MimeType.APPLICATION_JSON) {
-      if (!isValidJson(data.response)) {
-        ctx.addIssue(defaultIssueData);
-      }
-    } else if (mimeType === MimeType.APPLICATION_XML) {
+    if (mimeType === MimeType.APPLICATION_XML) {
       if (!isValidXml(data.response)) {
         ctx.addIssue(defaultIssueData);
       }
@@ -71,4 +40,5 @@ export const handlerSchema = z
       path: ["path"],
     }
   );
+
 export type HandlerSchema = z.infer<typeof handlerSchema>;

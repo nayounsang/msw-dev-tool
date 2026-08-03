@@ -1,3 +1,5 @@
+"use client";
+
 import { useFetch } from "../hooks/useFetch";
 import { User } from "../type/api";
 import { UsersTable } from "./UsersTable";
