@@ -1,5 +1,12 @@
 # @msw-dev-tool/react
 
+## 3.0.0
+
+### Patch Changes
+
+- Updated dependencies [5f6fc3c]
+  - @msw-dev-tool/core@1.2.0
+
 ## 2.1.0
 
 ### Minor Changes
