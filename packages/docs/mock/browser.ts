@@ -1,4 +1,4 @@
-import { Handler, setupDevToolWorker } from "@msw-dev-tool/core";
+import { setupDevToolWorker } from "@msw-dev-tool/core";
 import { handlers } from "./handlers";
 
-export const worker = setupDevToolWorker(...(handlers as unknown as Handler[]));
+export const worker = setupDevToolWorker(...handlers);

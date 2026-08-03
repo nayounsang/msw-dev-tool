@@ -1,15 +1,12 @@
-import { Handler, setupDevToolServer } from "@msw-dev-tool/core/node";
+import { setupDevToolServer } from "@msw-dev-tool/core/node";
 import { handlers } from "./handlers";
-
-// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-const typedHandlers = handlers as unknown as Handler[];
 
 let serverPromise: ReturnType<typeof setupDevToolServer> | null = null;
 
 export const ensureMswServer = async () => {
   if (!serverPromise) {
     serverPromise = (async () => {
-      const server = await setupDevToolServer(...typedHandlers);
+      const server = await setupDevToolServer(...handlers);
       server.listen({ onUnhandledRequest: "bypass" });
       return server;
     })();
