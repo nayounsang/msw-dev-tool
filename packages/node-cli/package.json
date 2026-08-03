@@ -1,0 +1,53 @@
+{
+  "name": "@msw-dev-tool/node-cli",
+  "version": "0.1.0",
+  "description": "CLI for AI agents to programmatically control msw-dev-tool Node sessions via session snapshot files. Not a general-purpose interactive TUI — designed for machine-readable, one-shot commands.",
+  "bin": {
+    "msw-dev-tool": "./bin/msw-dev-tool.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "bin",
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "repository": "https://github.com/nayounsang/msw-dev-tool",
+  "keywords": [
+    "msw",
+    "mock",
+    "cli",
+    "ai",
+    "agent",
+    "devtool"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "clean": "rm -rf dist && rm -rf node_modules",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@msw-dev-tool/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "typescript": "^5.8.3",
+    "vitest": "^4.1.10"
+  },
+  "peerDependencies": {
+    "msw": "^2.7.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
