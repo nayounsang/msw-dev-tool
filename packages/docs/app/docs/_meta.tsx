@@ -25,6 +25,9 @@ const meta: MetaRecord = {
   debugger: {
     title: "Debugger",
   },
+  "node-cli": {
+    title: "Node CLI (AI)",
+  },
   ui: {
     title: <Separator>UI</Separator>,
     type: "separator",

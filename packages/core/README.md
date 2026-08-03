@@ -1,26 +1,35 @@
-# core
+# @msw-dev-tool/core
 
-- Internal logic of `msw-dev-tool/react`.
-- Manage core logic, type and schema.
-- It is based on `msw`, with a lightweight store and React `useSyncExternalStore`.
-- Getting ready!
+Core logic for msw-dev-tool: handler store, behavior control, and temp handlers.
 
-# Install
-
-- npm:
+## Install
 
 ```bash
-npm i @msw-dev-tool/core --save-dev
+pnpm add -D @msw-dev-tool/core msw
 ```
 
-- yarn:
+## Entries
 
-```bash
-yarn add @msw-dev-tool/core --dev
+| Import | Environment |
+| --- | --- |
+| `@msw-dev-tool/core` / `@msw-dev-tool/core/browser` | Browser (`setupWorker`) |
+| `@msw-dev-tool/core/node` | Node (`setupServer` + session snapshot file) |
+
+### Browser
+
+```ts
+import { setupDevToolWorker } from "@msw-dev-tool/core";
+
+export const worker = setupDevToolWorker(...handlers);
 ```
 
-- pnpm:
+### Node
 
-```bash
-pnpm add @msw-dev-tool/core --save-dev
+```ts
+import { setupDevToolServer } from "@msw-dev-tool/core/node";
+
+const server = await setupDevToolServer(...handlers);
+server.listen();
 ```
+
+Node sessions persist handler state to a temp **snapshot file** (same mental model as browser `sessionStorage`). AI agents can control the session with [`@msw-dev-tool/node-cli`](../node-cli).

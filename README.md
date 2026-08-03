@@ -17,6 +17,7 @@ For complete documentation, guides, and examples, visit our official documentati
 - [Custom Trigger](https://msw-dev-tool-docs.vercel.app/docs/custom-trigger) - Customize the UI trigger
 - [Playground](https://msw-dev-tool-docs.vercel.app/docs/playground) - Interactive examples
 - [Temp Handler](https://msw-dev-tool-docs.vercel.app/docs/temp-handler) - Add temporary handlers
+- [Node CLI (AI)](https://msw-dev-tool-docs.vercel.app/docs/node-cli) - Programmatic control for AI agents
 - [Roadmap](https://msw-dev-tool-docs.vercel.app/docs/roadmap) - Future plans and features
 
 ## What Problem Does This Solve?
@@ -104,7 +105,7 @@ For detailed installation and setup instructions, see the [Getting Started Guide
 
 ### Using New Package Structure
 
-1. **Replace MSW's `setupWorker` with `setupDevToolWorker`:**
+1. **Replace MSW's `setupWorker` with `setupDevToolWorker` (browser):**
 
 ```typescript
 import { setupDevToolWorker } from "@msw-dev-tool/core";
@@ -112,7 +113,18 @@ import { setupDevToolWorker } from "@msw-dev-tool/core";
 export const worker = setupDevToolWorker(...handlers);
 ```
 
-2. **Add the DevTool UI component:**
+For Node (`setupServer`), use `@msw-dev-tool/core/node`:
+
+```typescript
+import { setupDevToolServer } from "@msw-dev-tool/core/node";
+
+const server = await setupDevToolServer(...handlers);
+server.listen();
+```
+
+AI agents can control Node sessions with `@msw-dev-tool/node-cli` (see [Node CLI docs](https://msw-dev-tool-docs.vercel.app/docs/node-cli)).
+
+2. **Add the DevTool UI component (browser):**
 
 ```tsx
 import { MSWDevTool } from "@msw-dev-tool/react";
@@ -165,16 +177,21 @@ This project is built on top of:
 The library consists of two main parts:
 
 1. **Core Logic** (`@msw-dev-tool/core`):
-   - Wraps MSW's `setupWorker` with `setupDevToolWorker`
+   - Browser: wraps MSW's `setupWorker` with `setupDevToolWorker`
+   - Node: wraps MSW's `setupServer` with `setupDevToolServer` + session snapshot file
    - Manages handler state and behavior modifications
    - Provides APIs for runtime handler control
-   - Uses a lightweight store with React `useSyncExternalStore` (`useHandlerStore`)
+   - Uses a lightweight store with React `useSyncExternalStore` (`useHandlerStore`) in the browser
 
 2. **React UI** (`@msw-dev-tool/react`):
    - React components for the dev tool interface
    - Handler table, debugger, and other UI features
    - Communicates with core logic through `useHandlerStore`
    - Depends on `@msw-dev-tool/core` as a peer dependency
+
+3. **Node CLI** (`@msw-dev-tool/node-cli`):
+   - One-shot, JSON CLI for **AI agents** to programmatically control Node sessions
+   - Reads/writes the session snapshot file (does not own `SetupServer`)
 
 ### How It Works
 
@@ -190,8 +207,9 @@ This project uses pnpm workspaces.
 | Project          | Description                                                                                                                                                      |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **docs**         | The documentation of the library.                                                                                                                                |
-| **core**         | `@msw-dev-tool/core`: Core library logic to control MSW handlers                                                                                                 |
+| **core**         | `@msw-dev-tool/core`: Core library logic to control MSW handlers (browser + node)                                                                                |
 | **react**        | `@msw-dev-tool/react`: React UI implementation                                                                                                                   |
+| **node-cli**     | `@msw-dev-tool/node-cli`: AI-oriented CLI to control Node sessions via snapshot files                                                                            |
 | **example**      | A sample project to develop and test `msw-dev-tool`. You need to build `msw-dev-tool` before testing.                                                            |
 | **msw-dev-tool** | The **LEGACY** source code of the library. This package will be deprecated in favor of the new modular structure (`@msw-dev-tool/core` + `@msw-dev-tool/react`). |
 
@@ -208,6 +226,7 @@ Key documentation pages:
 - [Custom Trigger](https://msw-dev-tool-docs.vercel.app/docs/custom-trigger)
 - [Playground](https://msw-dev-tool-docs.vercel.app/docs/playground)
 - [Temp Handler](https://msw-dev-tool-docs.vercel.app/docs/temp-handler)
+- [Node CLI (AI)](https://msw-dev-tool-docs.vercel.app/docs/node-cli)
 - [Roadmap](https://msw-dev-tool-docs.vercel.app/docs/roadmap)
 
 ## Contributing
