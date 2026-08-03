@@ -1,50 +1,27 @@
-# React + TypeScript + Vite
+# example (Next.js SSR)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Browser + Node MSW in one app.
 
-Currently, two official plugins are available:
+- **Client mocking** — button `fetch`, `setupDevToolWorker`, `MSWDevTool`
+- **SSR mocking** — RSC `fetch` with `{ cache: "no-store" }`, `setupDevToolServer` via `instrumentation.ts`
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Run
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```bash
+# from repo root (build core/react/cli first if needed)
+yarn build:core && yarn build:react && yarn build:node-cli
+yarn workspace example dev
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+Open http://127.0.0.1:3001
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+## CLI (Node session)
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+From `packages/example` (so `.msw-dev-tool/session` resolves):
+
+```bash
+yarn msw-dev-tool list
+yarn msw-dev-tool set-behavior '{"path":"https://ssr.example.local/users","method":"get"}' delay
 ```
+
+Then refresh the page — only the SSR slot should reflect Node-side behavior (error slot is isolated via `@ssr/error.tsx`).

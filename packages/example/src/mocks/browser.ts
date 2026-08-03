@@ -1,6 +1,7 @@
-    import { handlers } from "./handlers";
-    import { Handler, setupDevToolWorker } from "@msw-dev-tool/core";
+import { Handler, setupDevToolWorker } from "@msw-dev-tool/core/browser";
+import { handlers } from "./handlers";
 
-    const _handlers = handlers as unknown as Handler[];
+// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+const typedHandlers = handlers as unknown as Handler[];
 
-    export const worker = setupDevToolWorker(..._handlers);
+export const workerPromise = setupDevToolWorker(...typedHandlers);

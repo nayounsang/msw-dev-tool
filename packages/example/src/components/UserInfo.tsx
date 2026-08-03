@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { User } from "../type/api";
 import { UserInfoTable } from "./UserInfoTable";
