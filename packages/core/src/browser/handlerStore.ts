@@ -1,167 +1,130 @@
 import { setupWorker, SetupWorker } from "msw/browser";
-import {
-  appendFlattenHandler,
-  buildTempHandler,
-  getFlattenHandlerById as findFlattenHandlerById,
-  getHandlerBehavior as findHandlerBehavior,
-  rehydrateTempHandlers,
-  removeTempHandler as removeTempHandlerFromList,
-  setHandlerBehavior as applyHandlerBehavior,
-  wrapHandlersWithBehavior,
-} from "../shared/domain";
 import { STORAGE_KEY } from "../shared/const";
 import {
-  FlattenHandler,
-  Handler,
-  HttpHandlerBehavior,
-} from "../shared/types";
-import { initMSWDevToolStore } from "../shared/utils";
-import { createStore } from "./createStore";
-import { mergeStorageData } from "./storage";
+  createHandlerStore,
+  HandlerStoreBaseState,
+  HandlerStoreInternalState,
+  StoreApi,
+} from "../shared/store";
+import { Handler } from "../shared/types";
 import { HandlerSchema } from "./schema";
+import { mergeStorageData } from "./storage";
 
-const registerTempHandlers = (
-  worker: SetupWorker,
-  flattenHandlers: FlattenHandler[]
-) => {
-  const tempHandlers = flattenHandlers
-    .filter((handler) => handler.type === "temp")
-    .map((handler) => handler.handler);
-  if (tempHandlers.length > 0) {
-    worker.use(...tempHandlers);
-  }
-};
-
-export interface HandlerStoreState {
+export type HandlerStoreState = HandlerStoreBaseState & {
   /**
    * @remarks ⚠️ To be safe, access `getWorker()` rather than `get().worker` directly.
    */
   worker: SetupWorker | null;
-  /**
-   * GraphQL or WebSocketHandler
-   *
-   * **Currently not supported**
-   */
-  restHandlers: unknown[];
-  flattenHandlers: FlattenHandler[];
   setupDevToolWorker: (...handlers: Handler[]) => Promise<SetupWorker>;
-  resetMSWDevTool: () => void;
-  addTempHandler: (handler: { data: HandlerSchema }) => void;
   getWorker: () => SetupWorker;
-  getFlattenHandlerById: (id: string) => FlattenHandler | undefined;
-  getHandlerBehavior: (id: string) => HttpHandlerBehavior | undefined;
-  setHandlerBehavior: (id: string, behavior: HttpHandlerBehavior) => void;
-  removeTempHandler: (id: string) => void;
-}
+  addTempHandler: (handler: { data: HandlerSchema }) => void;
+};
 
-export const handlerStore = createStore<HandlerStoreState>(
-  (set, get) => {
-    const lookupBehavior = (id: string) =>
-      findHandlerBehavior(get().flattenHandlers, id);
+const mapState = (
+  base: HandlerStoreInternalState<SetupWorker>
+): HandlerStoreState => ({
+  worker: base.runtime,
+  restHandlers: base.restHandlers,
+  flattenHandlers: base.flattenHandlers,
+  setupDevToolWorker: base.setupDevToolRuntime,
+  resetMSWDevTool: base.resetMSWDevTool,
+  addTempHandler: base.addTempHandler,
+  getWorker: base.getRuntime,
+  getFlattenHandlerById: base.getFlattenHandlerById,
+  getHandlerBehavior: base.getHandlerBehavior,
+  setHandlerBehavior: base.setHandlerBehavior,
+  removeTempHandler: base.removeTempHandler,
+});
 
-    return {
-      flattenHandlers: [],
-      worker: null,
-      restHandlers: [],
-      setupDevToolWorker: async (...handlers: Handler[]) => {
-        const wrapped = wrapHandlersWithBehavior(handlers, lookupBehavior);
-        const worker = setupWorker(...wrapped);
+// Guard against SSR ReferenceError: sessionStorage is not defined.
+const canUseSessionStorage = () => typeof sessionStorage !== "undefined";
 
-        const { flattenHandlers, unsupportedHandlers } =
-          initMSWDevToolStore(worker);
+const readBrowserPersistedState = ():
+  | Partial<HandlerStoreInternalState<SetupWorker>>
+  | undefined => {
+  if (!canUseSessionStorage()) return undefined;
 
-        const { flattenHandlers: mergedHandlers } = mergeStorageData({
-          flattenHandlers,
-        });
+  const raw = sessionStorage.getItem(STORAGE_KEY);
+  if (!raw) return undefined;
 
-        const rehydratedHandlers = rehydrateTempHandlers(
-          mergedHandlers,
-          lookupBehavior
-        );
-        registerTempHandlers(worker, rehydratedHandlers);
+  const parsed: unknown = JSON.parse(raw);
+  if (
+    typeof parsed !== "object" ||
+    parsed === null ||
+    !("state" in parsed)
+  ) {
+    throw new Error(
+      `Invalid msw-dev-tool sessionStorage payload for key "${STORAGE_KEY}"`
+    );
+  }
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  return (parsed as { state: Partial<HandlerStoreInternalState<SetupWorker>> })
+    .state;
+};
 
-        set({
-          worker,
-          flattenHandlers: rehydratedHandlers,
-          restHandlers: unsupportedHandlers,
-        });
+const writeBrowserPersistedState = (partialized: unknown) => {
+  if (!canUseSessionStorage()) return;
 
-        return worker;
-      },
-      resetMSWDevTool: () => {
-        const worker = get().getWorker();
-        worker.resetHandlers();
+  sessionStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({ state: partialized })
+  );
+};
 
-        const { flattenHandlers, unsupportedHandlers } =
-          initMSWDevToolStore(worker);
-
-        set({
-          worker,
-          flattenHandlers,
-          restHandlers: unsupportedHandlers,
-        });
-      },
-      addTempHandler: ({ data }) => {
-        const { handler, flattenHandler } = buildTempHandler(
-          data,
-          lookupBehavior
-        );
-        const worker = get().getWorker();
-        const flattenHandlers = appendFlattenHandler(
-          get().flattenHandlers,
-          flattenHandler
-        );
-        worker.use(handler);
-
-        set({
-          worker,
-          flattenHandlers,
-        });
-      },
-      getWorker: () => {
-        const worker = get().worker;
-        if (!worker) throw new Error("Worker is not initialized");
-        return worker;
-      },
-      getFlattenHandlerById: (id) =>
-        findFlattenHandlerById(get().flattenHandlers, id),
-      getHandlerBehavior: (id) => lookupBehavior(id),
-      setHandlerBehavior: (id, behavior) => {
-        set({
-          flattenHandlers: applyHandlerBehavior(
-            get().flattenHandlers,
-            id,
-            behavior
-          ),
-        });
-      },
-      removeTempHandler: (id) => {
-        const worker = get().getWorker();
-        const flattenHandlers = removeTempHandlerFromList(
-          get().flattenHandlers,
-          id
-        );
-
-        // MSW has no single-handler unregister — reset runtime handlers
-        // and re-register remaining temps.
-        worker.resetHandlers();
-        registerTempHandlers(worker, flattenHandlers);
-
-        set({
-          worker,
-          flattenHandlers,
-        });
-      },
-    };
+const baseStore = createHandlerStore<SetupWorker>({
+  createRuntime: (handlers) => setupWorker(...handlers),
+  mergeOnSetup: ({ flattenHandlers }) => {
+    const { flattenHandlers: mergedHandlers } = mergeStorageData({
+      flattenHandlers,
+    });
+    return mergedHandlers;
   },
-  {
+  persist: {
     name: STORAGE_KEY,
     partialize: (state) => ({
       flattenHandlers: state.flattenHandlers.map(
         ({ handler: _handler, ...rest }) => rest
       ),
     }),
-  }
-);
+    getStoredState: readBrowserPersistedState,
+    write: writeBrowserPersistedState,
+  },
+});
 
-export const setupDevToolWorker = handlerStore.getState().setupDevToolWorker;
+let cachedBase: HandlerStoreInternalState<SetupWorker> | null = null;
+let cachedMapped: HandlerStoreState | null = null;
+
+const getMappedState = (): HandlerStoreState => {
+  const base = baseStore.getState();
+  if (base !== cachedBase || !cachedMapped) {
+    cachedBase = base;
+    cachedMapped = mapState(base);
+  }
+  return cachedMapped;
+};
+
+export const handlerStore: StoreApi<HandlerStoreState> = {
+  getState: getMappedState,
+  setState: (partial) => {
+    const current = getMappedState();
+    const nextPartial =
+      typeof partial === "function" ? partial(current) : partial;
+
+    const basePartial: Partial<HandlerStoreInternalState<SetupWorker>> = {};
+    if ("worker" in nextPartial) basePartial.runtime = nextPartial.worker;
+    if ("restHandlers" in nextPartial)
+      basePartial.restHandlers = nextPartial.restHandlers;
+    if ("flattenHandlers" in nextPartial)
+      basePartial.flattenHandlers = nextPartial.flattenHandlers;
+
+    baseStore.setState(basePartial);
+  },
+  subscribe: (listener) =>
+    baseStore.subscribe(() => {
+      cachedBase = null;
+      cachedMapped = null;
+      listener();
+    }),
+};
+
+export const setupDevToolWorker = baseStore.getState().setupDevToolRuntime;
