@@ -1,5 +1,11 @@
 # @msw-dev-tool/core
 
+## 1.2.0
+
+### Minor Changes
+
+- 5f6fc3c: Add Node MSW session support for controlling mock handlers from external tools.
+
 ## 1.1.0
 
 ### Minor Changes
