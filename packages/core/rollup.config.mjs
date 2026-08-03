@@ -12,12 +12,17 @@ const externalPackages = [
   ...Object.keys(pkg.peerDependencies || {}),
   ...Object.keys(pkg.dependencies || {}),
   "msw/browser",
+  "msw/node",
+  "node:fs",
+  "node:os",
+  "node:path",
 ];
 
 const entries = [
   { input: "src/index.ts", file: "index" },
   { input: "src/browser/index.ts", file: "browser/index" },
   { input: "src/node/index.ts", file: "node/index" },
+  { input: "src/node/internal.ts", file: "node/internal" },
 ];
 
 const jsConfigs = entries.map(({ input, file }) => ({
