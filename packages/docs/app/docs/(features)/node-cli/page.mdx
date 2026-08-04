@@ -4,7 +4,7 @@ description: "Node CLI for AI agents to control msw-dev-tool programmatically"
 
 import { Callout, Tabs } from "nextra/components";
 
-# Node CLI (AI)
+# Node CLI
 
 <Callout type="info">
   **`@msw-dev-tool/node-cli` is built for AI agents.** It exposes machine-readable,
@@ -12,21 +12,14 @@ import { Callout, Tabs } from "nextra/components";
   session. It is not a human interactive TUI.
 </Callout>
 
-## Overview
+## Session lifecycle and reset
 
-In the browser, handler state lives in memory and is backed by `sessionStorage`.
+Each Node server process has its own Dev Tool session. The session starts from
+the handlers supplied to `setupDevToolServer()` and is discarded when that server
+process stops; restarting the server starts a new session from its current code
+handlers.
 
-In Node, `setupDevToolServer()` owns `SetupServer` and writes a **session snapshot**
-file. The CLI never touches another process's memory — it only reads/writes that
-snapshot. The owner process polls the file and applies changes to MSW.
-
-```text
-App process                         AI / CLI process
-setupDevToolServer()                msw-dev-tool set-behavior ...
-  └ handlerStore (memory)             └ writes snapshot file
-  └ polls snapshot file  <───────────┘
-  └ applies to SetupServer
-```
+The owner process polls the file every 200 ms and applies changes to MSW.
 
 ## Install
 
@@ -48,7 +41,7 @@ setupDevToolServer()                msw-dev-tool set-behavior ...
   </Tabs.Tab>
 </Tabs>
 
-## App setup (owner process)
+## App setup
 
 ```ts copy
 import { setupDevToolServer } from "@msw-dev-tool/core/node";
