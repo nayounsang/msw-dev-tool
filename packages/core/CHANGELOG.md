@@ -1,5 +1,11 @@
 # @msw-dev-tool/core
 
+## 1.2.1
+
+### Patch Changes
+
+- a00bfd7: Add the browser control CLI and its versioned browser-control protocol.
+
 ## 1.2.0
 
 ### Minor Changes
