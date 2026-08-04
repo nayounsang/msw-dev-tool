@@ -80,7 +80,15 @@ describe("handlerSchema", () => {
       STORAGE_KEY,
       JSON.stringify({
         state: {
-          flattenHandlers: [{ id, type: "default" }],
+          flattenHandlers: [
+            {
+              id,
+              path: validBase.path,
+              method: validBase.method,
+              behavior: "default",
+              type: "default",
+            },
+          ],
         },
       })
     );

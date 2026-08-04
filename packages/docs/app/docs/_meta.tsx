@@ -28,6 +28,9 @@ const meta: MetaRecord = {
   "node-cli": {
     title: "Node CLI (AI)",
   },
+  "browser-cli": {
+    title: "Browser CLI (AI)",
+  },
   ui: {
     title: <Separator>UI</Separator>,
     type: "separator",

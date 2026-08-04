@@ -21,6 +21,7 @@ const externalPackages = [
 const entries = [
   { input: "src/index.ts", file: "index" },
   { input: "src/browser/index.ts", file: "browser/index" },
+  { input: "src/shared/index.ts", file: "shared/index" },
   { input: "src/node/index.ts", file: "node/index" },
   { input: "src/node/internal.ts", file: "node/internal" },
 ];

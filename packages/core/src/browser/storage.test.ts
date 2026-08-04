@@ -6,7 +6,7 @@ import {
   HttpMethod,
 } from "../shared/types";
 import { getRowId } from "../shared/utils";
-import { getStorageData, mergeStorageData } from "./storage";
+import { getBrowserStorageSnapshot, getStorageData, mergeStorageData } from "./storage";
 import { createFlattenHandler } from "../shared/testing/createHttpHandler";
 
 describe("getStorageData", () => {
@@ -46,6 +46,29 @@ describe("getStorageData", () => {
         type: "default",
       },
     ]);
+    expect(getBrowserStorageSnapshot().revision).toBe(0);
+  });
+
+  it("reads the revision from the extended browser payload", () => {
+    sessionStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ revision: 7, state: { flattenHandlers: [] } })
+    );
+    expect(getBrowserStorageSnapshot()).toEqual({
+      revision: 7,
+      state: { flattenHandlers: [] },
+    });
+  });
+
+  it("reports a Zod validation error for an invalid persisted payload", () => {
+    sessionStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ revision: "invalid", state: { flattenHandlers: [] } })
+    );
+
+    expect(() => getBrowserStorageSnapshot()).toThrow(
+      `Invalid msw-dev-tool sessionStorage payload for key "${STORAGE_KEY}": Expected number, received string`
+    );
   });
 });
 

@@ -1,7 +1,5 @@
-import { parseArgs } from "./cli/args";
-import { createCliContext } from "./cli/context";
-import { printJson } from "./cli/output";
-import { commandUsage, findCommand } from "./commands";
+import { commandUsage, findCommand, parseArgs, printJson } from "@msw-dev-tool/cli-core";
+import { createCliContext, toCommandContext } from "./cli/context";
 
 const usage = `msw-dev-tool — AI-oriented CLI for @msw-dev-tool/core Node sessions
 
@@ -39,6 +37,6 @@ export const runCli = async (argv: string[]): Promise<void> => {
   const command = findCommand(commandName);
   if (!command) throw new Error(`Unknown command: ${commandName}\n\n${usage}`);
 
-  const context = createCliContext(flags);
+  const context = toCommandContext(createCliContext(flags));
   printJson(await command.execute(context, { flags, positionals }));
 };

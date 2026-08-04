@@ -1,16 +1,59 @@
+import { z } from "zod";
 import { STORAGE_KEY } from "../shared/const";
-import { StorageData } from "../shared/types";
+import {
+  HttpHandlerBehavior,
+  HttpMethod,
+  PersistedStorageData,
+  StorageData,
+} from "../shared/types";
+import { tempHandlerSchema } from "../shared/schema";
 import { mergeStorageData as mergeStorageDataPure } from "../shared/utils/storage";
 
-export const getStorageData = (): StorageData => {
+export type BrowserStorageSnapshot = { revision: number; state: PersistedStorageData };
+
+const persistedFlattenHandlerSchema = z.object({
+  id: z.string(),
+  path: z.string(),
+  method: z.nativeEnum(HttpMethod),
+  behavior: z.nativeEnum(HttpHandlerBehavior),
+  type: z.enum(["temp", "default"]),
+  tempInput: tempHandlerSchema.optional(),
+});
+
+const browserStoragePayloadSchema = z.object({
+  revision: z.number().optional(),
+  state: z.object({
+    flattenHandlers: z.array(persistedFlattenHandlerSchema),
+  }),
+});
+
+export const getBrowserStorageSnapshot = (): BrowserStorageSnapshot => {
+  if (typeof sessionStorage === "undefined") return { revision: 0, state: { flattenHandlers: [] } };
+  const raw = sessionStorage.getItem(STORAGE_KEY);
+  if (!raw) return { revision: 0, state: { flattenHandlers: [] } };
+  let rawPayload: unknown;
+  try {
+    rawPayload = JSON.parse(raw);
+  } catch {
+    throw new Error(`Invalid msw-dev-tool sessionStorage payload for key "${STORAGE_KEY}": invalid JSON`);
+  }
+
+  const parsed = browserStoragePayloadSchema.safeParse(rawPayload);
+  if (!parsed.success) {
+    throw new Error(
+      `Invalid msw-dev-tool sessionStorage payload for key "${STORAGE_KEY}": ${parsed.error.issues[0]?.message ?? "invalid payload"}`
+    );
+  }
+  return { revision: parsed.data.revision ?? 0, state: parsed.data.state };
+};
+
+export const getStorageData = (): PersistedStorageData => {
   // Guard against SSR ReferenceError: sessionStorage is not defined.
   if (typeof sessionStorage === "undefined") {
     return { flattenHandlers: [] };
   }
 
-  const storage = sessionStorage.getItem(STORAGE_KEY);
-  if (!storage) return { flattenHandlers: [] };
-  return JSON.parse(storage).state;
+  return getBrowserStorageSnapshot().state;
 };
 
 export const mergeStorageData = ({

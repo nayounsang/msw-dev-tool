@@ -7,8 +7,22 @@ import {
   StoreApi,
 } from "../shared/store";
 import { Handler } from "../shared/types";
+import {
+  BROWSER_CONTROL_KEY,
+  BROWSER_CONTROL_PROTOCOL_VERSION,
+  BrowserControlBridge,
+} from "../shared/controlProtocol";
 import { HandlerSchema } from "./schema";
-import { mergeStorageData } from "./storage";
+import { tempHandlerSchema } from "../shared/schema";
+import { getBrowserStorageSnapshot, mergeStorageData } from "./storage";
+
+export { BROWSER_CONTROL_KEY, BrowserControlBridge } from "../shared/controlProtocol";
+
+declare global {
+  interface Window {
+    __MSW_DEV_TOOL_CONTROL__?: BrowserControlBridge;
+  }
+}
 
 export type HandlerStoreState = HandlerStoreBaseState & {
   /**
@@ -20,13 +34,15 @@ export type HandlerStoreState = HandlerStoreBaseState & {
   addTempHandler: (handler: { data: HandlerSchema }) => void;
 };
 
+type SerializableHandler = Omit<HandlerStoreState["flattenHandlers"][number], "handler">;
+
 const mapState = (
   base: HandlerStoreInternalState<SetupWorker>
 ): HandlerStoreState => ({
   worker: base.runtime,
   restHandlers: base.restHandlers,
   flattenHandlers: base.flattenHandlers,
-  setupDevToolWorker: base.setupDevToolRuntime,
+  setupDevToolWorker,
   resetMSWDevTool: base.resetMSWDevTool,
   addTempHandler: base.addTempHandler,
   getWorker: base.getRuntime,
@@ -44,31 +60,17 @@ const readBrowserPersistedState = ():
   | undefined => {
   if (!canUseSessionStorage()) return undefined;
 
-  const raw = sessionStorage.getItem(STORAGE_KEY);
-  if (!raw) return undefined;
-
-  const parsed: unknown = JSON.parse(raw);
-  if (
-    typeof parsed !== "object" ||
-    parsed === null ||
-    !("state" in parsed)
-  ) {
-    throw new Error(
-      `Invalid msw-dev-tool sessionStorage payload for key "${STORAGE_KEY}"`
-    );
-  }
+  if (!sessionStorage.getItem(STORAGE_KEY)) return undefined;
+  const parsed = getBrowserStorageSnapshot();
   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-  return (parsed as { state: Partial<HandlerStoreInternalState<SetupWorker>> })
-    .state;
+  return parsed.state as Partial<HandlerStoreInternalState<SetupWorker>>;
 };
 
 const writeBrowserPersistedState = (partialized: unknown) => {
   if (!canUseSessionStorage()) return;
 
-  sessionStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify({ state: partialized })
-  );
+  const previous = getBrowserStorageSnapshot();
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ revision: previous.revision + 1, state: partialized }));
 };
 
 const baseStore = createHandlerStore<SetupWorker>({
@@ -127,4 +129,56 @@ export const handlerStore: StoreApi<HandlerStoreState> = {
     }),
 };
 
-export const setupDevToolWorker = baseStore.getState().setupDevToolRuntime;
+const toSerializable = (handler: HandlerStoreState["flattenHandlers"][number]): SerializableHandler => {
+  const { handler: _handler, ...rest } = handler;
+  return rest;
+};
+
+const describeBrowserSession = () => {
+  const snapshot = getBrowserStorageSnapshot();
+  return { revision: snapshot.revision, handlerCount: handlerStore.getState().flattenHandlers.length };
+};
+
+const requireHandler = (id: string) => {
+  const handler = handlerStore.getState().getFlattenHandlerById(id);
+  if (!handler) throw new Error(`Handler not found for id: ${id}`);
+  return handler;
+};
+
+const registerBrowserControlBridge = () => {
+  if (typeof window === "undefined") return;
+  const bridge: BrowserControlBridge = {
+    version: BROWSER_CONTROL_PROTOCOL_VERSION,
+    describe: describeBrowserSession,
+    list: () => handlerStore.getState().flattenHandlers.map(toSerializable),
+    get: (id) => {
+      const handler = handlerStore.getState().getFlattenHandlerById(id);
+      return handler ? toSerializable(handler) : undefined;
+    },
+    setBehavior: (id, behavior) => {
+      requireHandler(id);
+      handlerStore.getState().setHandlerBehavior(id, behavior);
+      return { ...describeBrowserSession(), handler: toSerializable(requireHandler(id)) };
+    },
+    addTemp: (data) => {
+      handlerStore.getState().addTempHandler({ data: tempHandlerSchema.parse(data) });
+      const id = JSON.stringify({ path: data.path, method: data.method });
+      return { ...describeBrowserSession(), handler: toSerializable(requireHandler(id)) };
+    },
+    removeTemp: (id) => {
+      handlerStore.getState().removeTempHandler(id);
+      return describeBrowserSession();
+    },
+    reset: () => {
+      handlerStore.getState().resetMSWDevTool();
+      return describeBrowserSession();
+    },
+  };
+  window[BROWSER_CONTROL_KEY] = bridge;
+};
+
+export const setupDevToolWorker = async (...handlers: Handler[]): Promise<SetupWorker> => {
+  const worker = await baseStore.getState().setupDevToolRuntime(...handlers);
+  registerBrowserControlBridge();
+  return worker;
+};
