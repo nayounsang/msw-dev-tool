@@ -1119,6 +1119,32 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@msw-dev-tool/browser-cli@workspace:packages/browser-cli":
+  version: 0.0.0-use.local
+  resolution: "@msw-dev-tool/browser-cli@workspace:packages/browser-cli"
+  dependencies:
+    "@msw-dev-tool/cli-core": "workspace:*"
+    "@types/node": "npm:^22.13.10"
+    "@types/ws": "npm:^8.5.13"
+    typescript: "npm:^5.8.3"
+    vitest: "npm:^4.1.10"
+    ws: "npm:^8.18.0"
+  bin:
+    msw-dev-tool-browser: ./bin/msw-dev-tool-browser.js
+  languageName: unknown
+  linkType: soft
+
+"@msw-dev-tool/cli-core@workspace:*, @msw-dev-tool/cli-core@workspace:packages/cli-core":
+  version: 0.0.0-use.local
+  resolution: "@msw-dev-tool/cli-core@workspace:packages/cli-core"
+  dependencies:
+    "@msw-dev-tool/core": "workspace:*"
+    "@types/node": "npm:^22.13.10"
+    typescript: "npm:^5.8.3"
+    vitest: "npm:^4.1.10"
+  languageName: unknown
+  linkType: soft
+
 "@msw-dev-tool/core@workspace:*, @msw-dev-tool/core@workspace:packages/core":
   version: 0.0.0-use.local
   resolution: "@msw-dev-tool/core@workspace:packages/core"
@@ -1157,6 +1183,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@msw-dev-tool/node-cli@workspace:packages/node-cli"
   dependencies:
+    "@msw-dev-tool/cli-core": "workspace:*"
     "@msw-dev-tool/core": "workspace:*"
     "@types/node": "npm:^22.13.10"
     typescript: "npm:^5.8.3"
@@ -4331,7 +4358,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/ws@npm:^8.18.1":
+"@types/ws@npm:^8.18.1, @types/ws@npm:^8.5.13":
   version: 8.18.1
   resolution: "@types/ws@npm:8.18.1"
   dependencies:
@@ -14421,6 +14448,21 @@ __metadata:
   version: 1.0.2
   resolution: "wrappy@npm:1.0.2"
   checksum: 10c0/56fece1a4018c6a6c8e28fbc88c87e0fbf4ea8fd64fc6c63b18f4acc4bd13e0ad2515189786dd2c30d3eec9663d70f4ecf699330002f8ccb547e4a18231fc9f0
+  languageName: node
+  linkType: hard
+
+"ws@npm:^8.18.0":
+  version: 8.21.2
+  resolution: "ws@npm:8.21.2"
+  peerDependencies:
+    bufferutil: ^4.0.1
+    utf-8-validate: ">=5.0.2"
+  peerDependenciesMeta:
+    bufferutil:
+      optional: true
+    utf-8-validate:
+      optional: true
+  checksum: 10c0/82d687bbfbccce04e91266ff9911b27c67ca622fd8fbacc6a64d467a43fbd7ecaa3ef6d820b315c060682f901463f57cac01a02b00c4379f49c747ec7da83169
   languageName: node
   linkType: hard
 
