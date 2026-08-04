@@ -21,116 +21,92 @@ export default function MdxLayout(props) {
 
 ## Installation
 
-### New Package Structure (Recommended)
-
-We recommend using the new modular package structure with `@msw-dev-tool/core` and `@msw-dev-tool/react`:
-
-{/* prettier-ignore */}
-<Tabs items={["pnpm", "npm", "yarn"]}>
-  <Tabs.Tab>
-  ```bash copy
-  pnpm add -D @msw-dev-tool/core @msw-dev-tool/react
-  ```
-  </Tabs.Tab>
-  <Tabs.Tab>
-  ```bash copy
-  npm i @msw-dev-tool/core @msw-dev-tool/react --save-dev
-  ```
-  </Tabs.Tab>
-  <Tabs.Tab>
-  ```bash copy
-  yarn add @msw-dev-tool/core @msw-dev-tool/react --dev
-  ```
-  </Tabs.Tab>
-</Tabs>
-
-### Legacy Package
-
-The `msw-dev-tool` package is now **legacy** and will be deprecated in the future. However, it is still **stable** and fully supported. For new projects, please use the new package structure above.
-
-{/* prettier-ignore */}
-<Tabs items={["pnpm", "npm", "yarn"]}>
-  <Tabs.Tab>
-  ```bash copy
-  pnpm add -D msw-dev-tool
-  ```
-  </Tabs.Tab>
-  <Tabs.Tab>
-  ```bash copy
-  npm i msw-dev-tool --save-dev 
-  ```
-  </Tabs.Tab>
-  <Tabs.Tab>
-  ```bash copy
-  yarn add msw-dev-tool --dev 
-  ```
-  </Tabs.Tab>
-</Tabs>
-
-### Install Peer Dependencies
 <Callout type="warning">
-Currently, msw-dev-tool is not compatible with React 19.
+  The legacy `msw-dev-tool` package is no longer maintained and is scheduled for
+  removal. Use the packages below for all new and existing integrations.
 </Callout>
 
-#### New Package Structure (`@msw-dev-tool/core` + `@msw-dev-tool/react`)
+### Browser UI
 
-> **Note** Install the following peer dependencies:
+Use the browser UI to inspect and control browser MSW handlers from your app.
+Install `@msw-dev-tool/core` for the MSW integration and `@msw-dev-tool/react`
+for the React-only UI.
 
+{/* prettier-ignore */}
 <Tabs items={["pnpm", "npm", "yarn"]}>
   <Tabs.Tab>
   ```bash copy
-  pnpm add react react-dom
-  pnpm add -D msw
+  pnpm add -D @msw-dev-tool/core @msw-dev-tool/react msw
   ```
   </Tabs.Tab>
   <Tabs.Tab>
   ```bash copy
-  npm install react react-dom
-  npm install --save-dev msw
+  npm i @msw-dev-tool/core @msw-dev-tool/react msw --save-dev
   ```
   </Tabs.Tab>
   <Tabs.Tab>
   ```bash copy
-  yarn add react react-dom
-  yarn add -D msw
+  yarn add @msw-dev-tool/core @msw-dev-tool/react msw --dev
   ```
   </Tabs.Tab>
 </Tabs>
 
-#### Legacy Package (`msw-dev-tool`)
+### Browser CLI
 
-> **Note** The legacy package still requires `zustand` as a peer dependency:
+Use the Browser CLI when an AI agent or script needs to control a browser MSW
+session through Chrome DevTools Protocol. It connects to the browser tab that
+already runs `setupDevToolWorker`.
 
+{/* prettier-ignore */}
 <Tabs items={["pnpm", "npm", "yarn"]}>
   <Tabs.Tab>
   ```bash copy
-  pnpm add react react-dom
-  pnpm add -D zustand msw
+  pnpm add -D @msw-dev-tool/browser-cli @msw-dev-tool/core msw
   ```
   </Tabs.Tab>
   <Tabs.Tab>
   ```bash copy
-  npm install react react-dom
-  npm install --save-dev zustand msw
+  npm i @msw-dev-tool/browser-cli @msw-dev-tool/core msw --save-dev
   ```
   </Tabs.Tab>
   <Tabs.Tab>
   ```bash copy
-  yarn add react react-dom
-  yarn add -D zustand msw
+  yarn add @msw-dev-tool/browser-cli @msw-dev-tool/core msw --dev
+  ```
+  </Tabs.Tab>
+</Tabs>
+
+### Node
+
+Use Node support when your MSW handlers run with `setupServer`, such as in an API
+server, test environment, or SSR process. Add `@msw-dev-tool/node-cli` when an AI
+agent or script needs to control that Node session.
+
+{/* prettier-ignore */}
+<Tabs items={["pnpm", "npm", "yarn"]}>
+  <Tabs.Tab>
+  ```bash copy
+  pnpm add -D @msw-dev-tool/core @msw-dev-tool/node-cli msw
+  ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```bash copy
+  npm i @msw-dev-tool/core @msw-dev-tool/node-cli msw --save-dev
+  ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```bash copy
+  yarn add @msw-dev-tool/core @msw-dev-tool/node-cli msw --dev
   ```
   </Tabs.Tab>
 </Tabs>
 
 For detailed setup instructions:
 - [MSW Setup Guide](https://mswjs.io/docs/getting-started/install)
-- [Zustand Setup Guide](https://zustand.docs.pmnd.rs/getting-started/introduction) (legacy package only)
 
 ## Setup
 
-### Using New Package Structure
-
-#### Browser (React UI)
+### Browser UI
 
 ##### 1. Integrate with msw
 Replace MSW's `setupWorker` with `setupDevToolWorker` from `@msw-dev-tool/core`:
@@ -146,67 +122,6 @@ export const worker = setupDevToolWorker(...handlers);
 ##### 2. Integrate worker with browser
 
 For detailed information about **msw browser integration**, please refer to the [msw official documentation](https://mswjs.io/docs/integrations/browser).
-
-###### Next.js Integration
-<Callout type="info">
-There is two ways to load worker in nextjs. Choose one of them.
-</Callout>
-
-1. **use `use` and `Suspense` to load worker**
-
-
-```ts
-export const initWorkerPromise =
-  typeof window === "undefined"
-    ? Promise.resolve()
-    : import("@/mock/browser")
-        .then(async (mod) => await mod.worker)
-        .then((worker) => {
-          worker.start({
-            onUnhandledRequest: "bypass",
-          });
-        });
-```
-- Import browser worker with Promise.
-
-```tsx
-import { PropsWithChildren, use } from "react";
-
-export const MSWProviderContent = ({ children }: PropsWithChildren) => {
-  use(initWorkerPromise);
-  return children;
-};
-```
-- To resolve the Promise, use `use` hook.
-
-```tsx
-import { Suspense } from "react";
-
-<Suspense fallback={null}>
-  <MSWProviderContent>
-    {children}
-  </MSWProviderContent>
-</Suspense>
-```
-- Wrap with `Suspense` to process the Promise.
-
-
-2. **Add webpack config in `next.config.ts`**
-
-```ts
-webpack: (config, { isServer }) => {
-  // ... other config
-  if (isServer) {
-    config.resolve.alias["msw/browser"] = false;
-  }
-  /// --- other config
-  return config;
-}
-```
-
-- `msw/browser` has no export in node env. So we need to exclude it from the build process.
-- This works fine, as it only ignores validation during the build process.
-
 
 ##### 3. Add DevTool UI
 Add the `MSWDevTool` component and `msw-dev-tool.css` to your jsx:
@@ -227,7 +142,13 @@ export default function App() {
 
 Also, you can customize the trigger ui. See [Custom Trigger](/docs/custom-trigger) for more details.
 
-#### Node (headless + AI CLI)
+### Browser CLI
+
+Start Chrome with remote debugging enabled, then use `msw-dev-tool-browser` to
+select the tab running `setupDevToolWorker` and control its handlers. See
+[Browser CLI](/docs/browser-cli) for the Chrome and MCP setup.
+
+### Node
 
 Use `@msw-dev-tool/core/node` when MSW runs in Node (`setupServer`).
 
@@ -238,104 +159,7 @@ const server = await setupDevToolServer(...handlers);
 server.listen();
 ```
 
-AI agents can control the Node session with `@msw-dev-tool/node-cli`. See [Node CLI (AI)](/docs/node-cli).
-
-### Using Legacy Package
-
-#### 1. Integrate with msw
-Replace MSW's `setupWorker` with `setupDevToolWorker` from `msw-dev-tool`:
-
-```ts copy
-import { setupDevToolWorker } from "msw-dev-tool";
-
-export const worker = setupDevToolWorker(...handlers);
-```
-
-> **Note:** Unlike `msw`, `setupDevToolWorker()` returns a **Promise** that resolves to a worker instance.
-
-#### 2. Integrate worker with browser
-
-For detailed information about **msw browser integration**, please refer to the [msw official documentation](https://mswjs.io/docs/integrations/browser).
-
-##### Next.js Integration
-<Callout type="info">
-There is two ways to load worker in nextjs. Choose one of them.
-</Callout>
-
-1. **use `use` and `Suspense` to load worker**
-
-
-```ts
-export const initWorkerPromise =
-  typeof window === "undefined"
-    ? Promise.resolve()
-    : import("@/mock/browser")
-        .then(async (mod) => await mod.worker)
-        .then((worker) => {
-          worker.start({
-            onUnhandledRequest: "bypass",
-          });
-        });
-```
-- Import browser worker with Promise.
-
-```tsx
-import { PropsWithChildren, use } from "react";
-
-export const MSWProviderContent = ({ children }: PropsWithChildren) => {
-  use(initWorkerPromise);
-  return children;
-};
-```
-- To resolve the Promise, use `use` hook.
-
-```tsx
-import { Suspense } from "react";
-
-<Suspense fallback={null}>
-  <MSWProviderContent>
-    {children}
-  </MSWProviderContent>
-</Suspense>
-```
-- Wrap with `Suspense` to process the Promise.
-
-
-2. **Add webpack config in `next.config.ts`**
-
-```ts
-webpack: (config, { isServer }) => {
-  // ... other config
-  if (isServer) {
-    config.resolve.alias["msw/browser"] = false;
-  }
-  /// --- other config
-  return config;
-}
-```
-
-- `msw/browser` has no export in node env. So we need to exclude it from the build process.
-- This works fine, as it only ignores validation during the build process.
-
-
-#### 3. Add DevTool UI
-Add the `MSWDevTool` component and `msw-dev-tool.css` to your jsx:
-
-```tsx {1-2}
-import { MSWDevTool } from "msw-dev-tool";
-import "msw-dev-tool/msw-dev-tool.css";
-
-export default function App() {
-  return (
-    <>
-      {/* Your app components */}
-      <MSWDevTool />
-    </>
-  );
-}
-```
-
-Also, you can customize the trigger ui. See [Custom Trigger](/docs/custom-trigger) for more details.
+AI agents can control the Node session with `@msw-dev-tool/node-cli`. See [Node CLI](/docs/node-cli).
 
 ## Questions & Support
 

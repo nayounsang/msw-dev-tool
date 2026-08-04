@@ -2,7 +2,15 @@
 description: "Browser CLI for AI agents to control msw-dev-tool with Chrome DevTools Protocol"
 ---
 
-# Browser CLI (AI)
+import { Callout } from "nextra/components";
+
+# Browser CLI
+
+<Callout type="info">
+  **`@msw-dev-tool/browser-cli` is built for AI agents.** It exposes machine-readable,
+  one-shot commands so an agent can programmatically control an in-browser
+  msw-dev-tool session. It is not a human interactive TUI.
+</Callout>
 
 `@msw-dev-tool/browser-cli` lets an AI agent control an in-browser MSW Dev Tool
 session through Chrome DevTools Protocol (CDP). It uses the same handler commands
@@ -24,8 +32,9 @@ access.
   --user-data-dir=/tmp/msw-dev-tool-chrome
 ```
 
-Configure Chrome DevTools MCP to connect to that same endpoint. For Codex, add
-the following to `.codex/config.toml` and restart the MCP session:
+Configure your AI agent's Chrome DevTools MCP server to connect to the same
+endpoint. For example, in Codex add the following to `.codex/config.toml` and
+restart the MCP session:
 
 ```toml copy
 [mcp_servers.chrome-devtools]
@@ -33,7 +42,7 @@ command = "npx"
 args = ["-y", "chrome-devtools-mcp@latest", "--browser-url=http://127.0.0.1:9222"]
 ```
 
-The MCP and `msw-dev-tool-browser` can then inspect the same Chrome tabs. See
+Your MCP client and `msw-dev-tool-browser` can then inspect the same Chrome tabs. See
 the [Chrome DevTools MCP guide for connecting to a running Chrome instance](https://github.com/ChromeDevTools/chrome-devtools-mcp#connecting-to-a-running-chrome-instance)
 for other operating systems and remote-debugging details.
 

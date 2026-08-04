@@ -26,10 +26,10 @@ const meta: MetaRecord = {
     title: "Debugger",
   },
   "node-cli": {
-    title: "Node CLI (AI)",
+    title: "Node CLI",
   },
   "browser-cli": {
-    title: "Browser CLI (AI)",
+    title: "Browser CLI",
   },
   ui: {
     title: <Separator>UI</Separator>,
