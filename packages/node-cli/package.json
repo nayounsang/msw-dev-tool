@@ -37,6 +37,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@msw-dev-tool/cli-core": "workspace:*",
     "@msw-dev-tool/core": "workspace:*"
   },
   "devDependencies": {
