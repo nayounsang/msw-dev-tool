@@ -1,6 +1,6 @@
-# @msw-dev-tool/node-cli
+# @msw-dev-tool/browser-cli
 
-## 0.1.2
+## 0.1.1
 
 ### Patch Changes
 
@@ -8,10 +8,3 @@
 - Updated dependencies [a00bfd7]
   - @msw-dev-tool/cli-core@0.1.1
   - @msw-dev-tool/core@1.2.1
-
-## 0.1.1
-
-### Patch Changes
-
-- Updated dependencies [5f6fc3c]
-  - @msw-dev-tool/core@1.2.0
