@@ -45,6 +45,14 @@ export type FlattenHandler = {
   tempInput?: TempHandlerInput;
 };
 
+/** A handler shape that can safely cross a persistence or CDP boundary. */
+export type PersistedFlattenHandler = Omit<FlattenHandler, "handler">;
+
 export interface StorageData {
   flattenHandlers: FlattenHandler[];
+}
+
+/** Browser storage intentionally excludes the non-serializable MSW handler. */
+export interface PersistedStorageData {
+  flattenHandlers: PersistedFlattenHandler[];
 }

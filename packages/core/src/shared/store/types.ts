@@ -1,4 +1,5 @@
 import { FlattenHandler, Handler, HttpHandlerBehavior, TempHandlerInput } from "../types";
+import type { HydratableFlattenHandler } from "../utils/storage";
 import { ListHandlersRuntime } from "../utils";
 import { PersistOptions, StoreApi } from "./createStore";
 
@@ -32,7 +33,7 @@ export type CreateHandlerStoreOptions<TRuntime extends MswDevToolRuntime> = {
     flattenHandlers: FlattenHandler[];
     unsupportedHandlers: unknown[];
     runtime: TRuntime;
-  }) => FlattenHandler[];
+  }) => HydratableFlattenHandler[];
   onSetup?: (args: { runtime: TRuntime; flattenHandlers: FlattenHandler[] }) => void;
   persist?: PersistOptions<HandlerStoreInternalState<TRuntime>>;
 };

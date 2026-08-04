@@ -12,12 +12,17 @@ import {
   MimeType,
   TempHandlerInput,
 } from "../types";
+import type { HydratableFlattenHandler } from "../utils/storage";
 import { headerRecordSchema } from "../schema";
 import { getHandlerResponseByBehavior } from "../utils/handler";
 import { getRowId } from "../utils/store";
 import { isHttpHandler } from "../utils/validate";
 
 export type { TempHandlerInput };
+
+const isRuntimeFlattenHandler = (
+  handler: HydratableFlattenHandler
+): handler is FlattenHandler => "handler" in handler;
 
 const toMswMethod = (method: HttpMethod): HttpMethods => {
   switch (method) {
@@ -108,12 +113,12 @@ export const buildTempHandler = (
  * Drops temp entries that cannot be reconstructed.
  */
 export const rehydrateTempHandlers = (
-  handlers: FlattenHandler[],
+  handlers: HydratableFlattenHandler[],
   getBehavior: (id: string) => HttpHandlerBehavior | undefined
 ): FlattenHandler[] => {
   return handlers.flatMap((entry) => {
     if (entry.type !== "temp") {
-      return [entry];
+      return isRuntimeFlattenHandler(entry) ? [entry] : [];
     }
     if (!entry.tempInput) {
       return [];

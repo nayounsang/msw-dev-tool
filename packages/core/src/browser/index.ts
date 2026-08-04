@@ -1,5 +1,6 @@
 export * from "./handlerStore";
 export * from "./schema";
+export { tempHandlerSchema, isValidHandlerPath } from "../shared/schema";
 export * from "../shared/types";
 export {
   getRowId,
