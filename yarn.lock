@@ -1124,11 +1124,14 @@ __metadata:
   resolution: "@msw-dev-tool/browser-cli@workspace:packages/browser-cli"
   dependencies:
     "@msw-dev-tool/cli-core": "workspace:*"
+    "@msw-dev-tool/core": "workspace:*"
     "@types/node": "npm:^22.13.10"
     "@types/ws": "npm:^8.5.13"
     typescript: "npm:^5.8.3"
     vitest: "npm:^4.1.10"
     ws: "npm:^8.18.0"
+  peerDependencies:
+    "@msw-dev-tool/core": "workspace:*"
   bin:
     msw-dev-tool-browser: ./bin/msw-dev-tool-browser.js
   languageName: unknown

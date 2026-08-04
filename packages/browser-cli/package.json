@@ -29,10 +29,14 @@
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@msw-dev-tool/core": "workspace:*",
     "@types/node": "^22.13.10",
     "@types/ws": "^8.5.13",
     "typescript": "^5.8.3",
     "vitest": "^4.1.10"
+  },
+  "peerDependencies": {
+    "@msw-dev-tool/core": "workspace:*"
   },
   "publishConfig": {
     "access": "public"
