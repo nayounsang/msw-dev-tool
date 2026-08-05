@@ -51,4 +51,28 @@ describe("wrapHandlersWithBehavior", () => {
     });
     expect(original).toHaveBeenCalledOnce();
   });
+
+  it("preserves network-error behavior from the original resolver", async () => {
+    const networkError = HttpResponse.error();
+    const handler = createHttpHandler(
+      HttpMethod.GET,
+      "/x",
+      async () => networkError
+    );
+
+    wrapHandlersWithBehavior([handler], () => CustomBehavior.DEFAULT);
+    const result = await handler.resolver({
+      request: new Request("http://localhost/x"),
+      requestId: "1",
+      params: {},
+      cookies: {},
+    });
+
+    expect(result).toBeInstanceOf(Response);
+    if (!(result instanceof Response)) {
+      throw new Error("Expected Response");
+    }
+    expect(result.type).toBe("error");
+    expect(result.status).toBe(0);
+  });
 });
