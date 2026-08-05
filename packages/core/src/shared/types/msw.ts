@@ -17,7 +17,7 @@ export type BehaviorResolverResult =
  */
 export type DevToolResponseResolver = (
   info: Parameters<HttpResponseResolver>[0]
-) => BehaviorResolverResult | PromiseLike<BehaviorResolverResult>;
+) => BehaviorResolverResult | Promise<BehaviorResolverResult>;
 
 export type HttpHandler = _HttpHandler & {
   resolver: DevToolResponseResolver;

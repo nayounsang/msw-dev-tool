@@ -10,7 +10,7 @@ export type { BehaviorResolverResult };
 
 type MaybeBehaviorResolverResult =
   | BehaviorResolverResult
-  | PromiseLike<BehaviorResolverResult>;
+  | Promise<BehaviorResolverResult>;
 
 export const getHandlerResponseByBehavior = async (
   behavior: HttpHandlerBehavior | undefined | string,
