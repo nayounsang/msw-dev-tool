@@ -5,11 +5,34 @@ import {
   StringHttpStatusCode,
 } from "../types";
 
-export const customResponseSchema = z.object({
-  body: z.string().optional(),
-  headers: z.record(z.string()).optional(),
-  status: z.number().int().min(200).max(599).optional(),
-});
+const bodylessStatusCodes = new Set([204, 205, 304]);
+
+export const customResponseSchema = z
+  .object({
+    body: z.string().optional(),
+    headers: z.record(z.string()).optional(),
+    status: z.number().int().min(200).max(599).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.status && bodylessStatusCodes.has(data.status) && data.body !== undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `HTTP ${data.status} responses cannot include a body`,
+        path: ["body"],
+      });
+    }
+
+    if (!data.headers) return;
+    try {
+      new Headers(data.headers);
+    } catch {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Invalid response headers",
+        path: ["headers"],
+      });
+    }
+  });
 
 export type CustomResponseSchema = z.infer<typeof customResponseSchema>;
 

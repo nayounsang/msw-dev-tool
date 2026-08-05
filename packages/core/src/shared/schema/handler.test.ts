@@ -58,4 +58,26 @@ describe("customResponseSchema", () => {
     expect(customResponseSchema.safeParse({ status: 600 }).success).toBe(false);
     expect(customResponseSchema.safeParse({ status: 200.5 }).success).toBe(false);
   });
+
+  it.each([204, 205, 304])(
+    "rejects a body for HTTP %i",
+    (status) => {
+      expect(
+        customResponseSchema.safeParse({ status, body: "" }).success
+      ).toBe(false);
+    }
+  );
+
+  it("rejects headers that HttpResponse cannot construct", () => {
+    expect(
+      customResponseSchema.safeParse({
+        headers: { "invalid header": "value" },
+      }).success
+    ).toBe(false);
+    expect(
+      customResponseSchema.safeParse({
+        headers: { "X-Test": "line\nbreak" },
+      }).success
+    ).toBe(false);
+  });
 });
