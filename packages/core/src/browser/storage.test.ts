@@ -60,6 +60,46 @@ describe("getStorageData", () => {
     });
   });
 
+  it("preserves a persisted custom response", () => {
+    const id = getRowId({ path: "/custom", method: "get" });
+    const customResponse = {
+      body: '{"source":"session"}',
+      headers: { "X-Source": "session" },
+      status: 202,
+    };
+    sessionStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        revision: 3,
+        state: {
+          flattenHandlers: [
+            {
+              id,
+              path: "/custom",
+              method: HttpMethod.GET,
+              behavior: CustomBehavior.CUSTOM_RESPONSE,
+              type: "default",
+              customResponse,
+            },
+          ],
+        },
+      })
+    );
+
+    expect(getBrowserStorageSnapshot()).toEqual({
+      revision: 3,
+      state: {
+        flattenHandlers: [
+          expect.objectContaining({
+            id,
+            behavior: CustomBehavior.CUSTOM_RESPONSE,
+            customResponse,
+          }),
+        ],
+      },
+    });
+  });
+
   it("reports a Zod validation error for an invalid persisted payload", () => {
     sessionStorage.setItem(
       STORAGE_KEY,

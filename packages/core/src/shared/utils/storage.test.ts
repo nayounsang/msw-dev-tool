@@ -39,6 +39,34 @@ describe("mergeStorageData", () => {
     );
   });
 
+  it("overlays a saved custom response onto a matching handler", () => {
+    const id = getRowId({ path: "/a", method: "get" });
+    const customResponse = {
+      body: '{"cached":true}',
+      headers: { "X-Source": "storage" },
+      status: 201,
+    };
+    const merged = mergeStorageData(
+      { flattenHandlers: [makeFlatten({ id, path: "/a", method: HttpMethod.GET })] },
+      {
+        flattenHandlers: [
+          makeFlatten({
+            id,
+            path: "/a",
+            method: HttpMethod.GET,
+            behavior: CustomBehavior.CUSTOM_RESPONSE,
+            customResponse,
+          }),
+        ],
+      }
+    );
+
+    expect(merged.flattenHandlers[0]).toMatchObject({
+      behavior: CustomBehavior.CUSTOM_RESPONSE,
+      customResponse,
+    });
+  });
+
   it("keeps incoming handler when there is no saved match", () => {
     const id = getRowId({ path: "/new", method: "get" });
     const incoming = makeFlatten({

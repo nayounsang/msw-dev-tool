@@ -43,6 +43,7 @@ export const applySnapshotToRuntime = (args: {
       behavior: entry.behavior,
       type: entry.type,
       tempInput: entry.tempInput,
+      customResponse: entry.customResponse,
     });
   }
 
@@ -55,16 +56,26 @@ export const applySnapshotToRuntime = (args: {
   const lookupBehavior = (id: string) =>
     snapshot.flattenHandlers.find((h) => h.id === id)?.behavior ??
     findHandlerBehavior(current, id);
+  const lookupCustomResponse = (id: string) =>
+    snapshot.flattenHandlers.find((h) => h.id === id)?.customResponse;
 
   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   const seedAsHandlers = seed as FlattenHandler[];
 
-  const next = rehydrateTempHandlers(seedAsHandlers, lookupBehavior).map(
-    (h) => {
+  const next = rehydrateTempHandlers(
+    seedAsHandlers,
+    lookupBehavior,
+    lookupCustomResponse
+  ).map((h) => {
       const fromSnap = snapshot.flattenHandlers.find((s) => s.id === h.id);
-      return fromSnap ? { ...h, behavior: fromSnap.behavior } : h;
-    }
-  );
+      return fromSnap
+        ? {
+            ...h,
+            behavior: fromSnap.behavior,
+            customResponse: fromSnap.customResponse,
+          }
+        : h;
+    });
 
   const tempsChanged =
     tempIdsSignature(current) !== tempIdsSignature(snapshot.flattenHandlers);
@@ -84,6 +95,7 @@ const serializableTempToSeed = (
   path: entry.path,
   method: entry.method,
   behavior: entry.behavior,
+  customResponse: entry.customResponse,
   type: "temp",
   tempInput: entry.tempInput,
 });

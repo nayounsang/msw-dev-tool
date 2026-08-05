@@ -6,7 +6,7 @@ import {
   PersistedStorageData,
   StorageData,
 } from "../shared/types";
-import { tempHandlerSchema } from "../shared/schema";
+import { customResponseSchema, tempHandlerSchema } from "../shared/schema";
 import { mergeStorageData as mergeStorageDataPure } from "../shared/utils/storage";
 
 export type BrowserStorageSnapshot = { revision: number; state: PersistedStorageData };
@@ -18,6 +18,7 @@ const persistedFlattenHandlerSchema = z.object({
   behavior: z.nativeEnum(HttpHandlerBehavior),
   type: z.enum(["temp", "default"]),
   tempInput: tempHandlerSchema.optional(),
+  customResponse: customResponseSchema.optional(),
 });
 
 const browserStoragePayloadSchema = z.object({
