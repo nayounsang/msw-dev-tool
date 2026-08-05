@@ -1,4 +1,5 @@
 import { HttpResponse } from "msw";
+import type { BehaviorResolverResult } from "../types";
 import { HttpHandlerBehavior } from "../types";
 import { getHandlerResponseByBehavior } from "../utils/handler";
 import { getRowId } from "../utils/store";
@@ -6,7 +7,7 @@ import { isHttpHandler } from "../utils/validate";
 
 const toStrictResolverResult = async (
   result: unknown
-): Promise<HttpResponse | undefined> => {
+): Promise<BehaviorResolverResult> => {
   const value = result instanceof Promise ? await result : result;
 
   if (value === undefined || value === null) {
@@ -15,6 +16,10 @@ const toStrictResolverResult = async (
 
   if (value instanceof HttpResponse) {
     return value;
+  }
+
+  if (value instanceof Response && value.type === "error") {
+    return HttpResponse.error();
   }
 
   if (value instanceof Response) {

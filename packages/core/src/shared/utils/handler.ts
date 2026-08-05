@@ -8,9 +8,13 @@ import {
 
 export type { BehaviorResolverResult };
 
+type MaybeBehaviorResolverResult =
+  | BehaviorResolverResult
+  | PromiseLike<BehaviorResolverResult>;
+
 export const getHandlerResponseByBehavior = async (
   behavior: HttpHandlerBehavior | undefined | string,
-  originalResolverCallback: () => BehaviorResolverResult
+  originalResolverCallback: () => MaybeBehaviorResolverResult
 ): Promise<BehaviorResolverResult> => {
   if (!behavior || behavior === CustomBehavior.DEFAULT) {
     return originalResolverCallback();
