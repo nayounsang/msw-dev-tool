@@ -62,6 +62,49 @@ describe("getHandlerResponseByBehavior", () => {
     expect(result).toEqual(HttpResponse.error());
   });
 
+  it("returns the configured custom response", async () => {
+    const result = await getHandlerResponseByBehavior(
+      CustomBehavior.CUSTOM_RESPONSE,
+      async () => HttpResponse.json({ original: true }),
+      {
+        body: '{"custom":true}',
+        headers: { "Content-Type": "application/json", "X-Source": "dev-tool" },
+        status: 201,
+      }
+    );
+
+    expect(result).toBeInstanceOf(Response);
+    if (!(result instanceof Response)) throw new Error("Expected Response");
+    expect(result.status).toBe(201);
+    expect(result.statusText).toBe("Created");
+    expect(result.headers.get("X-Source")).toBe("dev-tool");
+    expect(await result.text()).toBe('{"custom":true}');
+  });
+
+  it("uses 200 OK when a custom response has no status configuration", async () => {
+    const result = await getHandlerResponseByBehavior(
+      CustomBehavior.CUSTOM_RESPONSE,
+      async () => HttpResponse.json({ original: true }),
+      { body: "default status" }
+    );
+
+    expect(result).toBeInstanceOf(Response);
+    if (!(result instanceof Response)) throw new Error("Expected Response");
+    expect(result.status).toBe(200);
+    expect(result.statusText).toBe("OK");
+  });
+
+  it("throws when CUSTOM_RESPONSE has not been configured", async () => {
+    await expect(
+      getHandlerResponseByBehavior(
+        CustomBehavior.CUSTOM_RESPONSE,
+        async () => HttpResponse.json({})
+      )
+    ).rejects.toThrow(
+      "Please configure a custom response before using this behavior."
+    );
+  });
+
   it("returns HttpResponse with status for error status codes", async () => {
     const result = await getHandlerResponseByBehavior(
       HttpErrorStatusCode.NOT_FOUND,

@@ -1,4 +1,4 @@
-import { FlattenHandler, Handler, HttpHandlerBehavior, TempHandlerInput } from "../types";
+import { CustomResponse, FlattenHandler, Handler, HttpHandlerBehavior, TempHandlerInput } from "../types";
 import type { HydratableFlattenHandler } from "../utils/storage";
 import { ListHandlersRuntime } from "../utils";
 import { PersistOptions, StoreApi } from "./createStore";
@@ -17,6 +17,8 @@ export type HandlerStoreBaseState = {
   getFlattenHandlerById: (id: string) => FlattenHandler | undefined;
   getHandlerBehavior: (id: string) => HttpHandlerBehavior | undefined;
   setHandlerBehavior: (id: string, behavior: HttpHandlerBehavior) => void;
+  getHandlerCustomResponse: (id: string) => CustomResponse | undefined;
+  setHandlerCustomResponse: (id: string, response: CustomResponse) => void;
   removeTempHandler: (id: string) => void;
 };
 

@@ -1,6 +1,6 @@
 import { HttpResponse } from "msw";
 import type { BehaviorResolverResult } from "../types";
-import { HttpHandlerBehavior } from "../types";
+import { CustomResponse, HttpHandlerBehavior } from "../types";
 import { getHandlerResponseByBehavior } from "../utils/handler";
 import { getRowId } from "../utils/store";
 import { isHttpHandler } from "../utils/validate";
@@ -35,7 +35,8 @@ const toStrictResolverResult = async (
  */
 export const wrapHandlersWithBehavior = <T>(
   handlers: T[],
-  getBehavior: (id: string) => HttpHandlerBehavior | undefined
+  getBehavior: (id: string) => HttpHandlerBehavior | undefined,
+  getCustomResponse: (id: string) => CustomResponse | undefined = () => undefined
 ): T[] => {
   return handlers.map((handler) => {
     if (!isHttpHandler(handler)) {
@@ -50,8 +51,10 @@ export const wrapHandlersWithBehavior = <T>(
       });
       const behavior = getBehavior(id);
 
-      return await getHandlerResponseByBehavior(behavior, () =>
-        toStrictResolverResult(originalResolver(args))
+      return await getHandlerResponseByBehavior(
+        behavior,
+        () => toStrictResolverResult(originalResolver(args)),
+        getCustomResponse(id)
       );
     };
     return handler;

@@ -4,7 +4,11 @@ import {
   MimeType,
   StringHttpStatusCode,
 } from "../types";
-import { tempHandlerSchema, isValidHandlerPath } from "./handler";
+import {
+  customResponseSchema,
+  isValidHandlerPath,
+  tempHandlerSchema,
+} from "./handler";
 
 const validBase = {
   path: "/api/items",
@@ -35,5 +39,23 @@ describe("tempHandlerSchema", () => {
     expect(isValidHandlerPath("/users/:id")).toBe(true);
     expect(isValidHandlerPath("/files/*")).toBe(true);
     expect(isValidHandlerPath("not-a-path")).toBe(false);
+  });
+});
+
+describe("customResponseSchema", () => {
+  it("accepts an optional response body, headers, and valid HTTP status", () => {
+    expect(
+      customResponseSchema.safeParse({
+        body: '{"ok":true}',
+        headers: { "Content-Type": "application/json" },
+        status: 599,
+      }).success
+    ).toBe(true);
+  });
+
+  it("rejects statuses outside the HTTP response range", () => {
+    expect(customResponseSchema.safeParse({ status: 199 }).success).toBe(false);
+    expect(customResponseSchema.safeParse({ status: 600 }).success).toBe(false);
+    expect(customResponseSchema.safeParse({ status: 200.5 }).success).toBe(false);
   });
 });

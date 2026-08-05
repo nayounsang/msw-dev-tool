@@ -10,8 +10,10 @@ import {
   appendFlattenHandler,
   getFlattenHandlerById,
   getHandlerBehavior,
+  getHandlerCustomResponse,
   removeTempHandler,
   setHandlerBehavior,
+  setHandlerCustomResponse,
 } from "./handlers";
 
 describe("getFlattenHandlerById / getHandlerBehavior", () => {
@@ -47,6 +49,24 @@ describe("setHandlerBehavior", () => {
     expect(getHandlerBehavior(next, id)).toBe(CustomBehavior.NETWORK_ERROR);
     expect(getHandlerBehavior(next, otherId)).toBe(HttpHandlerBehavior.DEFAULT);
     expect(handlers[0].behavior).toBe(HttpHandlerBehavior.DEFAULT);
+  });
+});
+
+describe("setHandlerCustomResponse", () => {
+  it("replaces only the selected handler's custom response", () => {
+    const id = getRowId({ path: "/a", method: "get" });
+    const otherId = getRowId({ path: "/b", method: "get" });
+    const handlers = [
+      createFlattenHandler({ id, path: "/a", method: HttpMethod.GET }),
+      createFlattenHandler({ id: otherId, path: "/b", method: HttpMethod.GET }),
+    ];
+
+    const first = setHandlerCustomResponse(handlers, id, { body: "first" });
+    const next = setHandlerCustomResponse(first, id, { body: "latest", status: 202 });
+
+    expect(getHandlerCustomResponse(next, id)).toEqual({ body: "latest", status: 202 });
+    expect(getHandlerCustomResponse(next, otherId)).toBeUndefined();
+    expect(getHandlerCustomResponse(handlers, id)).toBeUndefined();
   });
 });
 

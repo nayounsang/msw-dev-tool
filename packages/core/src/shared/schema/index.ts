@@ -22,6 +22,7 @@ export const httpHandlerSchema = z.object({
 export {
   tempHandlerSchema,
   handlerSchema,
+  customResponseSchema,
   isValidHandlerPath,
 } from "./handler";
-export type { TempHandlerSchema, HandlerSchema } from "./handler";
+export type { TempHandlerSchema, HandlerSchema, CustomResponseSchema } from "./handler";

@@ -5,6 +5,14 @@ import {
   StringHttpStatusCode,
 } from "../types";
 
+export const customResponseSchema = z.object({
+  body: z.string().optional(),
+  headers: z.record(z.string()).optional(),
+  status: z.number().int().min(200).max(599).optional(),
+});
+
+export type CustomResponseSchema = z.infer<typeof customResponseSchema>;
+
 const isValidJson = (input: string) => {
   try {
     JSON.parse(input);

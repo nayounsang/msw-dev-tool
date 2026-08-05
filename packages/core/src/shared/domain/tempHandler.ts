@@ -6,6 +6,7 @@ import {
 } from "msw";
 import {
   FlattenHandler,
+  CustomResponse,
   HttpHandler,
   HttpHandlerBehavior,
   HttpMethod,
@@ -45,7 +46,8 @@ const toMswMethod = (method: HttpMethod): HttpMethods => {
 
 export const buildTempHandler = (
   data: TempHandlerInput,
-  getBehavior: (id: string) => HttpHandlerBehavior | undefined
+  getBehavior: (id: string) => HttpHandlerBehavior | undefined,
+  getCustomResponse: (id: string) => CustomResponse | undefined = () => undefined
 ): { handler: HttpHandler; flattenHandler: FlattenHandler } => {
   const {
     path,
@@ -80,15 +82,19 @@ export const buildTempHandler = (
 
   const created = new MswHttpHandler(toMswMethod(method), path, async () => {
     const behavior = getBehavior(id);
-    return await getHandlerResponseByBehavior(behavior, async () => {
-      await delay(responseDelay);
-      // Create a fresh response per request — body streams are single-use.
-      return new HttpResponse(response, {
-        status: Number(status),
-        statusText: statusText,
-        headers,
-      });
-    });
+    return await getHandlerResponseByBehavior(
+      behavior,
+      async () => {
+        await delay(responseDelay);
+        // Create a fresh response per request — body streams are single-use.
+        return new HttpResponse(response, {
+          status: Number(status),
+          statusText: statusText,
+          headers,
+        });
+      },
+      getCustomResponse(id)
+    );
   });
 
   if (!isHttpHandler(created)) {
@@ -114,7 +120,8 @@ export const buildTempHandler = (
  */
 export const rehydrateTempHandlers = (
   handlers: HydratableFlattenHandler[],
-  getBehavior: (id: string) => HttpHandlerBehavior | undefined
+  getBehavior: (id: string) => HttpHandlerBehavior | undefined,
+  getCustomResponse: (id: string) => CustomResponse | undefined = () => undefined
 ): FlattenHandler[] => {
   return handlers.flatMap((entry) => {
     if (entry.type !== "temp") {
@@ -123,7 +130,11 @@ export const rehydrateTempHandlers = (
     if (!entry.tempInput) {
       return [];
     }
-    const { flattenHandler } = buildTempHandler(entry.tempInput, getBehavior);
-    return [{ ...flattenHandler, behavior: entry.behavior }];
+    const { flattenHandler } = buildTempHandler(
+      entry.tempInput,
+      getBehavior,
+      getCustomResponse
+    );
+    return [{ ...flattenHandler, behavior: entry.behavior, customResponse: entry.customResponse }];
   });
 };

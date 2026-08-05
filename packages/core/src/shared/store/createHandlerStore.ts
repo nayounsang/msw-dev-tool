@@ -3,9 +3,11 @@ import {
   buildTempHandler,
   getFlattenHandlerById as findFlattenHandlerById,
   getHandlerBehavior as findHandlerBehavior,
+  getHandlerCustomResponse as findHandlerCustomResponse,
   rehydrateTempHandlers,
   removeTempHandler as removeTempHandlerFromList,
   setHandlerBehavior as applyHandlerBehavior,
+  setHandlerCustomResponse as applyHandlerCustomResponse,
   wrapHandlersWithBehavior,
 } from "../domain";
 import {
@@ -46,13 +48,19 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
     (set, get) => {
       const lookupBehavior = (id: string) =>
         findHandlerBehavior(get().flattenHandlers, id);
+      const lookupCustomResponse = (id: string) =>
+        findHandlerCustomResponse(get().flattenHandlers, id);
 
       return {
         flattenHandlers: [],
         runtime: null,
         restHandlers: [],
         setupDevToolRuntime: async (...handlers: Handler[]) => {
-          const wrapped = wrapHandlersWithBehavior(handlers, lookupBehavior);
+          const wrapped = wrapHandlersWithBehavior(
+            handlers,
+            lookupBehavior,
+            lookupCustomResponse
+          );
           const runtime = options.createRuntime(wrapped);
 
           const { flattenHandlers, unsupportedHandlers } =
@@ -68,7 +76,8 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
 
           const rehydratedHandlers = rehydrateTempHandlers(
             mergedHandlers,
-            lookupBehavior
+            lookupBehavior,
+            lookupCustomResponse
           );
           registerTempHandlers(runtime, rehydratedHandlers);
 
@@ -102,7 +111,8 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
         addTempHandler: ({ data }) => {
           const { handler, flattenHandler } = buildTempHandler(
             data,
-            lookupBehavior
+            lookupBehavior,
+            lookupCustomResponse
           );
           const runtime = get().getRuntime();
           const flattenHandlers = appendFlattenHandler(
@@ -132,6 +142,16 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
               get().flattenHandlers,
               id,
               behavior
+            ),
+          });
+        },
+        getHandlerCustomResponse: (id) => lookupCustomResponse(id),
+        setHandlerCustomResponse: (id, response) => {
+          set({
+            flattenHandlers: applyHandlerCustomResponse(
+              get().flattenHandlers,
+              id,
+              response
             ),
           });
         },

@@ -9,7 +9,7 @@ vi.mock("msw/browser", () => ({
   }),
 }));
 
-import { BROWSER_CONTROL_KEY, BrowserControlBridge, setupDevToolWorker } from "./handlerStore";
+import { BROWSER_CONTROL_KEY, BrowserControlBridge, handlerStore, setupDevToolWorker } from "./handlerStore";
 import { STORAGE_KEY } from "../shared/const";
 
 const getBridge = (): BrowserControlBridge => {
@@ -60,5 +60,30 @@ describe("browser control bridge", () => {
       revision: reset.revision,
       state: { flattenHandlers: [{ id: handler.id, behavior: "default" }] },
     });
+  });
+
+  it("exposes custom response configuration through the handler store", async () => {
+    await setupDevToolWorker(http.get("/custom", () => HttpResponse.json({ original: true })));
+    const handler = handlerStore.getState().flattenHandlers[0]!;
+    const customResponse = {
+      body: "custom body",
+      headers: { "X-Custom": "yes" },
+      status: 202,
+    };
+
+    handlerStore.getState().setHandlerCustomResponse(handler.id, customResponse);
+    handlerStore.getState().setHandlerBehavior(handler.id, "custom response");
+
+    expect(handlerStore.getState().getHandlerCustomResponse(handler.id)).toEqual(customResponse);
+    const result = await handler.handler.resolver({
+      request: new Request("http://localhost/custom"),
+      requestId: "1",
+      params: {},
+      cookies: {},
+    });
+    if (!(result instanceof Response)) throw new Error("Expected Response");
+    expect(result.status).toBe(202);
+    expect(result.headers.get("X-Custom")).toBe("yes");
+    expect(await result.text()).toBe("custom body");
   });
 });

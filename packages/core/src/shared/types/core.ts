@@ -13,6 +13,7 @@ export const CustomBehavior = {
   DELAY: "delay",
   RETURN_NULL: "return null",
   NETWORK_ERROR: "network error",
+  CUSTOM_RESPONSE: "custom response",
 } as const;
 export type CustomBehavior = ValueUnion<typeof CustomBehavior>;
 
@@ -21,6 +22,13 @@ export const HttpHandlerBehavior = {
   ...HttpErrorStatusCode,
 } as const;
 export type HttpHandlerBehavior = ValueUnion<typeof HttpHandlerBehavior>;
+
+/** Serializable response data returned by the custom response behavior. */
+export type CustomResponse = {
+  body?: string;
+  headers?: Record<string, string>;
+  status?: number;
+};
 
 /** Serializable input for rebuilding temporary handlers after persistence. */
 export type TempHandlerInput = {
@@ -40,6 +48,8 @@ export type FlattenHandler = {
   method: HttpMethod;
   handler: HttpHandler;
   behavior: HttpHandlerBehavior;
+  /** Response data used when the custom response behavior is selected. */
+  customResponse?: CustomResponse;
   type: "temp" | "default";
   /** Present on temp handlers so they can be rebuilt after JSON persistence. */
   tempInput?: TempHandlerInput;
