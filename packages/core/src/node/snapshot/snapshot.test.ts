@@ -24,6 +24,7 @@ import {
   StringHttpStatusCode,
 } from "../../shared/types";
 import { FlattenHandler } from "../../shared/types";
+import { getRowId } from "../../shared/utils/store";
 
 const require = createRequire(import.meta.url);
 const tempDirs: string[] = [];
@@ -319,8 +320,13 @@ try {
             id: "a",
             path: "/a",
             method: HttpMethod.GET,
-            behavior: HttpHandlerBehavior.DELAY,
+            behavior: HttpHandlerBehavior.CUSTOM_RESPONSE,
             type: "default",
+            customResponse: {
+              body: "snapshot custom",
+              headers: { "X-Source": "snapshot" },
+              status: 202,
+            },
           },
         ],
       },
@@ -328,7 +334,66 @@ try {
 
     expect(next.map((h) => h.id).sort()).toEqual(["a", "b"]);
     expect(next.find((h) => h.id === "a")?.behavior).toBe(
-      HttpHandlerBehavior.DELAY
+      HttpHandlerBehavior.CUSTOM_RESPONSE
     );
+    expect(next.find((h) => h.id === "a")?.customResponse).toEqual({
+      body: "snapshot custom",
+      headers: { "X-Source": "snapshot" },
+      status: 202,
+    });
+  });
+
+  it("uses a custom response for a temp handler restored from a snapshot", async () => {
+    const runtime = {
+      use: () => undefined,
+      resetHandlers: () => undefined,
+      listHandlers: () => [],
+    };
+    const path = "/snapshot-temp";
+    const method = HttpMethod.GET;
+    const id = getRowId({ path, method });
+
+    const next = applySnapshotToRuntime({
+      runtime,
+      current: [],
+      snapshot: {
+        revision: 1,
+        flattenHandlers: [
+          {
+            id,
+            path,
+            method,
+            behavior: HttpHandlerBehavior.CUSTOM_RESPONSE,
+            type: "temp",
+            tempInput: {
+              path,
+              method,
+              contentType: MimeType.APPLICATION_JSON,
+              status: StringHttpStatusCode.OK,
+              response: '{"original":true}',
+            },
+            customResponse: {
+              body: "restored custom response",
+              headers: { "X-Source": "snapshot" },
+              status: 202,
+            },
+          },
+        ],
+      },
+    });
+
+    const handler = next[0]?.handler;
+    if (!handler) throw new Error("Expected restored temp handler");
+    const result = await handler.resolver({
+      request: new Request(`http://localhost${path}`, { method: "GET" }),
+      requestId: "1",
+      params: {},
+      cookies: {},
+    });
+
+    if (!(result instanceof Response)) throw new Error("Expected Response");
+    expect(result.status).toBe(202);
+    expect(result.headers.get("X-Source")).toBe("snapshot");
+    expect(await result.text()).toBe("restored custom response");
   });
 });

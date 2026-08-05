@@ -1,4 +1,5 @@
 import {
+  CustomResponse,
   FlattenHandler,
   HttpHandlerBehavior,
 } from "../types";
@@ -17,6 +18,11 @@ export const getHandlerBehavior = (
   return getFlattenHandlerById(handlers, id)?.behavior;
 };
 
+export const getHandlerCustomResponse = (
+  handlers: FlattenHandler[],
+  id: string
+): CustomResponse | undefined => getFlattenHandlerById(handlers, id)?.customResponse;
+
 export const setHandlerBehavior = (
   handlers: FlattenHandler[],
   id: string,
@@ -26,6 +32,15 @@ export const setHandlerBehavior = (
     handler.id === id ? { ...handler, behavior } : handler
   );
 };
+
+export const setHandlerCustomResponse = (
+  handlers: FlattenHandler[],
+  id: string,
+  customResponse: CustomResponse
+): FlattenHandler[] =>
+  handlers.map((handler) =>
+    handler.id === id ? { ...handler, customResponse } : handler
+  );
 
 export const removeTempHandler = (
   handlers: FlattenHandler[],

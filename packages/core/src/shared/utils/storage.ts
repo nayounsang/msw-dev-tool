@@ -22,6 +22,7 @@ export const mergeStorageData = (
         ...newHandler,
         behavior: savedHandler.behavior,
         type: savedHandler.type,
+        customResponse: savedHandler.customResponse,
       };
     }
     return newHandler;

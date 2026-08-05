@@ -52,6 +52,27 @@ describe("wrapHandlersWithBehavior", () => {
     expect(original).toHaveBeenCalledOnce();
   });
 
+  it("uses the custom response for a code-defined handler", async () => {
+    const handler = createHttpHandler(HttpMethod.GET, "/x");
+    wrapHandlersWithBehavior(
+      [handler],
+      () => CustomBehavior.CUSTOM_RESPONSE,
+      () => ({ body: "custom", headers: { "X-Handler": "yes" }, status: 203 })
+    );
+
+    const result = await handler.resolver({
+      request: new Request("http://localhost/x"),
+      requestId: "1",
+      params: {},
+      cookies: {},
+    });
+
+    if (!(result instanceof Response)) throw new Error("Expected Response");
+    expect(result.status).toBe(203);
+    expect(result.headers.get("X-Handler")).toBe("yes");
+    expect(await result.text()).toBe("custom");
+  });
+
   it("preserves network-error behavior from the original resolver", async () => {
     const networkError = HttpResponse.error();
     const handler = createHttpHandler(

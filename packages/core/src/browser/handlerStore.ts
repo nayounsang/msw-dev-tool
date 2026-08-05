@@ -49,6 +49,8 @@ const mapState = (
   getFlattenHandlerById: base.getFlattenHandlerById,
   getHandlerBehavior: base.getHandlerBehavior,
   setHandlerBehavior: base.setHandlerBehavior,
+  getHandlerCustomResponse: base.getHandlerCustomResponse,
+  setHandlerCustomResponse: base.setHandlerCustomResponse,
   removeTempHandler: base.removeTempHandler,
 });
 

@@ -3,7 +3,7 @@ import {
   HttpHandlerBehavior,
   HttpMethod,
 } from "../../shared/types";
-import { tempHandlerSchema } from "../../shared/schema";
+import { customResponseSchema, tempHandlerSchema } from "../../shared/schema";
 
 export const tempHandlerInputSchema = tempHandlerSchema;
 
@@ -14,6 +14,7 @@ export const serializableFlattenHandlerSchema = z.object({
   behavior: z.nativeEnum(HttpHandlerBehavior),
   type: z.enum(["temp", "default"]),
   tempInput: tempHandlerInputSchema.optional(),
+  customResponse: customResponseSchema.optional(),
 });
 
 export const sessionSnapshotSchema = z.object({

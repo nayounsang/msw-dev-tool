@@ -66,6 +66,26 @@ describe("buildTempHandler", () => {
     expect(await first.text()).toBe('{"ok":true}');
     expect(await second.text()).toBe('{"ok":true}');
   });
+
+  it("uses the configured custom response", async () => {
+    const { handler } = buildTempHandler(
+      baseInput,
+      () => CustomBehavior.CUSTOM_RESPONSE,
+      () => ({ body: "temporary custom", headers: { "X-Temp": "yes" }, status: 202 })
+    );
+
+    const result = await handler.resolver({
+      request: new Request("http://localhost/temp", { method: "POST" }),
+      requestId: "1",
+      params: {},
+      cookies: {},
+    });
+
+    if (!(result instanceof Response)) throw new Error("Expected Response");
+    expect(result.status).toBe(202);
+    expect(result.headers.get("X-Temp")).toBe("yes");
+    expect(await result.text()).toBe("temporary custom");
+  });
 });
 
 describe("rehydrateTempHandlers", () => {
