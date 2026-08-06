@@ -1,5 +1,16 @@
 # @msw-dev-tool/core
 
+## 1.3.0
+
+### Minor Changes
+
+- a0a8afd: Add CLI commands for storing handler custom response configuration in Node and browser sessions.
+- ba63316: Add handler-level custom response behavior with configurable body, headers, and status.
+
+### Patch Changes
+
+- 0c6efc4: Preserve network error responses when wrapping request handlers.
+
 ## 1.2.1
 
 ### Patch Changes
