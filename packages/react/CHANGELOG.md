@@ -1,5 +1,18 @@
 # @msw-dev-tool/react
 
+## 4.0.0
+
+### Minor Changes
+
+- d715dc7: Add custom response configuration controls and remove the handler debugger UI.
+
+### Patch Changes
+
+- Updated dependencies [a0a8afd]
+- Updated dependencies [ba63316]
+- Updated dependencies [0c6efc4]
+  - @msw-dev-tool/core@1.3.0
+
 ## 3.0.1
 
 ### Patch Changes
