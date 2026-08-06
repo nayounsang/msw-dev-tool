@@ -12,7 +12,7 @@ import {
     HttpMethod,
     StringHttpStatusCode,
     MimeType,
-} from "@msw-dev-tool/core";
+} from "@msw-dev-tool/core/browser";
 import { Flex } from "../../Components/Flex";
 import { Button } from "../../Components/Button";
 import { getOptions } from "../ToolButtonGroup/util";

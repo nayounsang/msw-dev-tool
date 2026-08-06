@@ -1,4 +1,4 @@
-import React, { CSSProperties, forwardRef } from "react";
+import React, { CSSProperties, forwardRef, useMemo, useState } from "react";
 import { Select as BaseSelect } from "@base-ui-components/react/select";
 import { ChevronDown, ChevronUp, Check } from "lucide-react";
 import clsx from "clsx";
@@ -16,11 +16,21 @@ export interface SelectProps {
   name?: string;
   disabled?: boolean;
   required?: boolean;
+  searchable?: boolean;
+  alignItemWithTrigger?: boolean;
 }
 
 export const Select = forwardRef<HTMLButtonElement, SelectProps>(
-  ({ options, placeholder, label, id, style, className, value, defaultValue, onValueChange, name, disabled, required }, ref) => {
+  ({ options, placeholder, label, id, style, className, value, defaultValue, onValueChange, name, disabled, required, searchable = false, alignItemWithTrigger = true }, ref) => {
     const items = options.map((opt) => ({ value: opt.value, label: String(opt.label) }));
+    const [query, setQuery] = useState("");
+    const visibleOptions = useMemo(() => {
+      const normalizedQuery = query.trim().toLowerCase();
+      if (!searchable || !normalizedQuery) return options;
+      return options.filter(({ label: optionLabel, value: optionValue }) =>
+        `${optionLabel} ${optionValue}`.toLowerCase().includes(normalizedQuery)
+      );
+    }, [options, query, searchable]);
 
     return (
       <BaseSelect.Root
@@ -47,13 +57,27 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           </BaseSelect.Icon>
         </BaseSelect.Trigger>
         <BaseSelect.Portal>
-          <BaseSelect.Positioner className="msw-dt-select-positioner">
+          <BaseSelect.Positioner
+            className="msw-dt-select-positioner"
+            side="bottom"
+            sideOffset={4}
+            alignItemWithTrigger={alignItemWithTrigger}
+          >
             <BaseSelect.Popup className="msw-dt-select-popup">
+              {searchable && (
+                <input
+                  className="msw-dt-select-search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search"
+                  aria-label={`${label ?? "Select"} search`}
+                />
+              )}
               <BaseSelect.ScrollUpArrow className="msw-dt-select-scroll-arrow">
                 <ChevronUp size={14} />
               </BaseSelect.ScrollUpArrow>
               <BaseSelect.List className="msw-dt-select-list">
-                {options.map((opt) => (
+                {visibleOptions.map((opt) => (
                   <BaseSelect.Item
                     key={opt.value}
                     value={opt.value}

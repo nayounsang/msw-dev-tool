@@ -4,7 +4,7 @@ import {
   FlattenHandler,
   useHandlerStore,
   HttpHandlerBehavior,
-} from "@msw-dev-tool/core";
+} from "@msw-dev-tool/core/browser";
 import { Select } from "../../Components/Select";
 
 const options = Object.values(HttpHandlerBehavior).map((behavior) => ({
