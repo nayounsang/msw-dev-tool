@@ -162,6 +162,11 @@ const registerBrowserControlBridge = () => {
       handlerStore.getState().setHandlerBehavior(id, behavior);
       return { ...describeBrowserSession(), handler: toSerializable(requireHandler(id)) };
     },
+    setCustomResponse: (id, response) => {
+      requireHandler(id);
+      handlerStore.getState().setHandlerCustomResponse(id, response);
+      return { ...describeBrowserSession(), handler: toSerializable(requireHandler(id)) };
+    },
     addTemp: (data) => {
       handlerStore.getState().addTempHandler({ data: tempHandlerSchema.parse(data) });
       const id = JSON.stringify({ path: data.path, method: data.method });

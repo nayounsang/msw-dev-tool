@@ -15,7 +15,17 @@ describe("CdpBrowserCliSession", () => {
       expression: expect.stringContaining("__MSW_DEV_TOOL_CONTROL__"),
     }));
     expect(call).toHaveBeenCalledWith("Runtime.evaluate", expect.objectContaining({
-      expression: expect.stringContaining("bridge.version !== 1"),
+      expression: expect.stringContaining("bridge.version !== 2"),
+    }));
+  });
+
+  it("sends custom response configuration through the page control bridge", async () => {
+    const call = vi.fn().mockResolvedValue({ result: { value: { revision: 3, handlerCount: 1 } } });
+    const session = new CdpBrowserCliSession({ call } as unknown as CdpClient);
+
+    await expect(session.setCustomResponse("handler-a", { status: 201, body: "created" })).resolves.toEqual({ revision: 3, handlerCount: 1 });
+    expect(call).toHaveBeenCalledWith("Runtime.evaluate", expect.objectContaining({
+      expression: expect.stringContaining('"setCustomResponse"'),
     }));
   });
 

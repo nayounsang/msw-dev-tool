@@ -1,5 +1,5 @@
 import { getRowId } from "../../shared/utils/store";
-import { HttpHandlerBehavior, TempHandlerInput } from "../../shared/types";
+import { CustomResponse, HttpHandlerBehavior, TempHandlerInput } from "../../shared/types";
 import { bumpSnapshot } from "./serialize";
 import { readSnapshotOrEmpty, withLockedMutation } from "./file";
 import { SessionSnapshot, SerializableFlattenHandler } from "./types";
@@ -28,6 +28,23 @@ export const setSnapshotBehavior = (
     return bumpSnapshot(prev, {
       flattenHandlers: prev.flattenHandlers.map((h) =>
         h.id === id ? { ...h, behavior } : h
+      ),
+    });
+  });
+
+export const setSnapshotCustomResponse = (
+  sessionPath: string,
+  id: string,
+  customResponse: CustomResponse
+): SessionSnapshot =>
+  withLockedMutation(sessionPath, (prev) => {
+    const target = prev.flattenHandlers.find((h) => h.id === id);
+    if (!target) {
+      throw new Error(`Handler not found for id: ${id}`);
+    }
+    return bumpSnapshot(prev, {
+      flattenHandlers: prev.flattenHandlers.map((h) =>
+        h.id === id ? { ...h, customResponse } : h
       ),
     });
   });

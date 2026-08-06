@@ -2,6 +2,7 @@ import { CliHandler, CliMutationResult, CliSession, CliSessionInfo } from "@msw-
 import {
   BROWSER_CONTROL_KEY,
   BROWSER_CONTROL_PROTOCOL_VERSION,
+  CustomResponse,
   HttpHandlerBehavior,
   TempHandlerInput,
 } from "@msw-dev-tool/core/shared";
@@ -26,6 +27,7 @@ export class CdpBrowserCliSession implements CliSession {
   public list(): Promise<CliHandler[]> { return this.invoke("list"); }
   public get(id: string): Promise<CliHandler | undefined> { return this.invoke("get", [id]); }
   public setBehavior(id: string, behavior: HttpHandlerBehavior): Promise<CliMutationResult> { return this.invoke("setBehavior", [id, behavior]); }
+  public setCustomResponse(id: string, response: CustomResponse): Promise<CliMutationResult> { return this.invoke("setCustomResponse", [id, response]); }
   public addTemp(data: TempHandlerInput): Promise<CliMutationResult> { return this.invoke("addTemp", [data]); }
   public removeTemp(id: string): Promise<CliSessionInfo> { return this.invoke("removeTemp", [id]); }
   public reset(): Promise<CliSessionInfo> { return this.invoke("reset"); }

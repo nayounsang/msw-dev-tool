@@ -2,7 +2,7 @@ import { commandUsage, findCommand, parseArgs, printJson } from "@msw-dev-tool/c
 import { CdpClient, listTargets } from "./cdp";
 import { CdpBrowserCliSession } from "./session";
 
-const usage = `msw-dev-tool-browser — AI-oriented CLI for @msw-dev-tool/core browser sessions\n\nCommands:\n  tabs\n${commandUsage()}\n\nAll commands except tabs require --cdp-url <http-url> and --target <target-id>.`;
+const usage = `msw-dev-tool-browser — AI-oriented CLI for @msw-dev-tool/core browser sessions\n\nCommands:\n  tabs\n${commandUsage()}\n\nset-custom-response stores response data only. Run set-behavior <id> "custom response" to apply it.\n\nAll commands except tabs require --cdp-url <http-url> and --target <target-id>.`;
 const requiredFlag = (flags: Record<string, string | boolean>, name: string) => {
   const value = flags[name];
   if (typeof value !== "string" || !value.trim()) throw new Error(`Missing required --${name}`);

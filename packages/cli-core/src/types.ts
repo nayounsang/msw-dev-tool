@@ -1,13 +1,11 @@
-import type { HttpHandlerBehavior, TempHandlerInput } from "@msw-dev-tool/core/shared";
+import type {
+  CustomResponse,
+  HttpHandlerBehavior,
+  PersistedFlattenHandler,
+  TempHandlerInput,
+} from "@msw-dev-tool/core/shared";
 
-export type CliHandler = {
-  id: string;
-  path: string;
-  method: string;
-  behavior: HttpHandlerBehavior;
-  type: "temp" | "default";
-  tempInput?: TempHandlerInput;
-};
+export type CliHandler = PersistedFlattenHandler;
 
 export type CliSessionInfo = {
   revision: number;
@@ -22,6 +20,7 @@ export type CliSession = {
   list(): Promise<CliHandler[]>;
   get(id: string): Promise<CliHandler | undefined>;
   setBehavior(id: string, behavior: HttpHandlerBehavior): Promise<CliMutationResult>;
+  setCustomResponse(id: string, response: CustomResponse): Promise<CliMutationResult>;
   addTemp(data: TempHandlerInput): Promise<CliMutationResult>;
   removeTemp(id: string): Promise<CliSessionInfo>;
   reset(): Promise<CliSessionInfo>;
