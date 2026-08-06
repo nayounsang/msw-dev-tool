@@ -1,4 +1,5 @@
 import {
+  customResponseSchema,
   HttpHandlerBehavior,
   tempHandlerSchema,
 } from "@msw-dev-tool/core/shared";
@@ -19,6 +20,17 @@ const withMetadata = (
   result: JsonResult,
   context: CliCommandContext
 ): JsonResult => ({ ...result, ...(context.metadata ?? {}) });
+
+const parseCustomResponse = (value: string) => {
+  try {
+    return customResponseSchema.parse(JSON.parse(value) as unknown);
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new Error("Custom response must be valid JSON");
+    }
+    throw error;
+  }
+};
 
 export const commands: CliCommand[] = [
   {
@@ -54,6 +66,20 @@ export const commands: CliCommand[] = [
       if (!id || !behavior) throw new Error("Usage: set-behavior <id> <behavior>");
       return withMetadata(
         { ok: true, ...(await context.session.setBehavior(id, parseBehavior(behavior))) },
+        context
+      );
+    },
+  },
+  {
+    name: "set-custom-response",
+    usage: "set-custom-response <id> --json '<customResponseJson>'",
+    async execute(context, { flags, positionals }) {
+      const id = positionals[1];
+      if (!id || typeof flags.json !== "string") {
+        throw new Error("Usage: set-custom-response <id> --json '<customResponseJson>'");
+      }
+      return withMetadata(
+        { ok: true, ...(await context.session.setCustomResponse(id, parseCustomResponse(flags.json))) },
         context
       );
     },

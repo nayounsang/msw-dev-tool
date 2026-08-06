@@ -71,10 +71,11 @@ describe("browser control bridge", () => {
       status: 202,
     };
 
-    handlerStore.getState().setHandlerCustomResponse(handler.id, customResponse);
+    const changed = getBridge().setCustomResponse(handler.id, customResponse);
     handlerStore.getState().setHandlerBehavior(handler.id, "custom response");
 
     expect(handlerStore.getState().getHandlerCustomResponse(handler.id)).toEqual(customResponse);
+    expect(changed.handler).toMatchObject({ id: handler.id, behavior: "default", customResponse });
     const result = await handler.handler.resolver({
       request: new Request("http://localhost/custom"),
       requestId: "1",

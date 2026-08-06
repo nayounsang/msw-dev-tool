@@ -10,6 +10,7 @@ import {
   writeSnapshot,
   withLockedMutation,
   setSnapshotBehavior,
+  setSnapshotCustomResponse,
   addSnapshotTempHandler,
   resolveSessionPath,
   writeSessionPointer,
@@ -86,6 +87,22 @@ describe("snapshot file protocol", () => {
     );
     expect(next.revision).toBe(2);
     expect(next.flattenHandlers[0]?.behavior).toBe(HttpHandlerBehavior.DELAY);
+  });
+
+  it("stores a custom response without changing behavior", () => {
+    const dir = makeTempDir();
+    const sessionPath = path.join(dir, "session.json");
+    writeSnapshot(sessionPath, bumpSnapshot(createEmptySnapshot(), {
+      flattenHandlers: [{ id: "a", path: "/api", method: HttpMethod.GET, behavior: HttpHandlerBehavior.DEFAULT, type: "default" }],
+    }));
+
+    const next = setSnapshotCustomResponse(sessionPath, "a", {
+      status: 201,
+      body: "created",
+      headers: { "X-Created": "yes" },
+    });
+
+    expect(next).toMatchObject({ revision: 2, flattenHandlers: [{ behavior: HttpHandlerBehavior.DEFAULT, customResponse: { status: 201, body: "created" } }] });
   });
 
   it("adds temp handlers with tempInput", () => {

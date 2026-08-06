@@ -84,6 +84,31 @@ describe("node-cli", () => {
     expect(payload.revision).toBe(1);
   });
 
+  it("stores a custom response without changing behavior", async () => {
+    const sessionPath = createSessionFile();
+    const id = JSON.stringify({ path: "/api/items", method: "get" });
+    vi.useFakeTimers();
+    const payload = await runWithJsonOutput([
+      "--session",
+      sessionPath,
+      "set-custom-response",
+      id,
+      "--json",
+      '{"status":201,"body":"created","headers":{"X-Created":"yes"}}',
+    ], true);
+    vi.useRealTimers();
+
+    expect(payload).toMatchObject({
+      ok: true,
+      revision: 1,
+      handler: {
+        id,
+        behavior: "default",
+        customResponse: { status: 201, body: "created", headers: { "X-Created": "yes" } },
+      },
+    });
+  });
+
   it("reports session metadata and returns a handler by id", async () => {
     const sessionPath = createSessionFile();
     const id = JSON.stringify({ path: "/api/items", method: "get" });
@@ -142,6 +167,9 @@ describe("node-cli", () => {
     await expect(
       runCli(["--session", sessionPath, "set-behavior", "missing", "unknown"])
     ).rejects.toThrow(/Unknown behavior/);
+    await expect(
+      runCli(["--session", sessionPath, "set-custom-response", "missing", "--json", "{"])
+    ).rejects.toThrow("Custom response must be valid JSON");
     await expect(
       runCli(["--session", sessionPath, "add-temp", "--json", "{"])
     ).rejects.toThrow(SyntaxError);
