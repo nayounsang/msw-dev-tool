@@ -2,6 +2,7 @@ import { Dialog } from "@base-ui-components/react/dialog";
 import {
   CustomResponse,
   FlattenHandler,
+  HttpStatusCode,
   useHandlerStore,
 } from "@msw-dev-tool/core";
 import { Pencil } from "lucide-react";
@@ -20,8 +21,8 @@ type CustomResponseFormValues = {
   headers: string;
 };
 
-const statusOptions = Array.from({ length: 400 }, (_, index) => {
-  const status = String(index + 200);
+const statusOptions = Object.values(HttpStatusCode).map((value) => {
+  const status = String(value);
   return { label: status, value: status };
 });
 
@@ -114,7 +115,7 @@ export const CustomResponseDialog = ({ handler }: { handler: FlattenHandler }) =
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Trigger render={<Button variant="ghost" title="Configure custom response"><Pencil size={16} /></Button>} />
+      <Dialog.Trigger render={<Button variant="ghost" color="gray" title="Configure custom response"><Pencil size={16} /></Button>} />
       <Dialog.Portal>
         <Dialog.Backdrop className="msw-dt-dialog-backdrop" forceRender />
         <Dialog.Popup className="msw-dt-dialog-popup-viewport">
