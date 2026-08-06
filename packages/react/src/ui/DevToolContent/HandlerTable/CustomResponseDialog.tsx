@@ -4,15 +4,16 @@ import {
   FlattenHandler,
   HttpStatusCode,
   useHandlerStore,
-} from "@msw-dev-tool/core";
+} from "@msw-dev-tool/core/browser";
 import { Pencil } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useId, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "../../Components/Button";
 import { CloseButton } from "../../Components/CloseButton";
 import { Flex } from "../../Components/Flex";
 import { Select } from "../../Components/Select";
+import { FormFieldBase } from "../Form/FormFieldBase";
 import { TextAreaFormField } from "../Form/TextAreaFormField";
 
 type CustomResponseFormValues = {
@@ -61,6 +62,7 @@ const toFormValues = (response?: CustomResponse): CustomResponseFormValues => ({
 export const CustomResponseDialog = ({ handler }: { handler: FlattenHandler }) => {
   const setHandlerCustomResponse = useHandlerStore((state) => state.setHandlerCustomResponse);
   const [open, setOpen] = useState(false);
+  const statusId = useId();
   const {
     register,
     handleSubmit,
@@ -129,18 +131,18 @@ export const CustomResponseDialog = ({ handler }: { handler: FlattenHandler }) =
             </Dialog.Description>
             <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.25rem", overflow: "auto" }}>
               <Flex direction="column" gap={5}>
-                <div>
-                  <label className="msw-dt-label msw-dt-w-fit">Status Code</label>
-                  {errors.status && <p className="msw-dt-error-text">{errors.status.message}</p>}
+                <FormFieldBase id={statusId} label="Status Code" error={errors.status?.message}>
                   <Select
+                    id={statusId}
                     options={statusOptions}
                     value={status}
                     onValueChange={(value) => setValue("status", value ?? "200")}
                     searchable
+                    alignItemWithTrigger={false}
                     className="msw-dt-w-select"
                     label="Status Code"
                   />
-                </div>
+                </FormFieldBase>
                 <TextAreaFormField label="Body" {...register("body")} error={errors.body?.message} className="msw-dt-min-h-textarea" />
                 <TextAreaFormField label="Response Headers (JSON object)" {...register("headers")} error={errors.headers?.message} className="msw-dt-min-h-textarea" />
               </Flex>

@@ -17,10 +17,11 @@ export interface SelectProps {
   disabled?: boolean;
   required?: boolean;
   searchable?: boolean;
+  alignItemWithTrigger?: boolean;
 }
 
 export const Select = forwardRef<HTMLButtonElement, SelectProps>(
-  ({ options, placeholder, label, id, style, className, value, defaultValue, onValueChange, name, disabled, required, searchable = false }, ref) => {
+  ({ options, placeholder, label, id, style, className, value, defaultValue, onValueChange, name, disabled, required, searchable = false, alignItemWithTrigger = true }, ref) => {
     const items = options.map((opt) => ({ value: opt.value, label: String(opt.label) }));
     const [query, setQuery] = useState("");
     const visibleOptions = useMemo(() => {
@@ -56,7 +57,12 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           </BaseSelect.Icon>
         </BaseSelect.Trigger>
         <BaseSelect.Portal>
-          <BaseSelect.Positioner className="msw-dt-select-positioner">
+          <BaseSelect.Positioner
+            className="msw-dt-select-positioner"
+            side="bottom"
+            sideOffset={4}
+            alignItemWithTrigger={alignItemWithTrigger}
+          >
             <BaseSelect.Popup className="msw-dt-select-popup">
               {searchable && (
                 <input

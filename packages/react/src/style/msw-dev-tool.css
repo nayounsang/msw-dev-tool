@@ -217,6 +217,9 @@
 }
 
 .msw-dt-select-popup {
+  display: flex;
+  flex-direction: column;
+  max-height: var(--available-height);
   overflow: hidden;
   border-radius: 0.5rem;
   background-color: #fff;
@@ -225,9 +228,11 @@
 }
 
 .msw-dt-select-list {
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 0.25rem;
   overflow-y: auto;
-  max-height: 300px;
+  max-height: min(300px, calc(var(--available-height) - 5rem));
 }
 
 .msw-dt-select-item {
