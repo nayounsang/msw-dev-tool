@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-table";
 import React, { useMemo } from "react";
 import { BehaviorSelect } from "../HandlerTable/BehaviorSelect";
-import { FlattenHandler, useHandlerStore } from "@msw-dev-tool/core";
+import { FlattenHandler, useHandlerStore } from "@msw-dev-tool/core/browser";
 import { Button } from "../../Components/Button";
 import { Trash2 } from "lucide-react";
 import { CustomResponseDialog } from "../HandlerTable/CustomResponseDialog";

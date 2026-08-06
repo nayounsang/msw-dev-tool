@@ -3,7 +3,7 @@ import { Plus, RotateCcw } from "lucide-react";
 import { Dialog } from "@base-ui-components/react/dialog";
 import { AddTempHandlerForm } from "../AddTempHandler";
 import { CloseButton } from "../../Components/CloseButton";
-import { useHandlerStore } from "@msw-dev-tool/core";
+import { useHandlerStore } from "@msw-dev-tool/core/browser";
 import { Flex } from "../../Components/Flex";
 import { Button } from "../../Components/Button";
 
