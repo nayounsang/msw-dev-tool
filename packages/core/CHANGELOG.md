@@ -1,5 +1,11 @@
 # @msw-dev-tool/core
 
+## 1.4.0
+
+### Minor Changes
+
+- 5b505c2: Require consumers to import browser, Node, and shared APIs from their dedicated `@msw-dev-tool/core` subpath entrypoints.
+
 ## 1.3.0
 
 ### Minor Changes
