@@ -1,5 +1,12 @@
 # @msw-dev-tool/react
 
+## 6.0.0
+
+### Patch Changes
+
+- Updated dependencies [a9f235c]
+  - @msw-dev-tool/core@1.5.0
+
 ## 5.0.0
 
 ### Patch Changes
