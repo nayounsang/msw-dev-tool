@@ -11,6 +11,7 @@ vi.mock("msw/browser", () => ({
 
 import { BROWSER_CONTROL_KEY, BrowserControlBridge, handlerStore, setupDevToolWorker } from "./handlerStore";
 import { STORAGE_KEY } from "../shared/const";
+import { BROWSER_CONTROL_METHOD_VERSIONS } from "../shared/controlProtocol";
 
 const getBridge = (): BrowserControlBridge => {
   const bridge = window[BROWSER_CONTROL_KEY];
@@ -24,6 +25,10 @@ describe("browser control bridge", () => {
   it("persists each bridge state transition and restores code handlers on reset", async () => {
     await setupDevToolWorker(http.get("/bridge-handler", () => HttpResponse.json({ ok: true })));
     const bridge = getBridge();
+    expect(bridge).toMatchObject({
+      version: 2,
+      methods: BROWSER_CONTROL_METHOD_VERSIONS,
+    });
     const handler = bridge.list()[0];
     const initialRevision = bridge.describe().revision;
 
