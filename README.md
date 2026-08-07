@@ -1,5 +1,7 @@
 # MSW Dev Tool
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/nayounsang/msw-dev-tool)
+
 A powerful development tool to control mock logic, modify responses, and monitor API calls with [MSW (Mock Service Worker)](https://mswjs.io/).
 
 ## 📚 Documentation
