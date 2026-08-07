@@ -108,7 +108,7 @@ For detailed installation and setup instructions, see the [Getting Started Guide
 1. **Replace MSW's `setupWorker` with `setupDevToolWorker` (browser):**
 
 ```typescript
-import { setupDevToolWorker } from "@msw-dev-tool/core";
+import { setupDevToolWorker } from "@msw-dev-tool/core/browser";
 
 export const worker = setupDevToolWorker(...handlers);
 ```
@@ -176,9 +176,10 @@ This project is built on top of:
 
 The library consists of two main parts:
 
-1. **Core Logic** (`@msw-dev-tool/core`):
-   - Browser: wraps MSW's `setupWorker` with `setupDevToolWorker`
-   - Node: wraps MSW's `setupServer` with `setupDevToolServer` + session snapshot file
+1. **Core Logic** (`@msw-dev-tool/core/browser`, `@msw-dev-tool/core/node`, `@msw-dev-tool/core/shared`):
+   - Shared types and schemas: `@msw-dev-tool/core/shared`
+   - Browser: `@msw-dev-tool/core/browser` wraps MSW's `setupWorker` with `setupDevToolWorker`
+   - Node: `@msw-dev-tool/core/node` wraps MSW's `setupServer` with `setupDevToolServer` + session snapshot file
    - Manages handler state and behavior modifications
    - Provides APIs for runtime handler control
    - Uses a lightweight store with React `useSyncExternalStore` (`useHandlerStore`) in the browser
@@ -207,7 +208,7 @@ This project uses pnpm workspaces.
 | Project          | Description                                                                                                                                                      |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **docs**         | The documentation of the library.                                                                                                                                |
-| **core**         | `@msw-dev-tool/core`: Core library logic to control MSW handlers (browser + node)                                                                                |
+| **core**         | `@msw-dev-tool/core`: Browser, Node, and shared APIs exposed through dedicated subpath entries                                                                  |
 | **react**        | `@msw-dev-tool/react`: React UI implementation                                                                                                                   |
 | **node-cli**     | `@msw-dev-tool/node-cli`: AI-oriented CLI to control Node sessions via snapshot files                                                                            |
 | **example**      | A sample project to develop and test `msw-dev-tool`. You need to build `msw-dev-tool` before testing.                                                            |
