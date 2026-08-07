@@ -1,6 +1,6 @@
 {
   "name": "@msw-dev-tool/node-cli",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "CLI for AI agents to programmatically control msw-dev-tool Node sessions via session snapshot files. Not a general-purpose interactive TUI — designed for machine-readable, one-shot commands.",
   "bin": {
     "msw-dev-tool": "./bin/msw-dev-tool.js"
