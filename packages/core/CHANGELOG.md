@@ -1,5 +1,11 @@
 # @msw-dev-tool/core
 
+## 1.5.0
+
+### Minor Changes
+
+- a9f235c: Export standard HTTP status messages and use them consistently for custom responses and status-code behaviors.
+
 ## 1.4.0
 
 ### Minor Changes
