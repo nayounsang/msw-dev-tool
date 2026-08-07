@@ -109,10 +109,10 @@ For detailed setup instructions:
 ### Browser UI
 
 ##### 1. Integrate with msw
-Replace MSW's `setupWorker` with `setupDevToolWorker` from `@msw-dev-tool/core`:
+Replace MSW's `setupWorker` with `setupDevToolWorker` from `@msw-dev-tool/core/browser`:
 
 ```ts copy
-import { setupDevToolWorker } from "@msw-dev-tool/core";
+import { setupDevToolWorker } from "@msw-dev-tool/core/browser";
 
 export const worker = setupDevToolWorker(...handlers);
 ```
