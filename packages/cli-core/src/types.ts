@@ -3,7 +3,7 @@ import type {
   HttpHandlerBehavior,
   PersistedFlattenHandler,
   TempHandlerInput,
-} from "@msw-dev-tool/core";
+} from "@msw-dev-tool/core/shared";
 
 export type CliHandler = PersistedFlattenHandler;
 

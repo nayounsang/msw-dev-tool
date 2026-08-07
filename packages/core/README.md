@@ -12,9 +12,9 @@ pnpm add -D @msw-dev-tool/core msw
 
 | Import | Environment |
 | --- | --- |
-| `@msw-dev-tool/core` | Shared core types and schemas |
 | `@msw-dev-tool/core/browser` | Browser (`setupWorker`) |
 | `@msw-dev-tool/core/node` | Node (`setupServer` + session snapshot file) |
+| `@msw-dev-tool/core/shared` | Shared core types and schemas |
 
 ### Browser
 

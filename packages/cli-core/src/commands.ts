@@ -2,7 +2,7 @@ import {
   customResponseSchema,
   HttpHandlerBehavior,
   tempHandlerSchema,
-} from "@msw-dev-tool/core";
+} from "@msw-dev-tool/core/shared";
 import type { CliCommand, CliCommandContext, JsonResult } from "./types";
 
 const parseBehavior = (value: string): HttpHandlerBehavior => {

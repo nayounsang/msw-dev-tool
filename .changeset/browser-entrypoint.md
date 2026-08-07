@@ -2,4 +2,4 @@
 "@msw-dev-tool/core": minor
 ---
 
-Keep browser store exports under the dedicated `@msw-dev-tool/core/browser` entrypoint and make the root entrypoint expose shared core APIs only.
+Require consumers to import browser, Node, and shared APIs from their dedicated `@msw-dev-tool/core` subpath entrypoints.

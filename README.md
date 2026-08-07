@@ -176,8 +176,8 @@ This project is built on top of:
 
 The library consists of two main parts:
 
-1. **Core Logic** (`@msw-dev-tool/core`):
-   - Shared types and schemas are available from the root entrypoint
+1. **Core Logic** (`@msw-dev-tool/core/browser`, `@msw-dev-tool/core/node`, `@msw-dev-tool/core/shared`):
+   - Shared types and schemas: `@msw-dev-tool/core/shared`
    - Browser: `@msw-dev-tool/core/browser` wraps MSW's `setupWorker` with `setupDevToolWorker`
    - Node: `@msw-dev-tool/core/node` wraps MSW's `setupServer` with `setupDevToolServer` + session snapshot file
    - Manages handler state and behavior modifications
@@ -208,7 +208,7 @@ This project uses pnpm workspaces.
 | Project          | Description                                                                                                                                                      |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **docs**         | The documentation of the library.                                                                                                                                |
-| **core**         | `@msw-dev-tool/core`: Shared APIs, with browser and Node runtimes exposed through dedicated subpath entries                                                  |
+| **core**         | `@msw-dev-tool/core`: Browser, Node, and shared APIs exposed through dedicated subpath entries                                                                  |
 | **react**        | `@msw-dev-tool/react`: React UI implementation                                                                                                                   |
 | **node-cli**     | `@msw-dev-tool/node-cli`: AI-oriented CLI to control Node sessions via snapshot files                                                                            |
 | **example**      | A sample project to develop and test `msw-dev-tool`. You need to build `msw-dev-tool` before testing.                                                            |

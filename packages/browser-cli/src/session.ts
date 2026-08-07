@@ -5,7 +5,7 @@ import {
   CustomResponse,
   HttpHandlerBehavior,
   TempHandlerInput,
-} from "@msw-dev-tool/core";
+} from "@msw-dev-tool/core/shared";
 import { CdpClient } from "./cdp";
 
 type RemoteResult = { result?: { value?: unknown }; exceptionDetails?: { text?: string; exception?: { description?: string } } };
