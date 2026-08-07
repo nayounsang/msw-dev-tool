@@ -1,7 +1,6 @@
 import { CliHandler, CliMutationResult, CliSession, CliSessionInfo } from "@msw-dev-tool/cli-core";
 import {
   BROWSER_CONTROL_KEY,
-  BROWSER_CONTROL_PROTOCOL_VERSION,
   CustomResponse,
   HttpHandlerBehavior,
   TempHandlerInput,
@@ -10,6 +9,19 @@ import { CdpClient } from "./cdp";
 
 type RemoteResult = { result?: { value?: unknown }; exceptionDetails?: { text?: string; exception?: { description?: string } } };
 
+const REQUIRED_BROWSER_CONTROL_METHOD_VERSIONS = {
+  describe: 1,
+  list: 1,
+  get: 1,
+  setBehavior: 1,
+  setCustomResponse: 1,
+  addTemp: 1,
+  removeTemp: 1,
+  reset: 1,
+} as const;
+
+type BrowserControlMethod = keyof typeof REQUIRED_BROWSER_CONTROL_METHOD_VERSIONS;
+
 const getCdpErrorMessage = (details: NonNullable<RemoteResult["exceptionDetails"]>) => {
   const description = details.exception?.description ?? details.text ?? "CDP evaluation failed";
   return description.split("\n")[0] || "CDP evaluation failed";
@@ -17,8 +29,10 @@ const getCdpErrorMessage = (details: NonNullable<RemoteResult["exceptionDetails"
 
 export class CdpBrowserCliSession implements CliSession {
   public constructor(private readonly client: CdpClient) {}
-  private async invoke<T>(method: string, args: unknown[] = []): Promise<T> {
-    const expression = `(() => { const bridge = globalThis[${JSON.stringify(BROWSER_CONTROL_KEY)}]; if (!bridge) throw new Error("MSW Dev Tool browser session is not initialized in this tab. Call setupDevToolWorker() first."); if (bridge.version !== ${BROWSER_CONTROL_PROTOCOL_VERSION}) throw new Error("Incompatible MSW Dev Tool browser control protocol. Update @msw-dev-tool/core and @msw-dev-tool/browser-cli together."); return bridge[${JSON.stringify(method)}](...${JSON.stringify(args)}); })()`;
+  private async invoke<T>(method: BrowserControlMethod, args: unknown[] = []): Promise<T> {
+    const requiredVersion = REQUIRED_BROWSER_CONTROL_METHOD_VERSIONS[method];
+    const unsupportedMethodMessage = `MSW Dev Tool browser control method "${method}" version ${requiredVersion} is unavailable. Update @msw-dev-tool/core.`;
+    const expression = `(() => { const bridge = globalThis[${JSON.stringify(BROWSER_CONTROL_KEY)}]; if (!bridge) throw new Error("MSW Dev Tool browser session is not initialized in this tab. Call setupDevToolWorker() first."); if (bridge.methods?.[${JSON.stringify(method)}] !== ${requiredVersion} || typeof bridge[${JSON.stringify(method)}] !== "function") throw new Error(${JSON.stringify(unsupportedMethodMessage)}); return bridge[${JSON.stringify(method)}](...${JSON.stringify(args)}); })()`;
     const response = await this.client.call("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true }) as RemoteResult;
     if (response.exceptionDetails) throw new Error(getCdpErrorMessage(response.exceptionDetails));
     return response.result?.value as T;

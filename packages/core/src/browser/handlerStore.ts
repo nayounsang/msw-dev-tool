@@ -9,6 +9,7 @@ import {
 import { Handler } from "../shared/types";
 import {
   BROWSER_CONTROL_KEY,
+  BROWSER_CONTROL_METHOD_VERSIONS,
   BROWSER_CONTROL_PROTOCOL_VERSION,
   BrowserControlBridge,
 } from "../shared/controlProtocol";
@@ -151,6 +152,7 @@ const registerBrowserControlBridge = () => {
   if (typeof window === "undefined") return;
   const bridge: BrowserControlBridge = {
     version: BROWSER_CONTROL_PROTOCOL_VERSION,
+    methods: BROWSER_CONTROL_METHOD_VERSIONS,
     describe: describeBrowserSession,
     list: () => handlerStore.getState().flattenHandlers.map(toSerializable),
     get: (id) => {
