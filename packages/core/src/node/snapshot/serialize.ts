@@ -9,6 +9,7 @@ export const toSerializableFlattenHandlers = (
 export const createEmptySnapshot = (revision = 0): SessionSnapshot => ({
   revision,
   state: { flattenHandlers: [] },
+  owner: { pid: process.pid },
 });
 
 export const bumpSnapshot = (
@@ -28,5 +29,6 @@ export const bumpSnapshot = (
       flattenHandlers: next.flattenHandlers ?? prev.state.flattenHandlers,
       ...(pendingReset ? { pendingReset: true } : {}),
     },
+    owner: prev.owner,
   };
 };

@@ -17,7 +17,7 @@ Open http://127.0.0.1:3001
 
 ## CLI (Node session)
 
-From `packages/example` (so `.msw-dev-tool/session` resolves):
+From `packages/example` (so its `.msw-dev-tool/sessions` directory resolves):
 
 ```bash
 yarn msw-dev-tool list

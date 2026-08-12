@@ -12,11 +12,9 @@ import {
   setSnapshotBehavior,
   setSnapshotCustomResponse,
   addSnapshotTempHandler,
-  resolveSessionPath,
-  writeSessionPointer,
-  getSessionPointerPath,
+  getSessionPathForPid,
+  listSessionPids,
   applySnapshotToRuntime,
-  SESSION_ENV_KEY,
 } from "./index";
 import {
   HttpHandlerBehavior,
@@ -37,7 +35,6 @@ const makeTempDir = () => {
 };
 
 afterEach(() => {
-  delete process.env[SESSION_ENV_KEY];
   for (const dir of tempDirs.splice(0)) {
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -86,7 +83,7 @@ describe("snapshot file protocol", () => {
       HttpHandlerBehavior.DELAY
     );
     expect(next.revision).toBe(2);
-    expect(next.flattenHandlers[0]?.behavior).toBe(HttpHandlerBehavior.DELAY);
+    expect(next.state.flattenHandlers[0]?.behavior).toBe(HttpHandlerBehavior.DELAY);
   });
 
   it("stores a custom response without changing behavior", () => {
@@ -102,7 +99,7 @@ describe("snapshot file protocol", () => {
       headers: { "X-Created": "yes" },
     });
 
-    expect(next).toMatchObject({ revision: 2, flattenHandlers: [{ behavior: HttpHandlerBehavior.DEFAULT, customResponse: { status: 201, body: "created" } }] });
+    expect(next).toMatchObject({ revision: 2, state: { flattenHandlers: [{ behavior: HttpHandlerBehavior.DEFAULT, customResponse: { status: 201, body: "created" } }] } });
   });
 
   it("adds temp handlers with tempInput", () => {
@@ -118,21 +115,17 @@ describe("snapshot file protocol", () => {
       response: '{"ok":true}',
     });
 
-    expect(next.flattenHandlers).toHaveLength(1);
-    expect(next.flattenHandlers[0]?.type).toBe("temp");
-    expect(next.flattenHandlers[0]?.tempInput?.path).toBe("/api/tmp");
+    expect(next.state.flattenHandlers).toHaveLength(1);
+    expect(next.state.flattenHandlers[0]?.type).toBe("temp");
+    expect(next.state.flattenHandlers[0]?.tempInput?.path).toBe("/api/tmp");
   });
 
-  it("resolves session path from env then pointer", () => {
+  it("uses PID-named session files in the caller cwd", () => {
     const dir = makeTempDir();
-    const sessionPath = path.join(dir, "env-session.json");
-    process.env[SESSION_ENV_KEY] = sessionPath;
-    expect(resolveSessionPath(dir)).toBe(path.resolve(sessionPath));
-
-    delete process.env[SESSION_ENV_KEY];
-    const pointed = path.join(dir, "pointed.json");
-    writeSessionPointer(pointed, dir);
-    expect(resolveSessionPath(dir)).toBe(path.resolve(pointed));
+    const sessionPath = getSessionPathForPid(4182, dir);
+    writeSnapshot(sessionPath, createEmptySnapshot());
+    expect(sessionPath).toBe(path.join(dir, ".msw-dev-tool", "sessions", "4182.json"));
+    expect(listSessionPids(dir)).toEqual([4182]);
   });
 
   it("applies sequential locked mutations without lost updates", () => {
@@ -145,7 +138,7 @@ describe("snapshot file protocol", () => {
       withLockedMutation(sessionPath, (prev) =>
         bumpSnapshot(prev, {
           flattenHandlers: [
-            ...prev.flattenHandlers,
+            ...prev.state.flattenHandlers,
             {
               id: `h-${i}`,
               path: `/h-${i}`,
@@ -160,8 +153,8 @@ describe("snapshot file protocol", () => {
 
     const final = readSnapshot(sessionPath);
     expect(final?.revision).toBe(writerCount);
-    expect(final?.flattenHandlers).toHaveLength(writerCount);
-    expect(final?.flattenHandlers.map((h) => h.id).sort()).toEqual(
+    expect(final?.state.flattenHandlers).toHaveLength(writerCount);
+    expect(final?.state.flattenHandlers.map((h) => h.id).sort()).toEqual(
       Array.from({ length: writerCount }, (_, i) => `h-${i}`).sort()
     );
   });
@@ -204,8 +197,10 @@ try {
   const prev = JSON.parse(fs.readFileSync(sessionPath, "utf8"));
   const next = {
     revision: prev.revision + 1,
-    flattenHandlers: [
-      ...prev.flattenHandlers,
+    state: {
+      ...prev.state,
+      flattenHandlers: [
+      ...prev.state.flattenHandlers,
       {
         id: handlerId,
         path: "/" + handlerId,
@@ -213,7 +208,9 @@ try {
         behavior: "default",
         type: "default",
       },
-    ],
+      ],
+    },
+    owner: prev.owner,
   };
   const tmpPath = sessionPath + "." + process.pid + "." + Date.now() + ".tmp";
   fs.writeFileSync(tmpPath, JSON.stringify(next, null, 2) + "\\n", "utf8");
@@ -249,8 +246,8 @@ try {
 
     const final = readSnapshot(sessionPath);
     expect(final?.revision).toBe(writerCount);
-    expect(final?.flattenHandlers).toHaveLength(writerCount);
-    expect(final?.flattenHandlers.map((h) => h.id).sort()).toEqual(
+    expect(final?.state.flattenHandlers).toHaveLength(writerCount);
+    expect(final?.state.flattenHandlers.map((h) => h.id).sort()).toEqual(
       Array.from({ length: writerCount }, (_, i) => `p-${i}`).sort()
     );
   });
@@ -262,19 +259,12 @@ try {
     expect(() => readSnapshot(sessionPath)).toThrow(/Invalid JSON/);
   });
 
-  it("throws on empty session pointer", () => {
-    const dir = makeTempDir();
-    writeSessionPointer("", dir);
-    fs.writeFileSync(getSessionPointerPath(dir), "\n", "utf8");
-    expect(() => resolveSessionPath(dir)).toThrow(/Session pointer is empty/);
-  });
-
   it("preserves pendingReset across unrelated bumps", () => {
     const withReset = bumpSnapshot(createEmptySnapshot(), {
       flattenHandlers: [],
       pendingReset: true,
     });
-    expect(withReset.pendingReset).toBe(true);
+    expect(withReset.state.pendingReset).toBe(true);
 
     const preserved = bumpSnapshot(withReset, {
       flattenHandlers: [
@@ -287,13 +277,13 @@ try {
         },
       ],
     });
-    expect(preserved.pendingReset).toBe(true);
+    expect(preserved.state.pendingReset).toBe(true);
 
     const cleared = bumpSnapshot(preserved, {
-      flattenHandlers: preserved.flattenHandlers,
+      flattenHandlers: preserved.state.flattenHandlers,
       pendingReset: false,
     });
-    expect(cleared.pendingReset).toBeUndefined();
+    expect(cleared.state.pendingReset).toBeUndefined();
   });
 
   it("preserves current default handlers missing from snapshot", () => {
@@ -332,7 +322,7 @@ try {
       current,
       snapshot: {
         revision: 2,
-        flattenHandlers: [
+        state: { flattenHandlers: [
           {
             id: "a",
             path: "/a",
@@ -345,7 +335,8 @@ try {
               status: 202,
             },
           },
-        ],
+        ] },
+        owner: { pid: 1 },
       },
     });
 
@@ -375,7 +366,7 @@ try {
       current: [],
       snapshot: {
         revision: 1,
-        flattenHandlers: [
+        state: { flattenHandlers: [
           {
             id,
             path,
@@ -395,7 +386,8 @@ try {
               status: 202,
             },
           },
-        ],
+        ] },
+        owner: { pid: 1 },
       },
     });
 
