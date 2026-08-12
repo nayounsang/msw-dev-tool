@@ -58,6 +58,11 @@ working directory. Use the following selection flow:
 2. Run `msw-dev-tool sessions` to list available PIDs
 3. When more than one session exists, pass `--pid <pid>` to every command
 
+Normal process shutdown removes its session snapshot. A crash can leave a stale
+PID-named file behind, so inspect the output of `msw-dev-tool sessions` and
+remove stale files from `.msw-dev-tool/sessions` before choosing a session or
+passing `--pid`.
+
 <Callout type="warning">
   After you change handler code, run `msw-dev-tool reset` so the session
   snapshot is re-seeded from the updated handlers.
