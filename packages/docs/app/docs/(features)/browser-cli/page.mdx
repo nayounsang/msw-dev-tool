@@ -72,11 +72,9 @@ command = "npx"
 args = ["-y", "chrome-devtools-mcp@latest", "--browser-url=http://127.0.0.1:9222"]
 ```
 
-Add the server globally to make it available across projects, or add it as a
-project-local MCP to limit it to this project. The MCP ID in this example is
-`chrome-devtools`; to connect to another Chrome instance, replace it with a
-unique ID such as `chrome-devtools-msw` in the `[mcp_servers.<id>]` header and
-use that ID in your agent instruction.
+When using a separate server through a global MCP configuration, you can assign
+it a different ID in the `[mcp_servers.<id>]` header. You can also configure the
+server as a project-local MCP.
 
 Your MCP client and `msw-dev-tool-browser` can then inspect the same Chrome tabs. See
 the [Chrome DevTools MCP guide for connecting to a running Chrome instance](https://github.com/ChromeDevTools/chrome-devtools-mcp#connecting-to-a-running-chrome-instance)
