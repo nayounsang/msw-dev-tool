@@ -7,7 +7,7 @@ import { SessionSnapshot, SerializableFlattenHandler } from "./types";
 export const listSnapshotHandlers = (
   sessionPath: string
 ): SerializableFlattenHandler[] =>
-  readSnapshotOrEmpty(sessionPath).flattenHandlers;
+  readSnapshotOrEmpty(sessionPath).state.flattenHandlers;
 
 export const getSnapshotHandler = (
   sessionPath: string,
@@ -21,12 +21,12 @@ export const setSnapshotBehavior = (
   behavior: HttpHandlerBehavior
 ): SessionSnapshot =>
   withLockedMutation(sessionPath, (prev) => {
-    const target = prev.flattenHandlers.find((h) => h.id === id);
+    const target = prev.state.flattenHandlers.find((h) => h.id === id);
     if (!target) {
       throw new Error(`Handler not found for id: ${id}`);
     }
     return bumpSnapshot(prev, {
-      flattenHandlers: prev.flattenHandlers.map((h) =>
+      flattenHandlers: prev.state.flattenHandlers.map((h) =>
         h.id === id ? { ...h, behavior } : h
       ),
     });
@@ -38,12 +38,12 @@ export const setSnapshotCustomResponse = (
   customResponse: CustomResponse
 ): SessionSnapshot =>
   withLockedMutation(sessionPath, (prev) => {
-    const target = prev.flattenHandlers.find((h) => h.id === id);
+    const target = prev.state.flattenHandlers.find((h) => h.id === id);
     if (!target) {
       throw new Error(`Handler not found for id: ${id}`);
     }
     return bumpSnapshot(prev, {
-      flattenHandlers: prev.flattenHandlers.map((h) =>
+      flattenHandlers: prev.state.flattenHandlers.map((h) =>
         h.id === id ? { ...h, customResponse } : h
       ),
     });
@@ -55,7 +55,7 @@ export const addSnapshotTempHandler = (
 ): SessionSnapshot =>
   withLockedMutation(sessionPath, (prev) => {
     const id = getRowId({ path: data.path, method: data.method });
-    if (prev.flattenHandlers.some((h) => h.id === id)) {
+    if (prev.state.flattenHandlers.some((h) => h.id === id)) {
       throw new Error(`Duplicate handler id: ${id}. Change method or path.`);
     }
     const entry: SerializableFlattenHandler = {
@@ -67,7 +67,7 @@ export const addSnapshotTempHandler = (
       tempInput: data,
     };
     return bumpSnapshot(prev, {
-      flattenHandlers: [...prev.flattenHandlers, entry],
+      flattenHandlers: [...prev.state.flattenHandlers, entry],
     });
   });
 
@@ -76,7 +76,7 @@ export const removeSnapshotTempHandler = (
   id: string
 ): SessionSnapshot =>
   withLockedMutation(sessionPath, (prev) => {
-    const target = prev.flattenHandlers.find((h) => h.id === id);
+    const target = prev.state.flattenHandlers.find((h) => h.id === id);
     if (!target) {
       throw new Error(`Handler not found for the given id: ${id}`);
     }
@@ -86,14 +86,14 @@ export const removeSnapshotTempHandler = (
       );
     }
     return bumpSnapshot(prev, {
-      flattenHandlers: prev.flattenHandlers.filter((h) => h.id !== id),
+      flattenHandlers: prev.state.flattenHandlers.filter((h) => h.id !== id),
     });
   });
 
 export const requestSnapshotReset = (sessionPath: string): SessionSnapshot =>
   withLockedMutation(sessionPath, (prev) =>
     bumpSnapshot(prev, {
-      flattenHandlers: prev.flattenHandlers,
+      flattenHandlers: prev.state.flattenHandlers,
       pendingReset: true,
     })
   );

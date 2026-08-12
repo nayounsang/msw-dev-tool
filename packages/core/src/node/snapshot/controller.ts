@@ -23,6 +23,7 @@ export class SessionController {
   private watcher: fs.FSWatcher | null = null;
   private watchDebounce: ReturnType<typeof setTimeout> | null = null;
   private exitHandler: (() => void) | null = null;
+  private signalHandlers = new Map<NodeJS.Signals, () => void>();
   private cleanedUp = false;
 
   public constructor(private readonly options: SessionControllerOptions) {}
@@ -35,6 +36,8 @@ export class SessionController {
     const sessionPath = ensureSessionPath();
     this.repository = new SnapshotRepository(sessionPath);
     this.cleanedUp = false;
+    // A reused PID may have left a stale file/lock after a crash.
+    clearSessionArtifacts(sessionPath);
 
     const seeded = this.repository.mutate(() =>
       bumpSnapshot(createEmptySnapshot(), {
@@ -67,10 +70,10 @@ export class SessionController {
       return;
     }
 
-    if (snapshot.pendingReset) {
+    if (snapshot.state.pendingReset) {
       const flattenHandlers = this.options.onReset();
       const cleared = repository.mutate((previous) => {
-        if (!previous.pendingReset) return previous;
+        if (!previous.state.pendingReset) return previous;
         return bumpSnapshot(previous, {
           flattenHandlers: toSerializableFlattenHandlers(flattenHandlers),
           pendingReset: false,
@@ -139,11 +142,24 @@ export class SessionController {
     if (this.exitHandler) return;
     this.exitHandler = () => this.dispose();
     process.once("exit", this.exitHandler);
+    for (const signal of ["SIGINT", "SIGTERM"] as const) {
+      const handler = () => {
+        this.dispose();
+        // Restore Node's default signal behavior after self-only cleanup.
+        process.kill(process.pid, signal);
+      };
+      this.signalHandlers.set(signal, handler);
+      process.once(signal, handler);
+    }
   }
 
   private unregisterExitHandler(): void {
     if (!this.exitHandler) return;
     process.off("exit", this.exitHandler);
     this.exitHandler = null;
+    for (const [signal, handler] of this.signalHandlers) {
+      process.off(signal, handler);
+    }
+    this.signalHandlers.clear();
   }
 }

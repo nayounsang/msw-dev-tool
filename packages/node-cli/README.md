@@ -20,15 +20,19 @@ pnpm add -D @msw-dev-tool/node-cli @msw-dev-tool/core msw
 
 ## Session discovery
 
-1. `--session <path>`
-2. `MSW_DEV_TOOL_SESSION` env
-3. `.msw-dev-tool/session` pointer in the current working directory
+Sessions are PID-named files in `.msw-dev-tool/sessions` under the current
+working directory. Run `msw-dev-tool sessions` to list them. Commands select a
+session automatically only when exactly one exists; when there are multiple,
+pass `--pid <pid>`. The former `--session` option and `MSW_DEV_TOOL_SESSION`
+environment variable are not supported.
 
 ## Commands
 
 All commands print JSON to stdout.
 
 ```bash
+msw-dev-tool sessions
+msw-dev-tool --pid 4182 list
 msw-dev-tool session
 msw-dev-tool list
 msw-dev-tool get '<id>'
@@ -51,8 +55,8 @@ server.listen();
 Then from another process / AI agent:
 
 ```bash
-msw-dev-tool list
-msw-dev-tool set-behavior '{"path":"/api/user","method":"get"}' "network error"
+msw-dev-tool --pid 4182 list
+msw-dev-tool --pid 4182 set-behavior '{"path":"/api/user","method":"get"}' "network error"
 ```
 
 After changing handler code, run `msw-dev-tool reset` and wait for `ok` before further commands. Writes during an in-flight reset can be discarded when the owner reseeds; the CLI settles ~300ms so `ok` usually means apply finished.
