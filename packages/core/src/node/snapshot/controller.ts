@@ -29,6 +29,9 @@ export class SessionController {
   private exitHandler: (() => void) | null = null;
   private signalHandlers = new Map<NodeJS.Signals, () => void>();
   private syncQueue: Promise<void> = Promise.resolve();
+  private disposing = false;
+  private disposePromise: Promise<void> | null = null;
+  private shuttingDown = false;
   private cleanedUp = false;
 
   public constructor(private readonly options: SessionControllerOptions) {}
@@ -57,6 +60,7 @@ export class SessionController {
   }
 
   public sync(): Promise<void> {
+    if (this.disposing) return this.syncQueue;
     this.syncQueue = this.syncQueue
       .then(() => this.syncNow())
       .catch((error: unknown) => {
@@ -103,14 +107,21 @@ export class SessionController {
   }
 
   public async dispose(): Promise<void> {
-    await this.stopWatching();
-    this.unregisterExitHandler();
-    const sessionPath = this.sessionPath;
-    if (sessionPath && !this.cleanedUp) {
-      await clearSessionArtifacts(sessionPath);
-      this.cleanedUp = true;
-    }
-    this.repository = null;
+    if (this.disposePromise) return this.disposePromise;
+
+    this.disposing = true;
+    this.disposePromise = (async () => {
+      await this.stopWatching();
+      await this.syncQueue;
+      this.unregisterExitHandler();
+      const sessionPath = this.sessionPath;
+      if (sessionPath && !this.cleanedUp) {
+        await clearSessionArtifacts(sessionPath);
+        this.cleanedUp = true;
+      }
+      this.repository = null;
+    })();
+    return this.disposePromise;
   }
 
   private async startWatching(): Promise<void> {
@@ -168,9 +179,12 @@ export class SessionController {
     process.once("beforeExit", this.exitHandler);
     for (const signal of ["SIGINT", "SIGTERM"] as const) {
       const handler = () => {
-        void this.dispose();
-        // Restore Node's default signal behavior after self-only cleanup.
-        process.kill(process.pid, signal);
+        if (this.shuttingDown) return;
+        this.shuttingDown = true;
+        void this.dispose().finally(() => {
+          // Restore Node's default signal behavior after self-only cleanup.
+          process.kill(process.pid, signal);
+        });
       };
       this.signalHandlers.set(signal, handler);
       process.once(signal, handler);
