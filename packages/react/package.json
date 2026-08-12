@@ -42,7 +42,7 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "@msw-dev-tool/core": "workspace:*",
+    "@msw-dev-tool/core": "workspace:^1.5.0",
     "msw": "^2.7.0",
     "react": "^18 || ^19",
     "react-dom": "^18 || ^19"

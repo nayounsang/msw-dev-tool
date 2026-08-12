@@ -1,6 +1,6 @@
 {
   "name": "@msw-dev-tool/browser-cli",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "CDP CLI for AI agents to control browser msw-dev-tool sessions.",
   "bin": {
     "msw-dev-tool-browser": "./bin/msw-dev-tool-browser.js"
@@ -36,7 +36,7 @@
     "vitest": "^4.1.10"
   },
   "peerDependencies": {
-    "@msw-dev-tool/core": "workspace:*"
+    "@msw-dev-tool/core": "workspace:^1.5.0"
   },
   "publishConfig": {
     "access": "public"
