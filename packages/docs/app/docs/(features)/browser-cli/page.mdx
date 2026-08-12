@@ -2,7 +2,7 @@
 description: "Browser CLI for AI agents to control msw-dev-tool with Chrome DevTools Protocol"
 ---
 
-import { Callout } from "nextra/components";
+import { Callout, Tabs } from "nextra/components";
 
 # Browser CLI
 
@@ -22,19 +22,49 @@ and JSON output conventions as the Node CLI, but requires an explicit browser ta
 pnpm add -D @msw-dev-tool/browser-cli @msw-dev-tool/core msw
 ```
 
-Start the Chrome instance controlled by your AI with a remote-debugging port.
+## Chrome and MCP setup
+
+Start the Chrome instance controlled by your AI with remote debugging enabled.
 Use a separate profile: this port gives local processes full browser-debugging
 access.
 
-```bash copy
-/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
-  --remote-debugging-port=9222 \
-  --user-data-dir=/tmp/msw-dev-tool-chrome
-```
+{/* prettier-ignore */}
+<Tabs items={["macOS", "Windows", "Linux"]}>
+  <Tabs.Tab>
+  ```bash copy
+  open -na "Google Chrome" --args \
+    --remote-debugging-address=127.0.0.1 \
+    --remote-debugging-port=9222 \
+    --user-data-dir=/private/tmp/chrome-debug-9222
+  ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```powershell copy
+  & "C:\Program Files\Google\Chrome\Application\chrome.exe" `
+    --remote-debugging-address=127.0.0.1 `
+    --remote-debugging-port=9222 `
+    --user-data-dir="$env:TEMP\chrome-debug-9222"
+  ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```bash copy
+  google-chrome \
+    --remote-debugging-address=127.0.0.1 \
+    --remote-debugging-port=9222 \
+    --user-data-dir=/tmp/chrome-debug-9222
+  ```
+  </Tabs.Tab>
+</Tabs>
 
-Configure your AI agent's Chrome DevTools MCP server to connect to the same
-endpoint. For example, in Codex add the following to `.codex/config.toml` and
-restart the MCP session:
+<Callout type="warning">
+  Before using Chrome DevTools MCP or `@msw-dev-tool/browser-cli`, keep the Chrome
+  instance started above running. Both connect to its `http://127.0.0.1:9222`
+  debugging endpoint, not to an ordinarily opened Chrome window.
+</Callout>
+
+### Install a dedicated Chrome DevTools MCP server
+
+Configure a separate Chrome DevTools MCP server to connect to the same endpoint:
 
 ```toml copy
 [mcp_servers.chrome-devtools]
@@ -45,6 +75,16 @@ args = ["-y", "chrome-devtools-mcp@latest", "--browser-url=http://127.0.0.1:9222
 Your MCP client and `msw-dev-tool-browser` can then inspect the same Chrome tabs. See
 the [Chrome DevTools MCP guide for connecting to a running Chrome instance](https://github.com/ChromeDevTools/chrome-devtools-mcp#connecting-to-a-running-chrome-instance)
 for other operating systems and remote-debugging details.
+
+### Agent instruction
+
+Add the following instruction for agents that use the Browser CLI:
+
+```text copy
+When using @msw-dev-tool/browser-cli, use the chrome-devtools MCP server
+configured for http://127.0.0.1:9222. Before using it, make sure Chrome is
+running with the remote-debugging configuration shown above.
+```
 
 Your application must call `setupDevToolWorker(...handlers)` in the target tab.
 That registers the in-page control endpoint used by the CLI.
