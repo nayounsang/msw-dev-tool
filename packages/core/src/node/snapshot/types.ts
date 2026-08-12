@@ -19,8 +19,10 @@ export const serializableFlattenHandlerSchema = z.object({
 
 export const sessionSnapshotSchema = z.object({
   revision: z.number(),
-  flattenHandlers: z.array(serializableFlattenHandlerSchema),
-  pendingReset: z.boolean().optional(),
+  state: z.object({
+    flattenHandlers: z.array(serializableFlattenHandlerSchema),
+    pendingReset: z.boolean().optional(),
+  }),
 });
 
 export type SerializableFlattenHandler = z.infer<

@@ -8,23 +8,25 @@ export const toSerializableFlattenHandlers = (
 
 export const createEmptySnapshot = (revision = 0): SessionSnapshot => ({
   revision,
-  flattenHandlers: [],
+  state: { flattenHandlers: [] },
 });
 
 export const bumpSnapshot = (
   prev: SessionSnapshot,
-  next: Partial<Pick<SessionSnapshot, "flattenHandlers" | "pendingReset">>
+  next: Partial<SessionSnapshot["state"]>
 ): SessionSnapshot => {
   const pendingReset =
     next.pendingReset === true
       ? true
       : next.pendingReset === false
         ? false
-        : Boolean(prev.pendingReset);
+      : Boolean(prev.state.pendingReset);
 
   return {
     revision: prev.revision + 1,
-    flattenHandlers: next.flattenHandlers ?? prev.flattenHandlers,
-    ...(pendingReset ? { pendingReset: true } : {}),
+    state: {
+      flattenHandlers: next.flattenHandlers ?? prev.state.flattenHandlers,
+      ...(pendingReset ? { pendingReset: true } : {}),
+    },
   };
 };

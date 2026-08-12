@@ -35,7 +35,6 @@ export class SessionController {
     const sessionPath = ensureSessionPath();
     this.repository = new SnapshotRepository(sessionPath);
     this.cleanedUp = false;
-
     const seeded = this.repository.mutate(() =>
       bumpSnapshot(createEmptySnapshot(), {
         flattenHandlers: toSerializableFlattenHandlers(flattenHandlers),
@@ -67,10 +66,10 @@ export class SessionController {
       return;
     }
 
-    if (snapshot.pendingReset) {
+    if (snapshot.state.pendingReset) {
       const flattenHandlers = this.options.onReset();
       const cleared = repository.mutate((previous) => {
-        if (!previous.pendingReset) return previous;
+        if (!previous.state.pendingReset) return previous;
         return bumpSnapshot(previous, {
           flattenHandlers: toSerializableFlattenHandlers(flattenHandlers),
           pendingReset: false,
