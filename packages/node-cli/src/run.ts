@@ -40,13 +40,13 @@ export const runCli = async (argv: string[]): Promise<void> => {
   }
 
   if (commandName === "sessions") {
-    printJson({ ok: true, sessions: listSessionPids().map((pid) => ({ pid })) });
+    printJson({ ok: true, sessions: (await listSessionPids()).map((pid) => ({ pid })) });
     return;
   }
 
   const command = findCommand(commandName);
   if (!command) throw new Error(`Unknown command: ${commandName}\n\n${usage}`);
 
-  const context = toCommandContext(createCliContext(flags));
+  const context = toCommandContext(await createCliContext(flags));
   printJson(await command.execute(context, { flags, positionals }));
 };

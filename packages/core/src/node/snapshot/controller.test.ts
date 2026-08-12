@@ -36,7 +36,7 @@ afterEach(() => {
 });
 
 describe("SessionController", () => {
-  it("seeds a session and applies each newer non-reset snapshot once", () => {
+  it("seeds a session and applies each newer non-reset snapshot once", async () => {
     const sessionPath = createTempSessionPath();
     const onSnapshot = vi.fn();
     const controller = new SessionController({
@@ -44,8 +44,8 @@ describe("SessionController", () => {
       onReset: () => [createFlattenHandler()],
     });
 
-    controller.start([createFlattenHandler()]);
-    const seeded = readSnapshot(sessionPath)!;
+    await controller.start([createFlattenHandler()]);
+    const seeded = (await readSnapshot(sessionPath))!;
     expect(seeded.revision).toBe(1);
     expect(seeded.state.flattenHandlers).toHaveLength(1);
 
@@ -55,32 +55,32 @@ describe("SessionController", () => {
         behavior: HttpHandlerBehavior.DELAY,
       })),
     });
-    writeSnapshot(sessionPath, next);
+    await writeSnapshot(sessionPath, next);
 
-    controller.sync();
-    controller.sync();
+    await controller.sync();
+    await controller.sync();
 
     expect(onSnapshot).toHaveBeenCalledTimes(1);
     expect(onSnapshot).toHaveBeenCalledWith(next);
-    controller.dispose();
+    await controller.dispose();
   });
 
-  it("acknowledges reset and removes session artifacts on dispose", () => {
+  it("acknowledges reset and removes session artifacts on dispose", async () => {
     const sessionPath = createTempSessionPath();
     const onReset = vi.fn(() => [createFlattenHandler()]);
     const controller = new SessionController({ onSnapshot: vi.fn(), onReset });
 
-    controller.start([createFlattenHandler()]);
-    const resetRequest = bumpSnapshot(readSnapshot(sessionPath)!, {
+    await controller.start([createFlattenHandler()]);
+    const resetRequest = bumpSnapshot((await readSnapshot(sessionPath))!, {
       pendingReset: true,
     });
-    writeSnapshot(sessionPath, resetRequest);
+    await writeSnapshot(sessionPath, resetRequest);
 
-    controller.sync();
+    await controller.sync();
 
     expect(onReset).toHaveBeenCalledTimes(1);
-    expect(readSnapshot(sessionPath)?.state.pendingReset).toBeUndefined();
-    controller.dispose();
+    expect((await readSnapshot(sessionPath))?.state.pendingReset).toBeUndefined();
+    await controller.dispose();
     expect(fs.existsSync(sessionPath)).toBe(false);
     expect(fs.existsSync(`${sessionPath}.lock`)).toBe(false);
   });
