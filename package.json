@@ -20,7 +20,7 @@
     "typecheck": "yarn workspace @msw-dev-tool/core typecheck && yarn workspace @msw-dev-tool/cli-core typecheck && yarn workspace @msw-dev-tool/react typecheck && yarn workspace @msw-dev-tool/node-cli typecheck && yarn workspace @msw-dev-tool/browser-cli typecheck && yarn workspace msw-dev-tool typecheck",
     "lint": "yarn workspace @msw-dev-tool/core lint && yarn workspace @msw-dev-tool/react lint",
     "test": "yarn workspace @msw-dev-tool/core test && yarn workspace @msw-dev-tool/cli-core test && yarn workspace @msw-dev-tool/node-cli test && yarn workspace @msw-dev-tool/browser-cli test",
-    "version-packages": "yarn changeset version",
+    "version-packages": "yarn changeset version && yarn install --mode=update-lockfile",
     "changeset": "changeset",
     "clean": "yarn workspace msw-dev-tool clean && yarn workspace docs clean && rm -rf node_modules",
     "resolve-workspace-protocol": "ts-node scripts/resolve-workspace-protocol.ts",
