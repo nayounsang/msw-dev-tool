@@ -134,6 +134,10 @@ describe("getHandlerResponseByBehavior", () => {
     });
   });
 
+  it("includes the 305 standard status text", () => {
+    expect(STANDARD_HTTP_STATUS_TEXT[305]).toBe("Use Proxy");
+  });
+
   it("falls back to original resolver for unknown behavior", async () => {
     const original = vi.fn(async () => HttpResponse.json({ fallback: true }));
     await getHandlerResponseByBehavior("unknown", original);
