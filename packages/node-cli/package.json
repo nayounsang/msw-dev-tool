@@ -37,15 +37,16 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@msw-dev-tool/cli-core": "workspace:*",
-    "@msw-dev-tool/core": "workspace:*"
+    "@msw-dev-tool/cli-core": "workspace:*"
   },
   "devDependencies": {
+    "@msw-dev-tool/core": "workspace:*",
     "@types/node": "^22.13.10",
     "typescript": "^5.8.3",
     "vitest": "^4.1.10"
   },
   "peerDependencies": {
+    "@msw-dev-tool/core": "workspace:^1.4.0",
     "msw": "^2.7.0"
   },
   "publishConfig": {
