@@ -13,9 +13,9 @@ export const toCommandContext = ({ sessionPath, pid }: CliContext): CliCommandCo
   metadata: { sessionPath, pid },
 });
 
-export const createCliContext = (
+export const createCliContext = async (
   flags: Record<string, string | boolean>
-): CliContext => {
+): Promise<CliContext> => {
   const fromFlag = flags.pid;
   if (typeof fromFlag === "string" && /^\d+$/.test(fromFlag)) {
     const pid = Number(fromFlag);
@@ -27,7 +27,7 @@ export const createCliContext = (
   }
   if (fromFlag !== undefined) throw new Error("--pid must be a numeric process ID");
 
-  const pids = listSessionPids();
+  const pids = await listSessionPids();
   if (pids.length === 0) {
     throw new Error(
       "No msw-dev-tool sessions found. Start a Node process with setupDevToolServer() first."

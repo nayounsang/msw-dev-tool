@@ -96,4 +96,16 @@ describe("wrapHandlersWithBehavior", () => {
     expect(result.type).toBe("error");
     expect(result.status).toBe(0);
   });
+
+  it("normalizes empty and native Response resolver results", async () => {
+    const empty = createHttpHandler(HttpMethod.GET, "/empty", async () => undefined);
+    const native = createHttpHandler(HttpMethod.GET, "/native", async () => new Response("native", { status: 201 }));
+    wrapHandlersWithBehavior([empty, native], () => CustomBehavior.DEFAULT);
+    const args = { request: new Request("http://localhost/x"), requestId: "1", params: {}, cookies: {} };
+    const emptyResult = await empty.resolver(args);
+    const nativeResult = await native.resolver(args);
+    expect(emptyResult).toBeUndefined();
+    expect(nativeResult).toBeInstanceOf(Response);
+    if (nativeResult instanceof Response) expect(await nativeResult.text()).toBe("native");
+  });
 });

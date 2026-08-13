@@ -12,6 +12,11 @@ import {
   setSnapshotBehavior,
   setSnapshotCustomResponse,
   addSnapshotTempHandler,
+  removeSnapshotTempHandler,
+  requestSnapshotReset,
+  getSnapshotHandler,
+  listSnapshotHandlers,
+  readSnapshotOrEmpty,
   getSessionPathForPid,
   listSessionPids,
   applySnapshotToRuntime,
@@ -284,6 +289,36 @@ try {
       pendingReset: false,
     });
     expect(cleared.state.pendingReset).toBeUndefined();
+  });
+
+  it("handles snapshot mutation lookup, removal, reset, and empty-file edges", () => {
+    const dir = makeTempDir();
+    const sessionPath = path.join(dir, "session.json");
+    expect(readSnapshotOrEmpty(sessionPath)).toEqual(createEmptySnapshot());
+    expect(readSnapshot(sessionPath)).toBeNull();
+    writeSnapshot(sessionPath, bumpSnapshot(createEmptySnapshot(), {
+      flattenHandlers: [{ id: "code", path: "/code", method: HttpMethod.GET, behavior: HttpHandlerBehavior.DEFAULT, type: "default" }],
+    }));
+    expect(listSnapshotHandlers(sessionPath)).toHaveLength(1);
+    expect(getSnapshotHandler(sessionPath, "missing")).toBeUndefined();
+    expect(() => setSnapshotBehavior(sessionPath, "missing", HttpHandlerBehavior.DELAY)).toThrow("Handler not found");
+    expect(() => setSnapshotCustomResponse(sessionPath, "missing", { status: 200 })).toThrow("Handler not found");
+    expect(() => removeSnapshotTempHandler(sessionPath, "missing")).toThrow("Handler not found");
+    expect(() => removeSnapshotTempHandler(sessionPath, "code")).toThrow("cannot be deleted");
+    const temp = addSnapshotTempHandler(sessionPath, { path: "/temp", method: HttpMethod.POST, contentType: MimeType.TEXT_PLAIN, status: StringHttpStatusCode.OK, response: "ok" });
+    const tempId = temp.state.flattenHandlers.at(-1)!.id;
+    expect(() => addSnapshotTempHandler(sessionPath, { path: "/temp", method: HttpMethod.POST, contentType: MimeType.TEXT_PLAIN, status: StringHttpStatusCode.OK, response: "ok" })).toThrow("Duplicate handler");
+    expect(removeSnapshotTempHandler(sessionPath, tempId).state.flattenHandlers).toHaveLength(1);
+    expect(requestSnapshotReset(sessionPath).state.pendingReset).toBe(true);
+  });
+
+  it("rejects empty and schema-invalid snapshot files", () => {
+    const dir = makeTempDir();
+    const sessionPath = path.join(dir, "session.json");
+    fs.writeFileSync(sessionPath, "   ");
+    expect(() => readSnapshot(sessionPath)).toThrow("empty");
+    fs.writeFileSync(sessionPath, JSON.stringify({ revision: "bad" }));
+    expect(() => readSnapshot(sessionPath)).toThrow("Invalid session snapshot schema");
   });
 
   it("preserves current default handlers missing from snapshot", () => {

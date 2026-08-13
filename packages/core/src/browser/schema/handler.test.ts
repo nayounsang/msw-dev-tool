@@ -103,4 +103,11 @@ describe("handlerSchema", () => {
       ).toBe(true);
     }
   });
+
+  it("validates XML and HTML response bodies only for their matching content types", () => {
+    expect(handlerSchema.safeParse({ ...validBase, contentType: MimeType.APPLICATION_XML, response: "<item>ok</item>" }).success).toBe(true);
+    expect(handlerSchema.safeParse({ ...validBase, contentType: MimeType.APPLICATION_XML, response: "<item>" }).success).toBe(true);
+    expect(handlerSchema.safeParse({ ...validBase, contentType: MimeType.TEXT_HTML, response: "<main>ok</main>" }).success).toBe(true);
+    expect(handlerSchema.safeParse({ ...validBase, contentType: MimeType.TEXT_HTML, response: "<main>" }).success).toBe(true);
+  });
 });
