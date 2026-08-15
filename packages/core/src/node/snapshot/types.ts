@@ -19,8 +19,11 @@ export const serializableFlattenHandlerSchema = z.object({
 
 export const sessionSnapshotSchema = z.object({
   revision: z.number(),
-  flattenHandlers: z.array(serializableFlattenHandlerSchema),
-  pendingReset: z.boolean().optional(),
+  state: z.object({
+    flattenHandlers: z.array(serializableFlattenHandlerSchema),
+    pendingReset: z.boolean().optional(),
+  }),
+  owner: z.object({ pid: z.number().int().nonnegative() }),
 });
 
 export type SerializableFlattenHandler = z.infer<
@@ -28,6 +31,5 @@ export type SerializableFlattenHandler = z.infer<
 >;
 export type SessionSnapshot = z.infer<typeof sessionSnapshotSchema>;
 
-export const SESSION_POINTER_DIR = ".msw-dev-tool";
-export const SESSION_POINTER_FILE = "session";
-export const SESSION_ENV_KEY = "MSW_DEV_TOOL_SESSION";
+export const SESSION_DIR = ".msw-dev-tool";
+export const SESSIONS_DIR = "sessions";

@@ -1,6 +1,6 @@
 import type { ParsedArgs } from "./types";
 
-const valueFlags = new Set(["json", "session", "cdp-url", "target"]);
+const valueFlags = new Set(["json", "pid", "cdp-url", "target"]);
 
 export const parseArgs = (argv: string[]): ParsedArgs => {
   const flags: Record<string, string | boolean> = {};

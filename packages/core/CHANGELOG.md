@@ -1,5 +1,24 @@
 # @msw-dev-tool/core
 
+## 1.5.1
+
+### Patch Changes
+
+- 67de2dd: Fix custom HTTP 305 responses to use the standard `Use Proxy` status text.
+- bda8f30: Store Node sessions in cwd-scoped PID snapshot files and add PID-based CLI selection.
+
+## 1.5.0
+
+### Minor Changes
+
+- a9f235c: Export standard HTTP status messages and use them consistently for custom responses and status-code behaviors.
+
+## 1.4.0
+
+### Minor Changes
+
+- 5b505c2: Require consumers to import browser, Node, and shared APIs from their dedicated `@msw-dev-tool/core` subpath entrypoints.
+
 ## 1.3.0
 
 ### Minor Changes

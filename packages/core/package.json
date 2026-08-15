@@ -1,6 +1,6 @@
 {
   "name": "@msw-dev-tool/core",
-  "version": "1.3.0",
+  "version": "1.5.1",
   "exports": {
     "./browser": {
       "types": "./dist/types/browser/index.d.ts",
@@ -46,7 +46,7 @@
     "clean": "rm -rf dist && rm -rf node_modules",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "yarn build && vitest run"
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",
@@ -80,6 +80,7 @@
     }
   },
   "dependencies": {
+    "chokidar": "^5.0.0",
     "proper-lockfile": "^4.1.2",
     "zod": "^3.24.2"
   },

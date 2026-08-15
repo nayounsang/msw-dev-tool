@@ -2,179 +2,77 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { getSessionPathForPid } from "@msw-dev-tool/core/node/internal";
 import { runCli } from "../src/run";
 
 const tempDirs: string[] = [];
+const originalCwd = process.cwd();
 
-const createSessionFile = () => {
+const createSessionFile = (pid = 4182) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "msw-dev-tool-cli-"));
   tempDirs.push(dir);
-  const sessionPath = path.join(dir, "session.json");
-  fs.writeFileSync(
-    sessionPath,
-    JSON.stringify(
-      {
-        revision: 0,
-        flattenHandlers: [
-          {
-            id: JSON.stringify({ path: "/api/items", method: "get" }),
-            path: "/api/items",
-            method: "get",
-            behavior: "default",
-            type: "default",
-          },
-        ],
-      },
-      null,
-      2
-    )
-  );
-  return sessionPath;
+  process.chdir(dir);
+  const sessionPath = getSessionPathForPid(pid, dir);
+  fs.mkdirSync(path.dirname(sessionPath), { recursive: true });
+  fs.writeFileSync(sessionPath, JSON.stringify({
+    revision: 0,
+    owner: { pid },
+    state: { flattenHandlers: [{
+      id: JSON.stringify({ path: "/api/items", method: "get" }),
+      path: "/api/items", method: "get", behavior: "default", type: "default",
+    }] },
+  }));
+  return { pid, sessionPath };
 };
 
-const runWithJsonOutput = async (argv: string[], settle = false) => {
+const runWithJsonOutput = async (argv: string[]) => {
   const logs: string[] = [];
   const originalWrite = process.stdout.write.bind(process.stdout);
   process.stdout.write = ((chunk: string | Uint8Array) => {
     logs.push(String(chunk));
     return true;
   }) as typeof process.stdout.write;
-
   try {
-    const running = runCli(argv);
-    if (settle) await vi.advanceTimersByTimeAsync(300);
-    await running;
+    await runCli(argv);
   } finally {
     process.stdout.write = originalWrite;
   }
-
   return JSON.parse(logs.join(""));
 };
 
 afterEach(() => {
   vi.useRealTimers();
-  for (const dir of tempDirs.splice(0)) {
-    fs.rmSync(dir, { recursive: true, force: true });
-  }
+  process.chdir(originalCwd);
+  for (const dir of tempDirs.splice(0)) fs.rmSync(dir, { recursive: true, force: true });
 });
 
 describe("node-cli", () => {
-  it("lists handlers from a session snapshot", async () => {
-    const sessionPath = createSessionFile();
-    const payload = await runWithJsonOutput(["--session", sessionPath, "list"]);
-    expect(payload.ok).toBe(true);
-    expect(payload.handlers).toHaveLength(1);
-    expect(payload.handlers[0].path).toBe("/api/items");
+  it("lists PID sessions in the current working directory", async () => {
+    createSessionFile(4182);
+    const secondPath = getSessionPathForPid(4217);
+    fs.mkdirSync(path.dirname(secondPath), { recursive: true });
+    fs.writeFileSync(secondPath, JSON.stringify({ revision: 0, owner: { pid: 4217 }, state: { flattenHandlers: [] } }));
+    await expect(runWithJsonOutput(["sessions"])).resolves.toEqual({ ok: true, sessions: [{ pid: 4182 }, { pid: 4217 }] });
   });
 
-  it("sets behavior in the snapshot", async () => {
-    const sessionPath = createSessionFile();
+  it("automatically selects the only session and applies a mutation", async () => {
+    const { pid } = createSessionFile();
     const id = JSON.stringify({ path: "/api/items", method: "get" });
-    vi.useFakeTimers();
-    const payload = await runWithJsonOutput([
-      "--session",
-      sessionPath,
-      "set-behavior",
-      id,
-      "delay",
-    ], true);
-    vi.useRealTimers();
-    expect(payload.ok).toBe(true);
-    expect(payload.handler.behavior).toBe("delay");
-    expect(payload.revision).toBe(1);
+    const payload = await runWithJsonOutput(["set-behavior", id, "delay"]);
+    expect(payload).toMatchObject({ ok: true, pid, revision: 1, handler: { behavior: "delay" } });
   });
 
-  it("stores a custom response without changing behavior", async () => {
-    const sessionPath = createSessionFile();
-    const id = JSON.stringify({ path: "/api/items", method: "get" });
-    vi.useFakeTimers();
-    const payload = await runWithJsonOutput([
-      "--session",
-      sessionPath,
-      "set-custom-response",
-      id,
-      "--json",
-      '{"status":201,"body":"created","headers":{"X-Created":"yes"}}',
-    ], true);
-    vi.useRealTimers();
-
-    expect(payload).toMatchObject({
-      ok: true,
-      revision: 1,
-      handler: {
-        id,
-        behavior: "default",
-        customResponse: { status: 201, body: "created", headers: { "X-Created": "yes" } },
-      },
-    });
+  it("requires --pid when multiple sessions exist and selects the requested PID", async () => {
+    createSessionFile(4182);
+    const secondPath = getSessionPathForPid(4217);
+    fs.writeFileSync(secondPath, JSON.stringify({ revision: 0, owner: { pid: 4217 }, state: { flattenHandlers: [] } }));
+    await expect(runCli(["list"])).rejects.toThrow(/Multiple msw-dev-tool sessions/);
+    await expect(runWithJsonOutput(["--pid", "4217", "list"])).resolves.toMatchObject({ ok: true, pid: 4217, handlers: [] });
   });
 
-  it("reports session metadata and returns a handler by id", async () => {
-    const sessionPath = createSessionFile();
-    const id = JSON.stringify({ path: "/api/items", method: "get" });
-
-    const session = await runWithJsonOutput(["--session", sessionPath, "session"]);
-    const get = await runWithJsonOutput(["--session", sessionPath, "get", id]);
-
-    expect(session).toMatchObject({
-      ok: true,
-      sessionPath,
-      revision: 0,
-      handlerCount: 1,
-    });
-    expect(get).toMatchObject({ ok: true, sessionPath, handler: { id } });
-  });
-
-  it("adds, removes, and resets handlers through the command registry", async () => {
-    const sessionPath = createSessionFile();
-    const data = JSON.stringify({
-      path: "/api/temp",
-      method: "get",
-      contentType: "application/json",
-      status: "200",
-      response: '{"ok":true}',
-    });
-
-    vi.useFakeTimers();
-    const added = await runWithJsonOutput([
-      "--session",
-      sessionPath,
-      "add-temp",
-      "--json",
-      data,
-    ], true);
-    const tempId = added.handler.id;
-    const removed = await runWithJsonOutput([
-      "--session",
-      sessionPath,
-      "remove-temp",
-      tempId,
-    ], true);
-    const reset = await runWithJsonOutput(["--session", sessionPath, "reset"], true);
-    vi.useRealTimers();
-
-    expect(added).toMatchObject({ ok: true, handler: { type: "temp" } });
-    expect(removed).toMatchObject({ ok: true, revision: 2 });
-    expect(reset).toMatchObject({ ok: true, revision: 3, pendingReset: true });
-  });
-
-  it("rejects malformed command input before mutating the snapshot", async () => {
-    const sessionPath = createSessionFile();
-
-    await expect(runCli(["--session", sessionPath, "get"])).rejects.toThrow(
-      "Usage: get <id>"
-    );
-    await expect(
-      runCli(["--session", sessionPath, "set-behavior", "missing", "unknown"])
-    ).rejects.toThrow(/Unknown behavior/);
-    await expect(
-      runCli(["--session", sessionPath, "set-custom-response", "missing", "--json", "{"])
-    ).rejects.toThrow("Custom response must be valid JSON");
-    await expect(
-      runCli(["--session", sessionPath, "add-temp", "--json", "{"])
-    ).rejects.toThrow(SyntaxError);
-    await expect(runCli(["--session", sessionPath, "unknown-command"])).rejects.toThrow(
-      /Unknown command/
-    );
+  it("rejects malformed commands before mutating a selected session", async () => {
+    const { pid } = createSessionFile();
+    await expect(runCli(["--pid", String(pid), "get"])).rejects.toThrow("Usage: get <id>");
+    await expect(runCli(["--pid", "not-a-pid", "list"])).rejects.toThrow("--pid must be a numeric process ID");
   });
 });

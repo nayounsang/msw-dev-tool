@@ -6,14 +6,16 @@ import { FlattenHandler, HttpHandlerBehavior, HttpMethod } from "../../shared/ty
 import { readSnapshot, writeSnapshot } from "./file";
 import { bumpSnapshot } from "./serialize";
 import { SessionController } from "./controller";
-import { SESSION_ENV_KEY } from "./types";
+import { getSessionPathForPid } from "./sessionPath";
 
 const tempDirs: string[] = [];
 
+const originalCwd = process.cwd();
 const createTempSessionPath = () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "msw-session-controller-"));
   tempDirs.push(dir);
-  return path.join(dir, "session.json");
+  process.chdir(dir);
+  return getSessionPathForPid(process.pid, dir);
 };
 
 const createFlattenHandler = (): FlattenHandler => ({
@@ -27,60 +29,58 @@ const createFlattenHandler = (): FlattenHandler => ({
 });
 
 afterEach(() => {
-  delete process.env[SESSION_ENV_KEY];
+  process.chdir(originalCwd);
   for (const dir of tempDirs.splice(0)) {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
 
 describe("SessionController", () => {
-  it("seeds a session and applies each newer non-reset snapshot once", () => {
+  it("seeds a session and applies each newer non-reset snapshot once", async () => {
     const sessionPath = createTempSessionPath();
-    process.env[SESSION_ENV_KEY] = sessionPath;
     const onSnapshot = vi.fn();
     const controller = new SessionController({
       onSnapshot,
       onReset: () => [createFlattenHandler()],
     });
 
-    controller.start([createFlattenHandler()]);
-    const seeded = readSnapshot(sessionPath)!;
+    await controller.start([createFlattenHandler()]);
+    const seeded = (await readSnapshot(sessionPath))!;
     expect(seeded.revision).toBe(1);
-    expect(seeded.flattenHandlers).toHaveLength(1);
+    expect(seeded.state.flattenHandlers).toHaveLength(1);
 
     const next = bumpSnapshot(seeded, {
-      flattenHandlers: seeded.flattenHandlers.map((handler) => ({
+      flattenHandlers: seeded.state.flattenHandlers.map((handler) => ({
         ...handler,
         behavior: HttpHandlerBehavior.DELAY,
       })),
     });
-    writeSnapshot(sessionPath, next);
+    await writeSnapshot(sessionPath, next);
 
-    controller.sync();
-    controller.sync();
+    await controller.sync();
+    await controller.sync();
 
     expect(onSnapshot).toHaveBeenCalledTimes(1);
     expect(onSnapshot).toHaveBeenCalledWith(next);
-    controller.dispose();
+    await controller.dispose();
   });
 
-  it("acknowledges reset and removes session artifacts on dispose", () => {
+  it("acknowledges reset and removes session artifacts on dispose", async () => {
     const sessionPath = createTempSessionPath();
-    process.env[SESSION_ENV_KEY] = sessionPath;
     const onReset = vi.fn(() => [createFlattenHandler()]);
     const controller = new SessionController({ onSnapshot: vi.fn(), onReset });
 
-    controller.start([createFlattenHandler()]);
-    const resetRequest = bumpSnapshot(readSnapshot(sessionPath)!, {
+    await controller.start([createFlattenHandler()]);
+    const resetRequest = bumpSnapshot((await readSnapshot(sessionPath))!, {
       pendingReset: true,
     });
-    writeSnapshot(sessionPath, resetRequest);
+    await writeSnapshot(sessionPath, resetRequest);
 
-    controller.sync();
+    await controller.sync();
 
     expect(onReset).toHaveBeenCalledTimes(1);
-    expect(readSnapshot(sessionPath)?.pendingReset).toBeUndefined();
-    controller.dispose();
+    expect((await readSnapshot(sessionPath))?.state.pendingReset).toBeUndefined();
+    await controller.dispose();
     expect(fs.existsSync(sessionPath)).toBe(false);
     expect(fs.existsSync(`${sessionPath}.lock`)).toBe(false);
   });

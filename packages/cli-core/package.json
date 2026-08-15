@@ -1,6 +1,6 @@
 {
   "name": "@msw-dev-tool/cli-core",
-  "version": "0.2.0",
+  "version": "0.2.3",
   "description": "Shared command protocol and implementation for msw-dev-tool CLIs.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

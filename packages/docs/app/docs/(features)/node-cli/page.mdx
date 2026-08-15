@@ -51,11 +51,17 @@ const server = await setupDevToolServer(...handlers);
 server.listen();
 ```
 
-On setup, a session snapshot file is created. Discovery order:
+On setup, a PID-named session snapshot file is created in the app's current
+working directory. Use the following selection flow:
 
-1. `MSW_DEV_TOOL_SESSION` env
-2. `.msw-dev-tool/session` pointer in cwd
-3. Auto-created temp file + cwd pointer
+1. `.msw-dev-tool/sessions/<pid>.json` files in the current working directory
+2. Run `msw-dev-tool sessions` to list available PIDs
+3. When more than one session exists, pass `--pid <pid>` to every command
+
+Normal process shutdown removes its session snapshot. A crash can leave a stale
+PID-named file behind, so inspect the output of `msw-dev-tool sessions` and
+remove stale files from `.msw-dev-tool/sessions` before choosing a session or
+passing `--pid`.
 
 <Callout type="warning">
   After you change handler code, run `msw-dev-tool reset` so the session
@@ -72,16 +78,20 @@ On setup, a session snapshot file is created. Discovery order:
 All commands print JSON to stdout.
 
 ```bash copy
+msw-dev-tool sessions
+msw-dev-tool --pid 4182 session
 msw-dev-tool session
-msw-dev-tool list
-msw-dev-tool get '<handler-id>'
-msw-dev-tool set-behavior '<handler-id>' delay
-msw-dev-tool add-temp --json '{"path":"/api/tmp","method":"get","contentType":"application/json","status":"200","response":"{\"ok\":true}"}'
-msw-dev-tool remove-temp '<handler-id>'
-msw-dev-tool reset
+msw-dev-tool --pid 4182 list
+msw-dev-tool --pid 4182 get '<handler-id>'
+msw-dev-tool --pid 4182 set-behavior '<handler-id>' delay
+msw-dev-tool --pid 4182 add-temp --json '{"path":"/api/tmp","method":"get","contentType":"application/json","status":"200","response":"{\"ok\":true}"}'
+msw-dev-tool --pid 4182 remove-temp '<handler-id>'
+msw-dev-tool --pid 4182 reset
 ```
 
-Optional: `--session /path/to/snapshot.json`
+`--session` and `MSW_DEV_TOOL_SESSION` are no longer supported. Node session
+selection is cwd-scoped and PID-based. This is separate from the browser CLI,
+which continues to use `tabs` and `--target` for CDP target selection.
 
 ## Handler id
 

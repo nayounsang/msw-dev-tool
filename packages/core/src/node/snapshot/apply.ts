@@ -27,11 +27,11 @@ export const applySnapshotToRuntime = (args: {
 }): FlattenHandler[] => {
   const { runtime, current, snapshot } = args;
   const currentById = new Map(current.map((h) => [h.id, h]));
-  const snapshotIds = new Set(snapshot.flattenHandlers.map((h) => h.id));
+  const snapshotIds = new Set(snapshot.state.flattenHandlers.map((h) => h.id));
 
   const seed: FlattenHandlerSeed[] = [];
 
-  for (const entry of snapshot.flattenHandlers) {
+  for (const entry of snapshot.state.flattenHandlers) {
     if (entry.type === "temp") {
       seed.push(serializableTempToSeed(entry));
       continue;
@@ -54,10 +54,10 @@ export const applySnapshotToRuntime = (args: {
   }
 
   const lookupBehavior = (id: string) =>
-    snapshot.flattenHandlers.find((h) => h.id === id)?.behavior ??
+    snapshot.state.flattenHandlers.find((h) => h.id === id)?.behavior ??
     findHandlerBehavior(current, id);
   const lookupCustomResponse = (id: string) =>
-    snapshot.flattenHandlers.find((h) => h.id === id)?.customResponse;
+    snapshot.state.flattenHandlers.find((h) => h.id === id)?.customResponse;
 
   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   const seedAsHandlers = seed as FlattenHandler[];
@@ -67,7 +67,7 @@ export const applySnapshotToRuntime = (args: {
     lookupBehavior,
     lookupCustomResponse
   ).map((h) => {
-      const fromSnap = snapshot.flattenHandlers.find((s) => s.id === h.id);
+      const fromSnap = snapshot.state.flattenHandlers.find((s) => s.id === h.id);
       return fromSnap
         ? {
             ...h,
@@ -78,7 +78,7 @@ export const applySnapshotToRuntime = (args: {
     });
 
   const tempsChanged =
-    tempIdsSignature(current) !== tempIdsSignature(snapshot.flattenHandlers);
+    tempIdsSignature(current) !== tempIdsSignature(snapshot.state.flattenHandlers);
 
   if (tempsChanged) {
     runtime.resetHandlers();

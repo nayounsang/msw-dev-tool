@@ -5,7 +5,6 @@ import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   nodeHandlerStore,
-  SESSION_ENV_KEY,
   readSnapshot,
   setSnapshotBehavior,
   addSnapshotTempHandler,
@@ -17,14 +16,16 @@ import {
   HttpMethod,
   MimeType,
   StringHttpStatusCode,
+  getSessionPathForPid,
 } from "./internal";
 import { setupDevToolServer } from "./index";
 
 const tempDirs: string[] = [];
+const originalCwd = process.cwd();
 
-afterEach(() => {
-  disposeNodeSession();
-  delete process.env[SESSION_ENV_KEY];
+afterEach(async () => {
+  await disposeNodeSession();
+  process.chdir(originalCwd);
   for (const dir of tempDirs.splice(0)) {
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -33,8 +34,8 @@ afterEach(() => {
 const makeSession = () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "msw-node-store-"));
   tempDirs.push(dir);
-  const sessionPath = path.join(dir, "session.json");
-  process.env[SESSION_ENV_KEY] = sessionPath;
+  process.chdir(dir);
+  const sessionPath = getSessionPathForPid(process.pid, dir);
   return sessionPath;
 };
 
@@ -46,16 +47,16 @@ describe("setupDevToolServer", () => {
     );
 
     expect(server).toBeTruthy();
-    expect(getNodeSessionPath()).toBe(sessionPath);
+    expect(getNodeSessionPath()).toBe(getSessionPathForPid(process.pid));
     expect(nodeHandlerStore.getState().flattenHandlers).toHaveLength(1);
 
-    const snap = readSnapshot(sessionPath);
-    expect(snap?.flattenHandlers).toHaveLength(1);
+    const snap = await readSnapshot(sessionPath);
+    expect(snap?.state.flattenHandlers).toHaveLength(1);
 
     const id = nodeHandlerStore.getState().flattenHandlers[0]!.id;
-    setSnapshotBehavior(sessionPath, id, HttpHandlerBehavior.DELAY);
+    await setSnapshotBehavior(sessionPath, id, HttpHandlerBehavior.DELAY);
 
-    syncNodeSession();
+    await syncNodeSession();
 
     expect(nodeHandlerStore.getState().getHandlerBehavior(id)).toBe(
       HttpHandlerBehavior.DELAY
@@ -82,9 +83,9 @@ describe("setupDevToolServer", () => {
       http.get("/api/items", () => HttpResponse.json({ ok: true }))
     );
 
-    const seeded = readSnapshot(sessionPath);
-    expect(seeded?.flattenHandlers).toHaveLength(1);
-    expect(seeded?.flattenHandlers[0]?.behavior).toBe(
+    const seeded = await readSnapshot(sessionPath);
+    expect(seeded?.state.flattenHandlers).toHaveLength(1);
+    expect(seeded?.state.flattenHandlers[0]?.behavior).toBe(
       HttpHandlerBehavior.DEFAULT
     );
 
@@ -94,7 +95,7 @@ describe("setupDevToolServer", () => {
     expect(nodeHandlerStore.getState().getHandlerBehavior(id)).toBe(
       HttpHandlerBehavior.DISABLE
     );
-    expect(readSnapshot(sessionPath)?.flattenHandlers[0]?.behavior).toBe(
+    expect((await readSnapshot(sessionPath))?.state.flattenHandlers[0]?.behavior).toBe(
       HttpHandlerBehavior.DEFAULT
     );
   });
@@ -106,7 +107,7 @@ describe("setupDevToolServer", () => {
       http.get("/api/items", () => HttpResponse.json({ ok: true }))
     );
 
-    addSnapshotTempHandler(sessionPath, {
+    await addSnapshotTempHandler(sessionPath, {
       path: "/api/tmp",
       method: HttpMethod.GET,
       contentType: MimeType.APPLICATION_JSON,
@@ -114,17 +115,18 @@ describe("setupDevToolServer", () => {
       response: '{"ok":true}',
     });
 
-    syncNodeSession();
+    await syncNodeSession();
     expect(
       nodeHandlerStore.getState().flattenHandlers.some((h) => h.type === "temp")
     ).toBe(true);
 
-    requestSnapshotReset(sessionPath);
-    syncNodeSession();
+    await requestSnapshotReset(sessionPath);
+    await syncNodeSession();
 
     expect(
       nodeHandlerStore.getState().flattenHandlers.every((h) => h.type === "default")
     ).toBe(true);
-    expect(readSnapshot(sessionPath)?.pendingReset).toBeUndefined();
+    expect((await readSnapshot(sessionPath))?.state.pendingReset).toBeUndefined();
   });
+
 });

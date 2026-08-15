@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { HttpResponse, passthrough } from "msw";
-import { CustomBehavior, HttpErrorStatusCode } from "../types";
+import {
+  CustomBehavior,
+  HttpErrorStatusCode,
+  STANDARD_HTTP_STATUS_TEXT,
+} from "../types";
 import { getHandlerResponseByBehavior } from "./handler";
 
 vi.mock("msw", async (importOriginal) => {
@@ -105,9 +109,12 @@ describe("getHandlerResponseByBehavior", () => {
     );
   });
 
-  it("returns HttpResponse with status for error status codes", async () => {
+  it.each([
+    [HttpErrorStatusCode.NOT_FOUND, "Not Found"],
+    [HttpErrorStatusCode.SERVICE_UNAVAILABLE, "Service Unavailable"],
+  ])("returns the standard status text for error behavior %i", async (status, statusText) => {
     const result = await getHandlerResponseByBehavior(
-      HttpErrorStatusCode.NOT_FOUND,
+      status,
       async () => HttpResponse.json({})
     );
 
@@ -115,8 +122,20 @@ describe("getHandlerResponseByBehavior", () => {
     if (!(result instanceof Response)) {
       throw new Error("Expected Response");
     }
-    expect(result.status).toBe(404);
-    expect(result.statusText).toContain("404");
+    expect(result.status).toBe(status);
+    expect(result.statusText).toBe(statusText);
+  });
+
+  it("exports standard status messages from the shared HTTP constants", () => {
+    expect(STANDARD_HTTP_STATUS_TEXT).toMatchObject({
+      200: "OK",
+      404: "Not Found",
+      503: "Service Unavailable",
+    });
+  });
+
+  it("includes the 305 standard status text", () => {
+    expect(STANDARD_HTTP_STATUS_TEXT[305]).toBe("Use Proxy");
   });
 
   it("falls back to original resolver for unknown behavior", async () => {
