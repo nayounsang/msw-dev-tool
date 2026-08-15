@@ -1159,6 +1159,7 @@ __metadata:
     "@types/node": "npm:^22.13.10"
     "@types/proper-lockfile": "npm:^4.1.4"
     "@types/react": "npm:^18 || ^19"
+    chokidar: "npm:^5.0.0"
     eslint: "npm:^9.24.0"
     globals: "npm:^16.0.0"
     happy-dom: "npm:^20.11.1"
@@ -5393,6 +5394,15 @@ __metadata:
     "@chevrotain/utils": "npm:11.0.3"
     lodash-es: "npm:4.17.21"
   checksum: 10c0/ffd425fa321e3f17e9833d7f44cd39f2743f066e92ca74b226176080ca5d455f853fe9091cdfd86354bd899d85c08b3bdc3f55b267e7d07124b048a88349765f
+  languageName: node
+  linkType: hard
+
+"chokidar@npm:^5.0.0":
+  version: 5.0.0
+  resolution: "chokidar@npm:5.0.0"
+  dependencies:
+    readdirp: "npm:^5.0.0"
+  checksum: 10c0/42fc907cb2a7ff5c9e220f84dae75380a77997f851c2a5e7865a2cf9ae45dd407a23557208cdcdbf3ac8c93341135a1748e4c48c31855f3bfa095e5159b6bdec
   languageName: node
   linkType: hard
 
@@ -11874,6 +11884,13 @@ __metadata:
     pify: "npm:^4.0.1"
     strip-bom: "npm:^3.0.0"
   checksum: 10c0/85a9ba08bb93f3c91089bab4f1603995ec7156ee595f8ce40ae9f49d841cbb586511508bd47b7cf78c97f678c679b2c6e2c0092e63f124214af41b6f8a25ca31
+  languageName: node
+  linkType: hard
+
+"readdirp@npm:^5.0.0":
+  version: 5.1.1
+  resolution: "readdirp@npm:5.1.1"
+  checksum: 10c0/5e99755684b9104761e48801828f4d2614efa33b1698629929c5985184dc63a7f8233c827832c40dc7be16b00cc871d303cf9de396d2fb74b9465ee2aa2424a1
   languageName: node
   linkType: hard
 

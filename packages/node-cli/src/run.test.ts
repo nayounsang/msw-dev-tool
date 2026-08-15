@@ -25,7 +25,7 @@ const createSessionFile = (pid = 4182) => {
   return { pid, sessionPath };
 };
 
-const runWithJsonOutput = async (argv: string[], settle = false) => {
+const runWithJsonOutput = async (argv: string[]) => {
   const logs: string[] = [];
   const originalWrite = process.stdout.write.bind(process.stdout);
   process.stdout.write = ((chunk: string | Uint8Array) => {
@@ -33,9 +33,7 @@ const runWithJsonOutput = async (argv: string[], settle = false) => {
     return true;
   }) as typeof process.stdout.write;
   try {
-    const running = runCli(argv);
-    if (settle) await vi.advanceTimersByTimeAsync(300);
-    await running;
+    await runCli(argv);
   } finally {
     process.stdout.write = originalWrite;
   }
@@ -60,8 +58,7 @@ describe("node-cli", () => {
   it("automatically selects the only session and applies a mutation", async () => {
     const { pid } = createSessionFile();
     const id = JSON.stringify({ path: "/api/items", method: "get" });
-    vi.useFakeTimers();
-    const payload = await runWithJsonOutput(["set-behavior", id, "delay"], true);
+    const payload = await runWithJsonOutput(["set-behavior", id, "delay"]);
     expect(payload).toMatchObject({ ok: true, pid, revision: 1, handler: { behavior: "delay" } });
   });
 

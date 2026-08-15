@@ -41,7 +41,7 @@ afterEach(() => {
 });
 
 describe("snapshot file protocol", () => {
-  it("writes and reads snapshots atomically", () => {
+  it("writes and reads snapshots atomically", async () => {
     const dir = makeTempDir();
     const sessionPath = path.join(dir, "session.json");
     const snap = bumpSnapshot(createEmptySnapshot(), {
@@ -55,14 +55,14 @@ describe("snapshot file protocol", () => {
         },
       ],
     });
-    writeSnapshot(sessionPath, snap);
-    expect(readSnapshot(sessionPath)).toEqual(snap);
+    await writeSnapshot(sessionPath, snap);
+    expect(await readSnapshot(sessionPath)).toEqual(snap);
   });
 
-  it("bumps revision on setSnapshotBehavior", () => {
+  it("bumps revision on setSnapshotBehavior", async () => {
     const dir = makeTempDir();
     const sessionPath = path.join(dir, "session.json");
-    writeSnapshot(
+    await writeSnapshot(
       sessionPath,
       bumpSnapshot(createEmptySnapshot(), {
         flattenHandlers: [
@@ -77,7 +77,7 @@ describe("snapshot file protocol", () => {
       })
     );
 
-    const next = setSnapshotBehavior(
+    const next = await setSnapshotBehavior(
       sessionPath,
       JSON.stringify({ path: "/api", method: "get" }),
       HttpHandlerBehavior.DELAY
@@ -86,14 +86,14 @@ describe("snapshot file protocol", () => {
     expect(next.state.flattenHandlers[0]?.behavior).toBe(HttpHandlerBehavior.DELAY);
   });
 
-  it("stores a custom response without changing behavior", () => {
+  it("stores a custom response without changing behavior", async () => {
     const dir = makeTempDir();
     const sessionPath = path.join(dir, "session.json");
-    writeSnapshot(sessionPath, bumpSnapshot(createEmptySnapshot(), {
+    await writeSnapshot(sessionPath, bumpSnapshot(createEmptySnapshot(), {
       flattenHandlers: [{ id: "a", path: "/api", method: HttpMethod.GET, behavior: HttpHandlerBehavior.DEFAULT, type: "default" }],
     }));
 
-    const next = setSnapshotCustomResponse(sessionPath, "a", {
+    const next = await setSnapshotCustomResponse(sessionPath, "a", {
       status: 201,
       body: "created",
       headers: { "X-Created": "yes" },
@@ -102,12 +102,12 @@ describe("snapshot file protocol", () => {
     expect(next).toMatchObject({ revision: 2, state: { flattenHandlers: [{ behavior: HttpHandlerBehavior.DEFAULT, customResponse: { status: 201, body: "created" } }] } });
   });
 
-  it("adds temp handlers with tempInput", () => {
+  it("adds temp handlers with tempInput", async () => {
     const dir = makeTempDir();
     const sessionPath = path.join(dir, "session.json");
-    writeSnapshot(sessionPath, createEmptySnapshot());
+    await writeSnapshot(sessionPath, createEmptySnapshot());
 
-    const next = addSnapshotTempHandler(sessionPath, {
+    const next = await addSnapshotTempHandler(sessionPath, {
       path: "/api/tmp",
       method: HttpMethod.GET,
       contentType: MimeType.APPLICATION_JSON,
@@ -120,22 +120,22 @@ describe("snapshot file protocol", () => {
     expect(next.state.flattenHandlers[0]?.tempInput?.path).toBe("/api/tmp");
   });
 
-  it("uses PID-named session files in the caller cwd", () => {
+  it("uses PID-named session files in the caller cwd", async () => {
     const dir = makeTempDir();
     const sessionPath = getSessionPathForPid(4182, dir);
-    writeSnapshot(sessionPath, createEmptySnapshot());
+    await writeSnapshot(sessionPath, createEmptySnapshot());
     expect(sessionPath).toBe(path.join(dir, ".msw-dev-tool", "sessions", "4182.json"));
-    expect(listSessionPids(dir)).toEqual([4182]);
+    expect(await listSessionPids(dir)).toEqual([4182]);
   });
 
-  it("applies sequential locked mutations without lost updates", () => {
+  it("applies sequential locked mutations without lost updates", async () => {
     const dir = makeTempDir();
     const sessionPath = path.join(dir, "session.json");
-    writeSnapshot(sessionPath, createEmptySnapshot());
+    await writeSnapshot(sessionPath, createEmptySnapshot());
 
     const writerCount = 20;
     for (let i = 0; i < writerCount; i += 1) {
-      withLockedMutation(sessionPath, (prev) =>
+      await withLockedMutation(sessionPath, (prev) =>
         bumpSnapshot(prev, {
           flattenHandlers: [
             ...prev.state.flattenHandlers,
@@ -151,7 +151,7 @@ describe("snapshot file protocol", () => {
       );
     }
 
-    const final = readSnapshot(sessionPath);
+    const final = await readSnapshot(sessionPath);
     expect(final?.revision).toBe(writerCount);
     expect(final?.state.flattenHandlers).toHaveLength(writerCount);
     expect(final?.state.flattenHandlers.map((h) => h.id).sort()).toEqual(
@@ -162,7 +162,7 @@ describe("snapshot file protocol", () => {
   it("serializes multi-process writers without lost updates", async () => {
     const dir = makeTempDir();
     const sessionPath = path.join(dir, "session.json");
-    writeSnapshot(sessionPath, createEmptySnapshot());
+    await writeSnapshot(sessionPath, createEmptySnapshot());
 
     const writerScript = path.join(dir, "writer.cjs");
     const lockfileEntry = require.resolve("proper-lockfile");
@@ -244,7 +244,7 @@ try {
 
     await Promise.all(children);
 
-    const final = readSnapshot(sessionPath);
+    const final = await readSnapshot(sessionPath);
     expect(final?.revision).toBe(writerCount);
     expect(final?.state.flattenHandlers).toHaveLength(writerCount);
     expect(final?.state.flattenHandlers.map((h) => h.id).sort()).toEqual(
@@ -252,11 +252,11 @@ try {
     );
   });
 
-  it("throws on corrupt snapshot JSON", () => {
+  it("throws on corrupt snapshot JSON", async () => {
     const dir = makeTempDir();
     const sessionPath = path.join(dir, "session.json");
     fs.writeFileSync(sessionPath, "{not-json", "utf8");
-    expect(() => readSnapshot(sessionPath)).toThrow(/Invalid JSON/);
+    await expect(readSnapshot(sessionPath)).rejects.toThrow(/Invalid JSON/);
   });
 
   it("preserves pendingReset across unrelated bumps", () => {

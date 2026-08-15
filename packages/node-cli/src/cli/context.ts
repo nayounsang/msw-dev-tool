@@ -1,5 +1,5 @@
-import fs from "node:fs";
 import { getSessionPathForPid, listSessionPids } from "@msw-dev-tool/core/node/internal";
+import fs from "node:fs/promises";
 import { CliCommandContext } from "@msw-dev-tool/cli-core";
 import { FileSnapshotCliSession } from "./session";
 
@@ -13,21 +13,23 @@ export const toCommandContext = ({ sessionPath, pid }: CliContext): CliCommandCo
   metadata: { sessionPath, pid },
 });
 
-export const createCliContext = (
+export const createCliContext = async (
   flags: Record<string, string | boolean>
-): CliContext => {
+): Promise<CliContext> => {
   const fromFlag = flags.pid;
   if (typeof fromFlag === "string" && /^\d+$/.test(fromFlag)) {
     const pid = Number(fromFlag);
     const sessionPath = getSessionPathForPid(pid);
-    if (!fs.existsSync(sessionPath)) {
+    try {
+      await fs.access(sessionPath);
+    } catch {
       throw new Error(`No msw-dev-tool session found for PID ${pid} in this working directory.`);
     }
     return { pid, sessionPath };
   }
   if (fromFlag !== undefined) throw new Error("--pid must be a numeric process ID");
 
-  const pids = listSessionPids();
+  const pids = await listSessionPids();
   if (pids.length === 0) {
     throw new Error(
       "No msw-dev-tool sessions found. Start a Node process with setupDevToolServer() first."

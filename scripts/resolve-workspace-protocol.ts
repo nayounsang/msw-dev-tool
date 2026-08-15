@@ -1,4 +1,4 @@
-import fs from 'fs';
+import fs from 'node:fs/promises';
 import path from 'path';
 
 interface PackageJson {
@@ -11,12 +11,14 @@ interface PackageJson {
 
 const PACKAGES_DIR = path.join(process.cwd(), 'packages');
 
-function readPackageJson(packagePath: string): PackageJson | null {
+async function readPackageJson(packagePath: string): Promise<PackageJson | null> {
   const packageJsonPath = path.join(packagePath, 'package.json');
-  if (!fs.existsSync(packageJsonPath)) {
-    return null;
+  try {
+    return JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw error;
   }
-  return JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
 }
 
 function updateDependencies(packageJson: PackageJson, workspacePackages: Map<string, string>): PackageJson {
@@ -41,29 +43,32 @@ function updateDependencies(packageJson: PackageJson, workspacePackages: Map<str
   };
 }
 
-function main() {
+async function main() {
   const workspacePackages = new Map<string, string>();
-  const packageDirs = fs.readdirSync(PACKAGES_DIR)
+  const packageDirs = await fs.readdir(PACKAGES_DIR);
 
-  packageDirs.forEach(dir => {
+  for (const dir of packageDirs) {
     const packagePath = path.join(PACKAGES_DIR, dir);
-    const packageJson = readPackageJson(packagePath);
+    const packageJson = await readPackageJson(packagePath);
     if (packageJson) {
       workspacePackages.set(packageJson.name, packageJson.version);
     }
-  });
+  }
 
-  packageDirs.forEach(dir => {
+  for (const dir of packageDirs) {
     const packagePath = path.join(PACKAGES_DIR, dir);
-    const packageJson = readPackageJson(packagePath);
+    const packageJson = await readPackageJson(packagePath);
     if (packageJson) {
       const updatedPackageJson = updateDependencies(packageJson, workspacePackages);
-      fs.writeFileSync(
+      await fs.writeFile(
         path.join(packagePath, 'package.json'),
         JSON.stringify(updatedPackageJson, null, 2) + '\n'
       );
     }
-  });
+  }
 }
 
-main(); 
+main().catch((error: unknown) => {
+  console.error(error);
+  process.exitCode = 1;
+});

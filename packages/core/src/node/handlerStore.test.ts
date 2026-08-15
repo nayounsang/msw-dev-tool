@@ -23,8 +23,8 @@ import { setupDevToolServer } from "./index";
 const tempDirs: string[] = [];
 const originalCwd = process.cwd();
 
-afterEach(() => {
-  disposeNodeSession();
+afterEach(async () => {
+  await disposeNodeSession();
   process.chdir(originalCwd);
   for (const dir of tempDirs.splice(0)) {
     fs.rmSync(dir, { recursive: true, force: true });
@@ -50,13 +50,13 @@ describe("setupDevToolServer", () => {
     expect(getNodeSessionPath()).toBe(getSessionPathForPid(process.pid));
     expect(nodeHandlerStore.getState().flattenHandlers).toHaveLength(1);
 
-    const snap = readSnapshot(sessionPath);
+    const snap = await readSnapshot(sessionPath);
     expect(snap?.state.flattenHandlers).toHaveLength(1);
 
     const id = nodeHandlerStore.getState().flattenHandlers[0]!.id;
-    setSnapshotBehavior(sessionPath, id, HttpHandlerBehavior.DELAY);
+    await setSnapshotBehavior(sessionPath, id, HttpHandlerBehavior.DELAY);
 
-    syncNodeSession();
+    await syncNodeSession();
 
     expect(nodeHandlerStore.getState().getHandlerBehavior(id)).toBe(
       HttpHandlerBehavior.DELAY
@@ -83,7 +83,7 @@ describe("setupDevToolServer", () => {
       http.get("/api/items", () => HttpResponse.json({ ok: true }))
     );
 
-    const seeded = readSnapshot(sessionPath);
+    const seeded = await readSnapshot(sessionPath);
     expect(seeded?.state.flattenHandlers).toHaveLength(1);
     expect(seeded?.state.flattenHandlers[0]?.behavior).toBe(
       HttpHandlerBehavior.DEFAULT
@@ -95,7 +95,7 @@ describe("setupDevToolServer", () => {
     expect(nodeHandlerStore.getState().getHandlerBehavior(id)).toBe(
       HttpHandlerBehavior.DISABLE
     );
-    expect(readSnapshot(sessionPath)?.state.flattenHandlers[0]?.behavior).toBe(
+    expect((await readSnapshot(sessionPath))?.state.flattenHandlers[0]?.behavior).toBe(
       HttpHandlerBehavior.DEFAULT
     );
   });
@@ -107,7 +107,7 @@ describe("setupDevToolServer", () => {
       http.get("/api/items", () => HttpResponse.json({ ok: true }))
     );
 
-    addSnapshotTempHandler(sessionPath, {
+    await addSnapshotTempHandler(sessionPath, {
       path: "/api/tmp",
       method: HttpMethod.GET,
       contentType: MimeType.APPLICATION_JSON,
@@ -115,17 +115,18 @@ describe("setupDevToolServer", () => {
       response: '{"ok":true}',
     });
 
-    syncNodeSession();
+    await syncNodeSession();
     expect(
       nodeHandlerStore.getState().flattenHandlers.some((h) => h.type === "temp")
     ).toBe(true);
 
-    requestSnapshotReset(sessionPath);
-    syncNodeSession();
+    await requestSnapshotReset(sessionPath);
+    await syncNodeSession();
 
     expect(
       nodeHandlerStore.getState().flattenHandlers.every((h) => h.type === "default")
     ).toBe(true);
-    expect(readSnapshot(sessionPath)?.state.pendingReset).toBeUndefined();
+    expect((await readSnapshot(sessionPath))?.state.pendingReset).toBeUndefined();
   });
+
 });

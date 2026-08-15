@@ -15,21 +15,21 @@ import { SessionSnapshot } from "./types";
 export class SnapshotRepository {
   public constructor(public readonly sessionPath: string) {}
 
-  public read(): SessionSnapshot | null {
+  public read(): Promise<SessionSnapshot | null> {
     return readSnapshot(this.sessionPath);
   }
 
-  public readOrEmpty(): SessionSnapshot {
+  public readOrEmpty(): Promise<SessionSnapshot> {
     return readSnapshotOrEmpty(this.sessionPath);
   }
 
-  public write(snapshot: SessionSnapshot): void {
-    writeSnapshot(this.sessionPath, snapshot);
+  public write(snapshot: SessionSnapshot): Promise<void> {
+    return writeSnapshot(this.sessionPath, snapshot);
   }
 
   public mutate(
     mutate: (previous: SessionSnapshot) => SessionSnapshot
-  ): SessionSnapshot {
+  ): Promise<SessionSnapshot> {
     return withLockedMutation(this.sessionPath, mutate);
   }
 }
