@@ -1,5 +1,11 @@
 # @msw-dev-tool/core
 
+## 1.6.0
+
+### Minor Changes
+
+- 8d996fa: Replace the global browser control protocol gate with method-level capability checks while preserving compatibility metadata for older CLI versions.
+
 ## 1.5.1
 
 ### Patch Changes
