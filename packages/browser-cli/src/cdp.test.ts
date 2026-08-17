@@ -8,6 +8,10 @@ afterEach(() => {
 });
 
 describe("listTargets", () => {
+  it("returns the Chrome target list", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify([{ id: "page", type: "page", title: "Page", url: "http://localhost" }]))));
+    await expect(listTargets("http://localhost:9222")).resolves.toMatchObject([{ id: "page" }]);
+  });
   it("reports an unsuccessful Chrome target response", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("unavailable", { status: 503, statusText: "Unavailable" })));
     await expect(listTargets("http://localhost:9222")).rejects.toThrow("Failed to list Chrome targets: 503 Unavailable");

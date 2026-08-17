@@ -91,4 +91,26 @@ describe("CdpBrowserCliSession", () => {
     });
     expect(setBehavior).toHaveBeenCalledWith("handler-a", "delay");
   });
+
+  it("forwards every bridge operation and accepts an empty remote value", async () => {
+    const call = vi.fn().mockResolvedValue({ result: {} });
+    const session = new CdpBrowserCliSession({ call } as unknown as CdpClient);
+    await session.describe();
+    await session.list();
+    await session.get("a");
+    await session.addTemp({ path: "/tmp", method: "get", contentType: "text/plain", status: "200" });
+    await session.removeTemp("a");
+    await session.reset();
+    expect(call).toHaveBeenCalledTimes(6);
+  });
+
+  it("uses the CDP text field when no exception description is present", async () => {
+    const client = { call: vi.fn().mockResolvedValue({ exceptionDetails: { text: "evaluation failed" } }) } as unknown as CdpClient;
+    await expect(new CdpBrowserCliSession(client).describe()).rejects.toThrow("evaluation failed");
+  });
+
+  it("falls back to the generic evaluation error when Chrome provides no message", async () => {
+    const client = { call: vi.fn().mockResolvedValue({ exceptionDetails: { text: "" } }) } as unknown as CdpClient;
+    await expect(new CdpBrowserCliSession(client).describe()).rejects.toThrow("CDP evaluation failed");
+  });
 });

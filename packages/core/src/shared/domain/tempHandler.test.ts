@@ -86,6 +86,23 @@ describe("buildTempHandler", () => {
     expect(result.headers.get("X-Temp")).toBe("yes");
     expect(await result.text()).toBe("temporary custom");
   });
+
+  it("supports every HTTP method when constructing temporary handlers", () => {
+    for (const method of Object.values(HttpMethod)) {
+      const { handler } = buildTempHandler({ ...baseInput, method });
+      expect(handler.info.method.toLowerCase()).toBe(method);
+    }
+  });
+
+  it("uses empty content length and optional headers for non-JSON responses", async () => {
+    const { handler } = buildTempHandler({ ...baseInput, contentType: MimeType.TEXT_PLAIN, response: "", header: '{"X-Test":"yes"}' }, () => CustomBehavior.DEFAULT);
+    const result = await handler.resolver({ request: new Request("http://localhost/temp"), requestId: "1", params: {}, cookies: {} });
+    expect(result).toBeInstanceOf(Response);
+    if (result instanceof Response) {
+      expect(result.headers.get("Content-Length")).toBeNull();
+      expect(result.headers.get("X-Test")).toBe("yes");
+    }
+  });
 });
 
 describe("rehydrateTempHandlers", () => {
@@ -127,5 +144,11 @@ describe("rehydrateTempHandlers", () => {
     expect(result[1].id).toBe(tempId);
     expect(result[1].behavior).toBe(CustomBehavior.DISABLE);
     expect(typeof result[1].handler.resolver).toBe("function");
+  });
+
+  it("drops persisted non-temporary entries that have no runtime handler", () => {
+    expect(rehydrateTempHandlers([
+      { id: "persisted", path: "/persisted", method: HttpMethod.GET, behavior: CustomBehavior.DEFAULT, type: "default" },
+    ], () => CustomBehavior.DEFAULT)).toEqual([]);
   });
 });

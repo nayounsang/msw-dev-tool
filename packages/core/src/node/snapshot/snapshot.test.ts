@@ -12,6 +12,11 @@ import {
   setSnapshotBehavior,
   setSnapshotCustomResponse,
   addSnapshotTempHandler,
+  removeSnapshotTempHandler,
+  requestSnapshotReset,
+  getSnapshotHandler,
+  listSnapshotHandlers,
+  readSnapshotOrEmpty,
   getSessionPathForPid,
   listSessionPids,
   applySnapshotToRuntime,
@@ -284,6 +289,40 @@ try {
       pendingReset: false,
     });
     expect(cleared.state.pendingReset).toBeUndefined();
+  });
+
+  it("handles snapshot mutation lookup, removal, reset, and empty-file edges", async () => {
+    const dir = makeTempDir();
+    const sessionPath = path.join(dir, "session.json");
+    await expect(readSnapshotOrEmpty(sessionPath)).resolves.toEqual(createEmptySnapshot());
+    await expect(readSnapshot(sessionPath)).resolves.toBeNull();
+    await writeSnapshot(sessionPath, bumpSnapshot(createEmptySnapshot(), {
+      flattenHandlers: [{ id: "code", path: "/code", method: HttpMethod.GET, behavior: HttpHandlerBehavior.DEFAULT, type: "default" }],
+    }));
+    await expect(listSnapshotHandlers(sessionPath)).resolves.toHaveLength(1);
+    await expect(getSnapshotHandler(sessionPath, "missing")).resolves.toBeUndefined();
+    await expect(setSnapshotBehavior(sessionPath, "missing", HttpHandlerBehavior.DELAY)).rejects.toThrow("Handler not found");
+    await expect(setSnapshotCustomResponse(sessionPath, "missing", { status: 200 })).rejects.toThrow("Handler not found");
+    await expect(removeSnapshotTempHandler(sessionPath, "missing")).rejects.toThrow("Handler not found");
+    await expect(removeSnapshotTempHandler(sessionPath, "code")).rejects.toThrow("cannot be deleted");
+    const temp = await addSnapshotTempHandler(sessionPath, { path: "/temp", method: HttpMethod.POST, contentType: MimeType.TEXT_PLAIN, status: StringHttpStatusCode.OK, response: "ok" });
+    const tempId = temp.state.flattenHandlers.at(-1)!.id;
+    await expect(addSnapshotTempHandler(sessionPath, { path: "/temp", method: HttpMethod.POST, contentType: MimeType.TEXT_PLAIN, status: StringHttpStatusCode.OK, response: "ok" })).rejects.toThrow("Duplicate handler");
+    await expect(removeSnapshotTempHandler(sessionPath, tempId)).resolves.toMatchObject({
+      state: { flattenHandlers: [expect.objectContaining({ id: "code" })] },
+    });
+    await expect(requestSnapshotReset(sessionPath)).resolves.toMatchObject({
+      state: { pendingReset: true },
+    });
+  });
+
+  it("rejects empty and schema-invalid snapshot files", async () => {
+    const dir = makeTempDir();
+    const sessionPath = path.join(dir, "session.json");
+    fs.writeFileSync(sessionPath, "   ");
+    await expect(readSnapshot(sessionPath)).rejects.toThrow("empty");
+    fs.writeFileSync(sessionPath, JSON.stringify({ revision: "bad" }));
+    await expect(readSnapshot(sessionPath)).rejects.toThrow("Invalid session snapshot schema");
   });
 
   it("preserves current default handlers missing from snapshot", () => {
