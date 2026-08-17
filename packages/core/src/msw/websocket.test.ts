@@ -89,4 +89,31 @@ describe("wrapped ws", () => {
     expect(await secondReply).toBe("reply:two");
     expect(store.getState().webSocketListeners).toHaveLength(1);
   });
+
+  it("keeps discovered listeners for already-connected clients after reset", async () => {
+    const chat = ws.link("ws://wrapper.test/reset");
+    const handler = chat.addEventListener("connection", ({ client }) => {
+      client.addEventListener("message", () => client.send("received"));
+    });
+    const store = createHandlerStore<SetupServer>({
+      createRuntime: (handlers) => setupServer(...handlers),
+    });
+    const server = await store.getState().setupDevToolRuntime(handler);
+    servers.push(server);
+    server.listen();
+
+    const socket = await openSocket("ws://wrapper.test/reset");
+    const beforeReset = nextMessage(socket);
+    socket.send("before reset");
+    expect(await beforeReset).toBe("received");
+    expect(store.getState().webSocketListeners).toHaveLength(1);
+
+    store.getState().resetMSWDevTool();
+
+    const afterReset = nextMessage(socket);
+    socket.send("after reset");
+    expect(await afterReset).toBe("received");
+    expect(store.getState().webSocketListeners).toHaveLength(1);
+  });
+
 });

@@ -7,6 +7,7 @@ import {
   attachWebSocketHandlerBindHook,
   type WebSocketStoreAdapter,
 } from "../shared/websocket/bind";
+import type { ManagedWebSocketListener } from "../shared/types";
 
 type WebSocketConnection = Parameters<WebSocketEventListener<"connection">>[0];
 type WebSocketClient = WebSocketConnection["client"];
@@ -21,7 +22,7 @@ const endpointFromMatcher = (matcher: string | RegExp): string =>
 const createProxyClient = (
   client: WebSocketClient,
   endpointId: string,
-  adapter: WebSocketStoreAdapter,
+  registerListener: (listener: ManagedWebSocketListener) => void,
 ): WebSocketClient => {
   let nextMessageListenerOrder = 0;
   /**
@@ -44,7 +45,7 @@ const createProxyClient = (
           // `error`) are reserved for future support.
           if (type === "message") {
             const order = nextMessageListenerOrder++;
-            adapter.registerCodeWebSocketListener({
+            registerListener({
               id: `${endpointId}:message:${order}`,
               endpointId,
               order,
@@ -82,6 +83,11 @@ const createWrappedLink = (
     addEventListener(event, listener) {
       let adapter: WebSocketStoreAdapter | undefined;
       let endpointId = "";
+      const discoveredListeners = new Map<string, ManagedWebSocketListener>();
+      const registerListener = (entry: ManagedWebSocketListener) => {
+        discoveredListeners.set(entry.id, entry);
+        adapter?.registerCodeWebSocketListener(entry);
+      };
       const handler = originalLink.addEventListener(event, (connection) => {
         if (!adapter) {
           listener(connection);
@@ -89,7 +95,7 @@ const createWrappedLink = (
         }
         listener({
           ...connection,
-          client: createProxyClient(connection.client, endpointId, adapter),
+          client: createProxyClient(connection.client, endpointId, registerListener),
         });
       });
 
@@ -104,7 +110,10 @@ const createWrappedLink = (
       hook.bind = (nextAdapter) => {
         bind.call(hook, nextAdapter);
         adapter = nextAdapter;
-        adapter.registerCodeWebSocketEndpoint(endpoint);
+        nextAdapter.registerCodeWebSocketEndpoint(endpoint);
+        discoveredListeners.forEach((entry) =>
+          nextAdapter.registerCodeWebSocketListener(entry)
+        );
       };
       return handler;
     },
