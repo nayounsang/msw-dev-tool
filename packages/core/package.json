@@ -21,6 +21,11 @@
       "types": "./dist/types/node/internal.d.ts",
       "import": "./dist/esm/node/internal.js",
       "require": "./dist/cjs/node/internal.js"
+    },
+    "./msw": {
+      "types": "./dist/types/msw/index.d.ts",
+      "import": "./dist/esm/msw/index.js",
+      "require": "./dist/cjs/msw/index.js"
     }
   },
   "repository": "https://github.com/nayounsang/msw-dev-tool",
