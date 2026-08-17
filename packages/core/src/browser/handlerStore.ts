@@ -43,6 +43,8 @@ const mapState = (
   worker: base.runtime,
   restHandlers: base.restHandlers,
   flattenHandlers: base.flattenHandlers,
+  webSocketEndpoints: base.webSocketEndpoints,
+  webSocketListeners: base.webSocketListeners,
   setupDevToolWorker,
   resetMSWDevTool: base.resetMSWDevTool,
   addTempHandler: base.addTempHandler,
@@ -53,6 +55,8 @@ const mapState = (
   getHandlerCustomResponse: base.getHandlerCustomResponse,
   setHandlerCustomResponse: base.setHandlerCustomResponse,
   removeTempHandler: base.removeTempHandler,
+  registerCodeWebSocketEndpoint: base.registerCodeWebSocketEndpoint,
+  registerCodeWebSocketListener: base.registerCodeWebSocketListener,
 });
 
 // Guard against SSR ReferenceError: sessionStorage is not defined.
@@ -121,6 +125,10 @@ export const handlerStore: StoreApi<HandlerStoreState> = {
       basePartial.restHandlers = nextPartial.restHandlers;
     if ("flattenHandlers" in nextPartial)
       basePartial.flattenHandlers = nextPartial.flattenHandlers;
+    if ("webSocketEndpoints" in nextPartial)
+      basePartial.webSocketEndpoints = nextPartial.webSocketEndpoints;
+    if ("webSocketListeners" in nextPartial)
+      basePartial.webSocketListeners = nextPartial.webSocketListeners;
 
     baseStore.setState(basePartial);
   },
