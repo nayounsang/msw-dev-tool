@@ -1,5 +1,5 @@
-import fs from "node:fs";
 import { getSessionPathForPid, listSessionPids } from "@msw-dev-tool/core/node/internal";
+import fs from "node:fs/promises";
 import { CliCommandContext } from "@msw-dev-tool/cli-core";
 import { FileSnapshotCliSession } from "./session";
 
@@ -20,7 +20,9 @@ export const createCliContext = async (
   if (typeof fromFlag === "string" && /^\d+$/.test(fromFlag)) {
     const pid = Number(fromFlag);
     const sessionPath = getSessionPathForPid(pid);
-    if (!fs.existsSync(sessionPath)) {
+    try {
+      await fs.access(sessionPath);
+    } catch {
       throw new Error(`No msw-dev-tool session found for PID ${pid} in this working directory.`);
     }
     return { pid, sessionPath };

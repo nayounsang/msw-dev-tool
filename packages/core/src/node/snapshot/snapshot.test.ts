@@ -46,7 +46,7 @@ afterEach(() => {
 });
 
 describe("snapshot file protocol", () => {
-  it("writes and reads snapshots atomically", () => {
+  it("writes and reads snapshots atomically", async () => {
     const dir = makeTempDir();
     const sessionPath = path.join(dir, "session.json");
     const snap = bumpSnapshot(createEmptySnapshot(), {
@@ -60,14 +60,14 @@ describe("snapshot file protocol", () => {
         },
       ],
     });
-    writeSnapshot(sessionPath, snap);
-    expect(readSnapshot(sessionPath)).toEqual(snap);
+    await writeSnapshot(sessionPath, snap);
+    expect(await readSnapshot(sessionPath)).toEqual(snap);
   });
 
-  it("bumps revision on setSnapshotBehavior", () => {
+  it("bumps revision on setSnapshotBehavior", async () => {
     const dir = makeTempDir();
     const sessionPath = path.join(dir, "session.json");
-    writeSnapshot(
+    await writeSnapshot(
       sessionPath,
       bumpSnapshot(createEmptySnapshot(), {
         flattenHandlers: [
@@ -82,7 +82,7 @@ describe("snapshot file protocol", () => {
       })
     );
 
-    const next = setSnapshotBehavior(
+    const next = await setSnapshotBehavior(
       sessionPath,
       JSON.stringify({ path: "/api", method: "get" }),
       HttpHandlerBehavior.DELAY
@@ -91,14 +91,14 @@ describe("snapshot file protocol", () => {
     expect(next.state.flattenHandlers[0]?.behavior).toBe(HttpHandlerBehavior.DELAY);
   });
 
-  it("stores a custom response without changing behavior", () => {
+  it("stores a custom response without changing behavior", async () => {
     const dir = makeTempDir();
     const sessionPath = path.join(dir, "session.json");
-    writeSnapshot(sessionPath, bumpSnapshot(createEmptySnapshot(), {
+    await writeSnapshot(sessionPath, bumpSnapshot(createEmptySnapshot(), {
       flattenHandlers: [{ id: "a", path: "/api", method: HttpMethod.GET, behavior: HttpHandlerBehavior.DEFAULT, type: "default" }],
     }));
 
-    const next = setSnapshotCustomResponse(sessionPath, "a", {
+    const next = await setSnapshotCustomResponse(sessionPath, "a", {
       status: 201,
       body: "created",
       headers: { "X-Created": "yes" },
@@ -107,12 +107,12 @@ describe("snapshot file protocol", () => {
     expect(next).toMatchObject({ revision: 2, state: { flattenHandlers: [{ behavior: HttpHandlerBehavior.DEFAULT, customResponse: { status: 201, body: "created" } }] } });
   });
 
-  it("adds temp handlers with tempInput", () => {
+  it("adds temp handlers with tempInput", async () => {
     const dir = makeTempDir();
     const sessionPath = path.join(dir, "session.json");
-    writeSnapshot(sessionPath, createEmptySnapshot());
+    await writeSnapshot(sessionPath, createEmptySnapshot());
 
-    const next = addSnapshotTempHandler(sessionPath, {
+    const next = await addSnapshotTempHandler(sessionPath, {
       path: "/api/tmp",
       method: HttpMethod.GET,
       contentType: MimeType.APPLICATION_JSON,
@@ -125,22 +125,22 @@ describe("snapshot file protocol", () => {
     expect(next.state.flattenHandlers[0]?.tempInput?.path).toBe("/api/tmp");
   });
 
-  it("uses PID-named session files in the caller cwd", () => {
+  it("uses PID-named session files in the caller cwd", async () => {
     const dir = makeTempDir();
     const sessionPath = getSessionPathForPid(4182, dir);
-    writeSnapshot(sessionPath, createEmptySnapshot());
+    await writeSnapshot(sessionPath, createEmptySnapshot());
     expect(sessionPath).toBe(path.join(dir, ".msw-dev-tool", "sessions", "4182.json"));
-    expect(listSessionPids(dir)).toEqual([4182]);
+    expect(await listSessionPids(dir)).toEqual([4182]);
   });
 
-  it("applies sequential locked mutations without lost updates", () => {
+  it("applies sequential locked mutations without lost updates", async () => {
     const dir = makeTempDir();
     const sessionPath = path.join(dir, "session.json");
-    writeSnapshot(sessionPath, createEmptySnapshot());
+    await writeSnapshot(sessionPath, createEmptySnapshot());
 
     const writerCount = 20;
     for (let i = 0; i < writerCount; i += 1) {
-      withLockedMutation(sessionPath, (prev) =>
+      await withLockedMutation(sessionPath, (prev) =>
         bumpSnapshot(prev, {
           flattenHandlers: [
             ...prev.state.flattenHandlers,
@@ -156,7 +156,7 @@ describe("snapshot file protocol", () => {
       );
     }
 
-    const final = readSnapshot(sessionPath);
+    const final = await readSnapshot(sessionPath);
     expect(final?.revision).toBe(writerCount);
     expect(final?.state.flattenHandlers).toHaveLength(writerCount);
     expect(final?.state.flattenHandlers.map((h) => h.id).sort()).toEqual(
@@ -167,7 +167,7 @@ describe("snapshot file protocol", () => {
   it("serializes multi-process writers without lost updates", async () => {
     const dir = makeTempDir();
     const sessionPath = path.join(dir, "session.json");
-    writeSnapshot(sessionPath, createEmptySnapshot());
+    await writeSnapshot(sessionPath, createEmptySnapshot());
 
     const writerScript = path.join(dir, "writer.cjs");
     const lockfileEntry = require.resolve("proper-lockfile");
@@ -249,7 +249,7 @@ try {
 
     await Promise.all(children);
 
-    const final = readSnapshot(sessionPath);
+    const final = await readSnapshot(sessionPath);
     expect(final?.revision).toBe(writerCount);
     expect(final?.state.flattenHandlers).toHaveLength(writerCount);
     expect(final?.state.flattenHandlers.map((h) => h.id).sort()).toEqual(
@@ -257,11 +257,11 @@ try {
     );
   });
 
-  it("throws on corrupt snapshot JSON", () => {
+  it("throws on corrupt snapshot JSON", async () => {
     const dir = makeTempDir();
     const sessionPath = path.join(dir, "session.json");
     fs.writeFileSync(sessionPath, "{not-json", "utf8");
-    expect(() => readSnapshot(sessionPath)).toThrow(/Invalid JSON/);
+    await expect(readSnapshot(sessionPath)).rejects.toThrow(/Invalid JSON/);
   });
 
   it("preserves pendingReset across unrelated bumps", () => {
@@ -291,34 +291,38 @@ try {
     expect(cleared.state.pendingReset).toBeUndefined();
   });
 
-  it("handles snapshot mutation lookup, removal, reset, and empty-file edges", () => {
+  it("handles snapshot mutation lookup, removal, reset, and empty-file edges", async () => {
     const dir = makeTempDir();
     const sessionPath = path.join(dir, "session.json");
-    expect(readSnapshotOrEmpty(sessionPath)).toEqual(createEmptySnapshot());
-    expect(readSnapshot(sessionPath)).toBeNull();
-    writeSnapshot(sessionPath, bumpSnapshot(createEmptySnapshot(), {
+    await expect(readSnapshotOrEmpty(sessionPath)).resolves.toEqual(createEmptySnapshot());
+    await expect(readSnapshot(sessionPath)).resolves.toBeNull();
+    await writeSnapshot(sessionPath, bumpSnapshot(createEmptySnapshot(), {
       flattenHandlers: [{ id: "code", path: "/code", method: HttpMethod.GET, behavior: HttpHandlerBehavior.DEFAULT, type: "default" }],
     }));
-    expect(listSnapshotHandlers(sessionPath)).toHaveLength(1);
-    expect(getSnapshotHandler(sessionPath, "missing")).toBeUndefined();
-    expect(() => setSnapshotBehavior(sessionPath, "missing", HttpHandlerBehavior.DELAY)).toThrow("Handler not found");
-    expect(() => setSnapshotCustomResponse(sessionPath, "missing", { status: 200 })).toThrow("Handler not found");
-    expect(() => removeSnapshotTempHandler(sessionPath, "missing")).toThrow("Handler not found");
-    expect(() => removeSnapshotTempHandler(sessionPath, "code")).toThrow("cannot be deleted");
-    const temp = addSnapshotTempHandler(sessionPath, { path: "/temp", method: HttpMethod.POST, contentType: MimeType.TEXT_PLAIN, status: StringHttpStatusCode.OK, response: "ok" });
+    await expect(listSnapshotHandlers(sessionPath)).resolves.toHaveLength(1);
+    await expect(getSnapshotHandler(sessionPath, "missing")).resolves.toBeUndefined();
+    await expect(setSnapshotBehavior(sessionPath, "missing", HttpHandlerBehavior.DELAY)).rejects.toThrow("Handler not found");
+    await expect(setSnapshotCustomResponse(sessionPath, "missing", { status: 200 })).rejects.toThrow("Handler not found");
+    await expect(removeSnapshotTempHandler(sessionPath, "missing")).rejects.toThrow("Handler not found");
+    await expect(removeSnapshotTempHandler(sessionPath, "code")).rejects.toThrow("cannot be deleted");
+    const temp = await addSnapshotTempHandler(sessionPath, { path: "/temp", method: HttpMethod.POST, contentType: MimeType.TEXT_PLAIN, status: StringHttpStatusCode.OK, response: "ok" });
     const tempId = temp.state.flattenHandlers.at(-1)!.id;
-    expect(() => addSnapshotTempHandler(sessionPath, { path: "/temp", method: HttpMethod.POST, contentType: MimeType.TEXT_PLAIN, status: StringHttpStatusCode.OK, response: "ok" })).toThrow("Duplicate handler");
-    expect(removeSnapshotTempHandler(sessionPath, tempId).state.flattenHandlers).toHaveLength(1);
-    expect(requestSnapshotReset(sessionPath).state.pendingReset).toBe(true);
+    await expect(addSnapshotTempHandler(sessionPath, { path: "/temp", method: HttpMethod.POST, contentType: MimeType.TEXT_PLAIN, status: StringHttpStatusCode.OK, response: "ok" })).rejects.toThrow("Duplicate handler");
+    await expect(removeSnapshotTempHandler(sessionPath, tempId)).resolves.toMatchObject({
+      state: { flattenHandlers: [expect.objectContaining({ id: "code" })] },
+    });
+    await expect(requestSnapshotReset(sessionPath)).resolves.toMatchObject({
+      state: { pendingReset: true },
+    });
   });
 
-  it("rejects empty and schema-invalid snapshot files", () => {
+  it("rejects empty and schema-invalid snapshot files", async () => {
     const dir = makeTempDir();
     const sessionPath = path.join(dir, "session.json");
     fs.writeFileSync(sessionPath, "   ");
-    expect(() => readSnapshot(sessionPath)).toThrow("empty");
+    await expect(readSnapshot(sessionPath)).rejects.toThrow("empty");
     fs.writeFileSync(sessionPath, JSON.stringify({ revision: "bad" }));
-    expect(() => readSnapshot(sessionPath)).toThrow("Invalid session snapshot schema");
+    await expect(readSnapshot(sessionPath)).rejects.toThrow("Invalid session snapshot schema");
   });
 
   it("preserves current default handlers missing from snapshot", () => {

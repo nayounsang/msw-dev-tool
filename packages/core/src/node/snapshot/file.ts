@@ -1,4 +1,4 @@
-import fs from "node:fs";
+import fs from "node:fs/promises";
 import path from "node:path";
 import lockfile from "proper-lockfile";
 import { createEmptySnapshot } from "./serialize";
@@ -8,40 +8,29 @@ const LOCK_STALE_MS = 15_000;
 const LOCK_MAX_ATTEMPTS = 10;
 const LOCK_BACKOFF_MS = { min: 50, max: 500, factor: 1.5 } as const;
 
-const sleepSync = (ms: number) => {
-  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
-};
-
-const acquireLockSync = (sessionPath: string): (() => void) => {
-  let lastError: unknown;
-  for (let attempt = 0; attempt < LOCK_MAX_ATTEMPTS; attempt += 1) {
-    try {
-      // retries are async-only in proper-lockfile; backoff here for lockSync.
-      return lockfile.lockSync(sessionPath, {
-        stale: LOCK_STALE_MS,
-        realpath: false,
-      });
-    } catch (error) {
-      lastError = error;
-      if (attempt === LOCK_MAX_ATTEMPTS - 1) break;
-      const delay = Math.min(
-        LOCK_BACKOFF_MS.min * LOCK_BACKOFF_MS.factor ** attempt,
-        LOCK_BACKOFF_MS.max
-      );
-      sleepSync(delay);
-    }
+const pathExists = async (filePath: string): Promise<boolean> => {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch (error) {
+    if (isEnoent(error)) return false;
+    throw error;
   }
-
-  throw new Error(
-    `Failed to acquire session snapshot lock: ${sessionPath}`,
-    { cause: lastError }
-  );
 };
 
-export const readSnapshot = (sessionPath: string): SessionSnapshot | null => {
-  if (!fs.existsSync(sessionPath)) return null;
+const isEnoent = (error: unknown): boolean =>
+  typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
 
-  const raw = fs.readFileSync(sessionPath, "utf8");
+export const readSnapshot = async (
+  sessionPath: string
+): Promise<SessionSnapshot | null> => {
+  let raw: string;
+  try {
+    raw = await fs.readFile(sessionPath, "utf8");
+  } catch (error) {
+    if (isEnoent(error)) return null;
+    throw error;
+  }
   if (!raw.trim()) {
     throw new Error(`Session snapshot is empty: ${sessionPath}`);
   }
@@ -64,18 +53,19 @@ export const readSnapshot = (sessionPath: string): SessionSnapshot | null => {
   return parsed.data;
 };
 
-export const readSnapshotOrEmpty = (sessionPath: string): SessionSnapshot =>
-  readSnapshot(sessionPath) ?? createEmptySnapshot();
+export const readSnapshotOrEmpty = async (
+  sessionPath: string
+): Promise<SessionSnapshot> => (await readSnapshot(sessionPath)) ?? createEmptySnapshot();
 
-export const writeSnapshot = (
+export const writeSnapshot = async (
   sessionPath: string,
   snapshot: SessionSnapshot
-) => {
+): Promise<void> => {
   const dir = path.dirname(sessionPath);
-  fs.mkdirSync(dir, { recursive: true });
+  await fs.mkdir(dir, { recursive: true });
   const tmpPath = `${sessionPath}.${process.pid}.${Date.now()}.tmp`;
-  fs.writeFileSync(tmpPath, `${JSON.stringify(snapshot, null, 2)}\n`, "utf8");
-  fs.renameSync(tmpPath, sessionPath);
+  await fs.writeFile(tmpPath, `${JSON.stringify(snapshot, null, 2)}\n`, "utf8");
+  await fs.rename(tmpPath, sessionPath);
 };
 
 /**
@@ -85,24 +75,33 @@ export const writeSnapshot = (
  * Locks a stable sidecar (`*.lock`) so atomic rename of the snapshot
  * does not drop the inter-process exclusion.
  */
-export const withLockedMutation = (
+export const withLockedMutation = async (
   sessionPath: string,
   mutate: (prev: SessionSnapshot) => SessionSnapshot
-): SessionSnapshot => {
+): Promise<SessionSnapshot> => {
   const dir = path.dirname(sessionPath);
-  fs.mkdirSync(dir, { recursive: true });
+  await fs.mkdir(dir, { recursive: true });
 
-  if (!fs.existsSync(sessionPath)) {
-    writeSnapshot(sessionPath, createEmptySnapshot());
+  if (!(await pathExists(sessionPath))) {
+    await writeSnapshot(sessionPath, createEmptySnapshot());
   }
 
-  const release = acquireLockSync(sessionPath);
+  const release = await lockfile.lock(sessionPath, {
+    stale: LOCK_STALE_MS,
+    realpath: false,
+    retries: {
+      retries: LOCK_MAX_ATTEMPTS - 1,
+      minTimeout: LOCK_BACKOFF_MS.min,
+      maxTimeout: LOCK_BACKOFF_MS.max,
+      factor: LOCK_BACKOFF_MS.factor,
+    },
+  });
   try {
-    const prev = readSnapshotOrEmpty(sessionPath);
+    const prev = await readSnapshotOrEmpty(sessionPath);
     const next = mutate(prev);
-    writeSnapshot(sessionPath, next);
+    await writeSnapshot(sessionPath, next);
     return next;
   } finally {
-    release();
+    await release();
   }
 };

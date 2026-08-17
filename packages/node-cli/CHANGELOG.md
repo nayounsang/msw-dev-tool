@@ -1,5 +1,23 @@
 # @msw-dev-tool/node-cli
 
+## 0.2.4
+
+### Patch Changes
+
+- Updated dependencies [8d996fa]
+  - @msw-dev-tool/core@1.6.0
+  - @msw-dev-tool/cli-core@0.2.4
+
+## 0.2.3
+
+### Patch Changes
+
+- bda8f30: Store Node sessions in cwd-scoped PID snapshot files and add PID-based CLI selection.
+- Updated dependencies [67de2dd]
+- Updated dependencies [bda8f30]
+  - @msw-dev-tool/core@1.5.1
+  - @msw-dev-tool/cli-core@0.2.3
+
 ## 0.2.2
 
 ### Patch Changes

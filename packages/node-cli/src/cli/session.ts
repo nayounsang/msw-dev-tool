@@ -22,8 +22,8 @@ const toInfo = (snapshot: { revision: number; state: { pendingReset?: boolean; f
 export class FileSnapshotCliSession implements CliSession {
   public constructor(private readonly sessionPath: string) {}
   public async describe() { return toInfo(await readSessionSnapshot(this.sessionPath)); }
-  public async list() { return await listSnapshotHandlers(this.sessionPath); }
-  public async get(id: string) { return await getSnapshotHandler(this.sessionPath, id); }
+  public async list() { return listSnapshotHandlers(this.sessionPath); }
+  public async get(id: string) { return getSnapshotHandler(this.sessionPath, id); }
   public async setBehavior(id: string, behavior: Parameters<typeof setSnapshotBehavior>[2]) {
     const snapshot = await setSnapshotBehavior(this.sessionPath, id, behavior);
     await settleAfterWrite();

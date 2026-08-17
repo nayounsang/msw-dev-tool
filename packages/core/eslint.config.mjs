@@ -33,5 +33,26 @@ export default tseslint.config(
         { assertionStyle: "never" },
       ],
     },
+  },
+  {
+    files: ["src/**/*.{js,mjs,cjs,ts,tsx}"],
+    ignores: ["src/**/*.test.{js,mjs,cjs,ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "fs",
+              message: "Use node:fs/promises for asynchronous file system access.",
+            },
+            {
+              name: "node:fs",
+              message: "Use node:fs/promises for asynchronous file system access.",
+            },
+          ],
+        },
+      ],
+    },
   }
 );

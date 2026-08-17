@@ -52,21 +52,23 @@ export const setupDevToolServer = async (...handlers: Handler[]): Promise<SetupS
   });
 
   try {
-    session.start(baseStore.getState().flattenHandlers);
+    await session.start(baseStore.getState().flattenHandlers);
     activeSession = session;
     return server;
   } catch (error) {
-    session.dispose();
+    await session.dispose();
     throw error;
   }
 };
 
 /** @internal CLI/runtime integration only. */
-export const syncNodeSession = (): void => activeSession?.sync();
+export const syncNodeSession = async (): Promise<void> => {
+  await activeSession?.sync();
+};
 
 /** @internal lifecycle and test teardown only. */
-export const disposeNodeSession = (): void => {
-  activeSession?.dispose();
+export const disposeNodeSession = async (): Promise<void> => {
+  await activeSession?.dispose();
   activeSession = null;
 };
 
