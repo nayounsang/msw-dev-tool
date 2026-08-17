@@ -39,17 +39,20 @@ const nextMessage = (socket: WebSocket): Promise<string> =>
   });
 
 describe("wrapped ws", () => {
-  it("binds only setup handlers and discovers message listeners after connection", async () => {
+  it("binds setup handlers, discovers listeners, and restores them after reset", async () => {
     const chat = ws.link("ws://wrapper.test/chat");
     const ignored = ws.link("ws://wrapper.test/ignored");
+    const reset = ws.link("ws://wrapper.test/reset");
     const handler = chat.addEventListener("connection", ({ client }) => {
-      client.addEventListener("message", function (event) {
-        // The native client remains the listener receiver, so native methods work.
-        this.send(`reply:${event.data}`);
+      client.addEventListener("message", (event) => {
+        client.send(`reply:${event.data}`);
       }, { once: false });
       client.addEventListener("close", () => undefined, { once: true });
     });
     const ignoredHandler = ignored.addEventListener("connection", () => undefined);
+    const resetHandler = reset.addEventListener("connection", ({ client }) => {
+      client.addEventListener("message", () => client.send("received"));
+    });
     const descriptor = Object.getOwnPropertyDescriptor(handler, WEBSOCKET_HANDLER_BIND);
 
     expect(descriptor?.enumerable).toBe(false);
@@ -58,15 +61,19 @@ describe("wrapped ws", () => {
     const store = createHandlerStore<SetupServer>({
       createRuntime: (handlers) => setupServer(...handlers),
     });
-    const server = await store.getState().setupDevToolRuntime(handler);
+    const server = await store.getState().setupDevToolRuntime(handler, resetHandler);
     server.use(ignoredHandler);
     servers.push(server);
     server.listen();
 
     expect(store.getState().webSocketEndpoints).toEqual([
       { id: handler.id, endpoint: "ws://wrapper.test/chat", source: "code" },
+      { id: resetHandler.id, endpoint: "ws://wrapper.test/reset", source: "code" },
     ]);
     expect(store.getState().webSocketListeners).toEqual([]);
+
+    // Handlers added after setup are not bound to the dev-tool store.
+    await openSocket("ws://wrapper.test/ignored");
 
     const first = await openSocket("ws://wrapper.test/chat");
     const reply = nextMessage(first);
@@ -88,32 +95,19 @@ describe("wrapped ws", () => {
     second.send("two");
     expect(await secondReply).toBe("reply:two");
     expect(store.getState().webSocketListeners).toHaveLength(1);
-  });
-
-  it("keeps discovered listeners for already-connected clients after reset", async () => {
-    const chat = ws.link("ws://wrapper.test/reset");
-    const handler = chat.addEventListener("connection", ({ client }) => {
-      client.addEventListener("message", () => client.send("received"));
-    });
-    const store = createHandlerStore<SetupServer>({
-      createRuntime: (handlers) => setupServer(...handlers),
-    });
-    const server = await store.getState().setupDevToolRuntime(handler);
-    servers.push(server);
-    server.listen();
 
     const socket = await openSocket("ws://wrapper.test/reset");
     const beforeReset = nextMessage(socket);
     socket.send("before reset");
     expect(await beforeReset).toBe("received");
-    expect(store.getState().webSocketListeners).toHaveLength(1);
+    expect(store.getState().webSocketListeners).toHaveLength(2);
 
     store.getState().resetMSWDevTool();
 
     const afterReset = nextMessage(socket);
     socket.send("after reset");
     expect(await afterReset).toBe("received");
-    expect(store.getState().webSocketListeners).toHaveLength(1);
+    expect(store.getState().webSocketListeners).toHaveLength(2);
   });
 
 });
