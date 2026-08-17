@@ -47,6 +47,17 @@ afterEach(() => {
 });
 
 describe("node-cli", () => {
+  it("prints help and rejects unknown commands", async () => {
+    const output: string[] = [];
+    const originalWrite = process.stdout.write.bind(process.stdout);
+    process.stdout.write = ((chunk: string | Uint8Array) => { output.push(String(chunk)); return true; }) as typeof process.stdout.write;
+    try {
+      await runCli([]);
+      await runCli(["--help"]);
+    } finally { process.stdout.write = originalWrite; }
+    expect(output.join("")).toContain("Session discovery");
+    await expect(runCli(["unknown"])).rejects.toThrow("Unknown command");
+  });
   it("lists PID sessions in the current working directory", async () => {
     createSessionFile(4182);
     const secondPath = getSessionPathForPid(4217);

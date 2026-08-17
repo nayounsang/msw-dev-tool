@@ -1,5 +1,14 @@
 # @msw-dev-tool/browser-cli
 
+## 2.0.3
+
+### Patch Changes
+
+- 8d996fa: Replace the global browser control protocol gate with method-level capability checks while preserving compatibility metadata for older CLI versions.
+- Updated dependencies [8d996fa]
+  - @msw-dev-tool/core@1.6.0
+  - @msw-dev-tool/cli-core@0.2.4
+
 ## 2.0.2
 
 ### Patch Changes

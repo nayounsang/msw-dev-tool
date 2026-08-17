@@ -110,4 +110,34 @@ describe("browser control bridge", () => {
       state: { flattenHandlers: [] },
     });
   });
+
+  it("maps direct object and functional updates to the base store", async () => {
+    await setupDevToolWorker(http.get("/state", () => HttpResponse.json({ ok: true })));
+    const initial = handlerStore.getState();
+
+    handlerStore.setState({ worker: initial.worker });
+    handlerStore.setState({ flattenHandlers: initial.flattenHandlers });
+    handlerStore.setState({ restHandlers: ["unsupported"] });
+    handlerStore.setState((current) => ({
+      restHandlers: [...current.restHandlers, "another"],
+    }));
+
+    expect(handlerStore.getState().restHandlers).toEqual([
+      "unsupported",
+      "another",
+    ]);
+    expect(handlerStore.getState().flattenHandlers).toEqual(
+      initial.flattenHandlers
+    );
+  });
+
+  it("rejects control requests for missing handlers", async () => {
+    await setupDevToolWorker(http.get("/missing", () => HttpResponse.json({ ok: true })));
+    const bridge = getBridge();
+
+    expect(bridge.get("missing")).toBeUndefined();
+    expect(() => bridge.setBehavior("missing", "delay")).toThrow(
+      "Handler not found"
+    );
+  });
 });
