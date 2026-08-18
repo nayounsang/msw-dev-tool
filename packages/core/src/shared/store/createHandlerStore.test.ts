@@ -82,6 +82,36 @@ describe("createHandlerStore WebSocket coordination", () => {
     expect(store.getState().getWebSocketEndpoint(endpointId)).toBeDefined();
   });
 
+  it("does not leave removed or rehydrated temporary handlers on the runtime", async () => {
+    const store = createHandlerStore<SetupServer>({
+      createRuntime: (handlers) => setupServer(...handlers),
+    });
+    const runtime = await store.getState().setupDevToolRuntime();
+    servers.push(runtime);
+
+    const initialCount = runtime.listHandlers().length;
+    const first = store.getState().addTempWebSocketEndpoint({
+      endpoint: "ws://temp.test/first",
+      matcher: { kind: "string", value: "ws://temp.test/first" },
+    });
+    const second = store.getState().addTempWebSocketEndpoint({
+      endpoint: "ws://temp.test/second",
+      matcher: { kind: "regexp", source: "temp\\.test/second", flags: "i" },
+    });
+    expect(runtime.listHandlers()).toHaveLength(initialCount + 2);
+
+    store.getState().hydrateWebSocket(store.getState().webSocket.endpoints);
+    expect(runtime.listHandlers()).toHaveLength(initialCount + 2);
+
+    store.getState().removeWebSocketEndpoint(first);
+    expect(runtime.listHandlers()).toHaveLength(initialCount + 1);
+    expect(store.getState().getWebSocketEndpoint(first)).toBeUndefined();
+    expect(store.getState().getWebSocketEndpoint(second)).toBeDefined();
+
+    store.getState().removeWebSocketEndpoint(second);
+    expect(runtime.listHandlers()).toHaveLength(initialCount);
+  });
+
   it("rejects malformed persisted WebSocket state at the store boundary", async () => {
     let runtime: SetupServer | undefined;
     const store = createHandlerStore<SetupServer>({

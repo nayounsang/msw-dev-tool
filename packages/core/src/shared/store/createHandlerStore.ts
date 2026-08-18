@@ -173,6 +173,18 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
         temporaryHandlers.set(config.endpointId, handler);
         runtime.use(handler);
       };
+      const rebuildRuntimeWebSocketHandlers = (
+        runtime: TRuntime,
+        flattenHandlers = get().flattenHandlers,
+      ) => {
+        runtime.resetHandlers();
+        registerTempHandlers(runtime, flattenHandlers);
+        bindWebSocketHandlers(runtime.listHandlers());
+        temporaryHandlers.clear();
+        webSocketSlice.getState().endpoints
+          .filter((entry) => entry.info.source === "temp")
+          .forEach((entry) => installTempEndpoint(entry, runtime));
+      };
 
       return {
         flattenHandlers: [],
@@ -310,10 +322,8 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
             id
           );
 
-          runtime.resetHandlers();
-          registerTempHandlers(runtime, flattenHandlers);
-
           registry.unregisterHandler(id);
+          rebuildRuntimeWebSocketHandlers(runtime, flattenHandlers);
           syncWebSocketState({ runtime, flattenHandlers });
         },
         registerCodeWebSocketEndpoint: (endpoint) => {
@@ -334,7 +344,17 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
         listHandlerInfo: (kind) => registry.listHandlerInfo(kind),
         addTempWebSocketEndpoint: (input) => { const id = webSocketSlice.addTempEndpoint(input); const endpoint = webSocketSlice.getState().endpoints.find((entry) => entry.endpointId === id); const info = endpoint?.info; if (info) { registry.registerHandler(info); installTempEndpoint(endpoint!, get().getRuntime()); } syncWebSocketState(); return id; },
         addTempWebSocketListener: (input) => { const id = webSocketSlice.addTempListener(input); const info = webSocketSlice.getState().listeners.find((entry) => entry.info.id === id)?.info; if (info) registry.registerHandler(info); syncWebSocketState(); return id; },
-        removeWebSocketEndpoint: (id) => { const endpoint = webSocketSlice.getState().endpoints.find((entry) => entry.endpointId === id); webSocketSlice.removeEndpoint(id); if (endpoint) { registry.unregisterHandler(id); endpoint.listeners.forEach((listener) => registry.unregisterHandler(listener.info.id)); } temporaryHandlers.delete(id); syncWebSocketState(); },
+        removeWebSocketEndpoint: (id) => {
+          const endpoint = webSocketSlice.getState().endpoints.find((entry) => entry.endpointId === id);
+          webSocketSlice.removeEndpoint(id);
+          if (endpoint) {
+            registry.unregisterHandler(id);
+            endpoint.listeners.forEach((listener) => registry.unregisterHandler(listener.info.id));
+          }
+          const runtime = get().runtime;
+          if (runtime) rebuildRuntimeWebSocketHandlers(runtime);
+          syncWebSocketState();
+        },
         removeWebSocketListener: (id) => { webSocketSlice.removeListener(id); registry.unregisterHandler(id); syncWebSocketState(); },
         setWebSocketEndpointEnabled: (id, enabled) => { webSocketSlice.setEndpointEnabled(id, enabled); syncWebSocketState(); },
         setWebSocketListenerEnabled: (id, enabled) => { webSocketSlice.setListenerEnabled(id, enabled); syncWebSocketState(); },
@@ -346,7 +366,7 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
           hydrated.endpoints.flatMap((entry) => [entry.info, ...entry.listeners.map((listener) => listener.info)])
             .forEach((info) => registry.registerHandler(info));
           const runtime = get().runtime;
-          if (runtime) hydrated.endpoints.filter((entry) => entry.info.source === "temp").forEach((entry) => installTempEndpoint(entry, runtime));
+          if (runtime) rebuildRuntimeWebSocketHandlers(runtime);
           syncWebSocketState();
         },
         getWebSocketEndpoint: (id) => webSocketSlice.getState().endpoints.find((entry) => entry.endpointId === id),
