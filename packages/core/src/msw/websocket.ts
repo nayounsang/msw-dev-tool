@@ -29,6 +29,7 @@ const createProxyClient = (
   client: WebSocketClient,
   endpointId: string,
   registerListener: (listener: ManagedWebSocketListener) => void,
+  adapter: WebSocketStoreAdapter,
 ): WebSocketClient => {
   let nextMessageListenerOrder = 0;
   /**
@@ -58,12 +59,22 @@ const createProxyClient = (
               event: "message",
               source: "code",
             });
+            const listenerId = `${endpointId}:message:${order}`;
+            if (typeof listener !== "function") {
+              Reflect.apply(target.addEventListener, target, [type, listener, options]);
+              return;
+            }
+            const dispatch = (event: Event) => adapter.dispatchWebSocketMessage(
+              endpointId, target, event, listenerId,
+              (nextEvent) => Reflect.apply(listener, target, [nextEvent]),
+            );
+            Reflect.apply(target.addEventListener, target, [type, dispatch, options]);
+            adapter.registerWebSocketMessageListener(endpointId, () => {
+              Reflect.apply(target.addEventListener, target, [type, dispatch, options]);
+            });
+            return;
           }
-          Reflect.apply(target.addEventListener, target, [
-            type,
-            listener,
-            options,
-          ]);
+          Reflect.apply(target.addEventListener, target, [type, listener, options]);
         };
         methods.set(property, addEventListener);
         return addEventListener;
@@ -99,9 +110,14 @@ const createWrappedLink = (
           listener(connection);
           return;
         }
+        adapter.registerWebSocketConnection(endpointId, connection.client);
+        if (!adapter.getWebSocketEndpoint(endpointId)?.enabled) {
+          adapter.connectWebSocket(endpointId, connection.server);
+          return;
+        }
         listener({
           ...connection,
-          client: createProxyClient(connection.client, endpointId, registerListener),
+          client: createProxyClient(connection.client, endpointId, registerListener, adapter),
         });
       });
 
@@ -137,3 +153,21 @@ const createWrappedLink = (
 };
 
 export const wrappedWs: typeof originalWs = { link: createWrappedLink };
+
+/** Creates a live MSW handler for a temporary endpoint. */
+export const createTemporaryWebSocketHandler = (
+  matcher: string | RegExp,
+  endpointId: string,
+  adapter: WebSocketStoreAdapter,
+) => originalWs.link(matcher).addEventListener("connection", ({ client, server }) => {
+  adapter.registerWebSocketConnection(endpointId, client);
+  client.addEventListener("message", (event) => {
+    adapter.dispatchWebSocketMessage(endpointId, client, event, undefined, undefined);
+  });
+  adapter.registerWebSocketMessageListener(endpointId, () => {
+    client.addEventListener("message", (event) => {
+      adapter.dispatchWebSocketMessage(endpointId, client, event, undefined, undefined);
+    });
+  });
+  if (!adapter.getWebSocketEndpoint(endpointId)?.enabled) adapter.connectWebSocket(endpointId, server);
+});

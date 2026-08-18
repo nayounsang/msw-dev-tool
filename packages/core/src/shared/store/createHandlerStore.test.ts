@@ -53,6 +53,7 @@ describe("createHandlerStore WebSocket coordination", () => {
     store.getState().setWebSocketListenerBehavior(listenerId, { preset: "drop" });
     store.getState().removeWebSocketListener(listenerId);
     store.getState().removeWebSocketEndpoint(endpointId);
+    store.getState().resetMSWDevTool();
 
     expect(store.getState().getHandlerInfo("orphan-listener")).toMatchObject({
       endpoint: "missing-endpoint",
@@ -60,6 +61,25 @@ describe("createHandlerStore WebSocket coordination", () => {
     expect(runtime.addTempEndpoint).toHaveBeenCalledOnce();
     expect(runtime.closeEndpointConnections).toHaveBeenCalledWith(endpointId);
     expect(runtime.removeEndpoint).toHaveBeenCalledWith(endpointId);
+  });
+
+  it("rebuilds hydrated temporary WebSocket handlers in an active runtime", async () => {
+    const store = createHandlerStore<SetupServer>({
+      createRuntime: (handlers) => setupServer(...handlers),
+    });
+    await store.getState().setupDevToolRuntime();
+
+    const endpointId = store.getState().addTempWebSocketEndpoint({
+      endpoint: "ws://temp.test/hydrated",
+      matcher: { kind: "regexp", source: "temp\\.test/hydrated", flags: "i" },
+    });
+    store.getState().addTempWebSocketListener({
+      endpointId,
+      behavior: { preset: "default" },
+    });
+    store.getState().hydrateWebSocket(store.getState().webSocket.endpoints);
+
+    expect(store.getState().getWebSocketEndpoint(endpointId)).toBeDefined();
   });
 
   it("rejects malformed persisted WebSocket state at the store boundary", async () => {

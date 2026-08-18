@@ -89,12 +89,51 @@ describe("wrapped ws", () => {
       },
     ]);
 
+    const firstListenerId = `${handler.id}:message:0`;
+    store.getState().setWebSocketListenerBehavior(firstListenerId, {
+      preset: "send",
+      options: { message: "configured reply" },
+    });
+    const configuredReply = nextMessage(first);
+    first.send("configured");
+    expect(await configuredReply).toBe("configured reply");
+
+    store.getState().setWebSocketListenerBehavior(firstListenerId, {
+      preset: "close",
+      options: { code: 4000, reason: "configured close" },
+    });
+    const closed = new Promise<number>((resolve) => {
+      first.addEventListener("close", (event) => resolve(event.code), { once: true });
+    });
+    first.send("close");
+    expect(await closed).toBe(4000);
+    store.getState().setWebSocketListenerBehavior(firstListenerId, { preset: "default" });
+
     // A second connection repeats registration order zero and is upserted.
     const second = await openSocket("ws://wrapper.test/chat");
     const secondReply = nextMessage(second);
     second.send("two");
     expect(await secondReply).toBe("reply:two");
     expect(store.getState().webSocketListeners).toHaveLength(1);
+
+    store.getState().setWebSocketListenerEnabled(firstListenerId, false);
+    second.send("disabled listener");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    store.getState().setWebSocketListenerEnabled(firstListenerId, true);
+    store.getState().setWebSocketListenerBehavior(firstListenerId, {
+      preset: "send",
+      options: {},
+    });
+    second.send("invalid send options");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    store.getState().setWebSocketListenerBehavior(firstListenerId, {
+      preset: "close",
+      options: { reason: 1 },
+    });
+    second.send("invalid close options");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    store.getState().setWebSocketEndpointEnabled(handler.id, false);
+    await new Promise<void>((resolve) => second.addEventListener("close", () => resolve(), { once: true }));
 
     const socket = await openSocket("ws://wrapper.test/reset");
     const beforeReset = nextMessage(socket);

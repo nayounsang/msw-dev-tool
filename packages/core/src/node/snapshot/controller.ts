@@ -6,6 +6,7 @@ import { bumpSnapshot, createEmptySnapshot, toSerializableFlattenHandlers } from
 import { SnapshotRepository } from "./repository";
 import { SessionSnapshot } from "./types";
 import type { WebSocketEndpointConfig } from "../../shared/types";
+import { webSocketEndpointsSchema } from "../../shared/schema/websocket";
 
 const DEFAULT_POLL_INTERVAL_MS = 200;
 const WATCH_DEBOUNCE_MS = 25;
@@ -52,7 +53,7 @@ export class SessionController {
     const seeded = await this.repository.mutate(() =>
       bumpSnapshot(createEmptySnapshot(), {
       flattenHandlers: toSerializableFlattenHandlers(flattenHandlers),
-      webSocket,
+      webSocket: webSocketEndpointsSchema.parse(webSocket),
       })
     );
     this.lastWrittenRevision = seeded.revision;
@@ -98,7 +99,7 @@ export class SessionController {
         if (!previous.state.pendingReset) return previous;
         return bumpSnapshot(previous, {
           flattenHandlers: toSerializableFlattenHandlers(flattenHandlers),
-          webSocket,
+          webSocket: webSocketEndpointsSchema.parse(webSocket),
           pendingReset: false,
         });
       });
@@ -207,4 +208,5 @@ export class SessionController {
   }
 }
 
-const previousWebSocket = (snapshot: SessionSnapshot): WebSocketEndpointConfig[] => snapshot.state.webSocket ?? [];
+const previousWebSocket = (snapshot: SessionSnapshot) =>
+  webSocketEndpointsSchema.parse(snapshot.state.webSocket ?? []);
