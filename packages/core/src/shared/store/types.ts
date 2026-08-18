@@ -72,7 +72,7 @@ export type CreateHandlerStoreOptions<TRuntime extends MswDevToolRuntime> = {
   onSetup?: (args: { runtime: TRuntime; flattenHandlers: FlattenHandler[] }) => void;
   persist?: PersistOptions<HandlerStoreInternalState<TRuntime>>;
   webSocketRuntime?: WebSocketRuntimeAdapter;
-  getStoredWebSocketState?: () => WebSocketEndpointConfig[] | undefined;
+  getStoredWebSocketState?: () => unknown;
 };
 
 export type HandlerStoreApi<TRuntime extends MswDevToolRuntime> = StoreApi<

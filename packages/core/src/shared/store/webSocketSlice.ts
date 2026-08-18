@@ -138,4 +138,4 @@ export const createWebSocketSlice = (runtime?: WebSocketRuntimeAdapter) => {
 };
 
 export const managedEndpointToInfo = (endpoint: ManagedWebSocketEndpoint): WebSocketHandlerInfo => ({ id: endpoint.id, kind: "websocket", endpoint: endpoint.endpoint, operation: "endpoint", source: endpoint.source });
-export const managedListenerToInfo = (listener: ManagedWebSocketListener): WebSocketHandlerInfo => ({ id: listener.id, kind: "websocket", endpoint: listener.endpointId, operation: listener.event, source: listener.source });
+export const managedListenerToInfo = (listener: ManagedWebSocketListener, endpoint?: string): WebSocketHandlerInfo => ({ id: listener.id, kind: "websocket", endpoint: endpoint ?? listener.endpointId, operation: listener.event, source: listener.source });

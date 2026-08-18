@@ -21,14 +21,6 @@ export type ManagedWebSocketRegistration = {
   endpoint: ManagedWebSocketEndpoint;
 };
 
-export type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | { [key: string]: JsonValue };
-
 export type DevToolHandlerInfo = {
   id: string;
   kind: "http" | "websocket";
@@ -39,7 +31,7 @@ export type DevToolHandlerInfo = {
 
 export type WebSocketBehaviorSelection = {
   preset: string;
-  options?: JsonValue;
+  options?: unknown;
 };
 
 export type WebSocketHandlerInfo = Omit<DevToolHandlerInfo, "kind"> & { kind: "websocket" };

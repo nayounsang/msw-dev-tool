@@ -12,7 +12,9 @@ export const createHandlerRegistry = () => {
     unregisterHandler: (id: string) => { handlers = handlers.filter((entry) => entry.id !== id); },
     getHandlerInfo: (id: string) => handlers.find((entry) => entry.id === id),
     listHandlerInfo: (kind?: "http" | "websocket") => handlers.filter((entry) => !kind || entry.kind === kind),
-    clearTempHandlers: () => { handlers = handlers.filter((entry) => entry.source !== "temp"); },
+    clearTempHandlers: (kind?: "http" | "websocket") => {
+      handlers = handlers.filter((entry) => entry.source !== "temp" || (kind !== undefined && entry.kind !== kind));
+    },
     replace: (next: DevToolHandlerInfo[]) => { handlers = next; },
   };
 };

@@ -147,8 +147,6 @@ export const handlerStore: StoreApi<HandlerStoreState> = {
       basePartial.webSocketEndpoints = nextPartial.webSocketEndpoints;
     if ("webSocketListeners" in nextPartial)
       basePartial.webSocketListeners = nextPartial.webSocketListeners;
-    if ("common" in nextPartial) basePartial.common = nextPartial.common;
-    if ("webSocket" in nextPartial) basePartial.webSocket = nextPartial.webSocket;
 
     baseStore.setState(basePartial);
   },
