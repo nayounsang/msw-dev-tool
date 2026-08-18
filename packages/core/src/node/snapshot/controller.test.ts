@@ -84,4 +84,38 @@ describe("SessionController", () => {
     expect(fs.existsSync(sessionPath)).toBe(false);
     expect(fs.existsSync(`${sessionPath}.lock`)).toBe(false);
   });
+
+  it("writes WebSocket state from onResetWebSocket during a pending reset", async () => {
+    const sessionPath = createTempSessionPath();
+    const onResetWebSocket = vi.fn(() => []);
+    const controller = new SessionController({
+      onSnapshot: vi.fn(),
+      onReset: () => [createFlattenHandler()],
+      onResetWebSocket,
+    });
+
+    await controller.start([createFlattenHandler()], [{
+      info: {
+        id: "endpoint:ws",
+        kind: "websocket",
+        endpoint: "ws://controller.test",
+        operation: "endpoint",
+        source: "temp",
+      },
+      endpointId: "endpoint:ws",
+      matcher: { kind: "string", value: "ws://controller.test" },
+      enabled: true,
+      listeners: [],
+    }]);
+    const resetRequest = bumpSnapshot((await readSnapshot(sessionPath))!, {
+      pendingReset: true,
+    });
+    await writeSnapshot(sessionPath, resetRequest);
+
+    await controller.sync();
+
+    expect(onResetWebSocket).toHaveBeenCalledTimes(1);
+    expect((await readSnapshot(sessionPath))?.state.webSocket).toEqual([]);
+    await controller.dispose();
+  });
 });

@@ -47,6 +47,9 @@ describe("createHandlerStore WebSocket coordination", () => {
       endpointId,
       behavior: { preset: "reply" },
     });
+    expect(store.getState().getWebSocketListener(listenerId)).toMatchObject({
+      endpointId,
+    });
     store.getState().setWebSocketEndpointEnabled(endpointId, true);
     store.getState().setWebSocketEndpointEnabled(endpointId, false);
     store.getState().setWebSocketListenerEnabled(listenerId, false);
@@ -58,6 +61,16 @@ describe("createHandlerStore WebSocket coordination", () => {
     expect(store.getState().getHandlerInfo("orphan-listener")).toMatchObject({
       endpoint: "missing-endpoint",
     });
+    store.getState().registerHandler({
+      id: "manual-info",
+      kind: "http",
+      endpoint: "/manual",
+      operation: "get",
+      source: "temp",
+    });
+    expect(store.getState().getHandlerInfo("manual-info")).toMatchObject({ endpoint: "/manual" });
+    store.getState().unregisterHandler("manual-info");
+    expect(store.getState().getHandlerInfo("manual-info")).toBeUndefined();
     expect(runtime.addTempEndpoint).toHaveBeenCalledOnce();
     expect(runtime.closeEndpointConnections).toHaveBeenCalledWith(endpointId);
     expect(runtime.removeEndpoint).toHaveBeenCalledWith(endpointId);
@@ -110,6 +123,39 @@ describe("createHandlerStore WebSocket coordination", () => {
 
     store.getState().removeWebSocketEndpoint(second);
     expect(runtime.listHandlers()).toHaveLength(initialCount);
+  });
+
+  it("installs persisted temporary WebSocket handlers during setup", async () => {
+    const endpointId = "websocket:endpoint:string:ws://temp.test/persisted:0";
+    const store = createHandlerStore<SetupServer>({
+      createRuntime: (handlers) => setupServer(...handlers),
+      getStoredWebSocketState: () => [{
+        info: {
+          id: endpointId,
+          kind: "websocket",
+          endpoint: "ws://temp.test/persisted",
+          operation: "endpoint",
+          source: "temp",
+        },
+        endpointId,
+        matcher: { kind: "string", value: "ws://temp.test/persisted" },
+        enabled: true,
+        listeners: [],
+      }],
+    });
+    const runtime = await store.getState().setupDevToolRuntime();
+    servers.push(runtime);
+
+    expect(store.getState().getWebSocketEndpoint(endpointId)).toBeDefined();
+    expect(runtime.listHandlers()).toHaveLength(1);
+  });
+
+  it("throws when the runtime is used before setup", () => {
+    const store = createHandlerStore<SetupServer>({
+      createRuntime: (handlers) => setupServer(...handlers),
+    });
+
+    expect(() => store.getState().getRuntime()).toThrow("MSW Dev Tool runtime is not initialized");
   });
 
   it("rejects malformed persisted WebSocket state at the store boundary", async () => {
