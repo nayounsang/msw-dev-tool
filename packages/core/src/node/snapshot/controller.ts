@@ -5,6 +5,7 @@ import { clearSessionArtifacts, ensureSessionPath } from "./sessionPath";
 import { bumpSnapshot, createEmptySnapshot, toSerializableFlattenHandlers } from "./serialize";
 import { SnapshotRepository } from "./repository";
 import { SessionSnapshot } from "./types";
+import type { WebSocketEndpointConfig } from "../../shared/types";
 
 const DEFAULT_POLL_INTERVAL_MS = 200;
 const WATCH_DEBOUNCE_MS = 25;
@@ -15,6 +16,7 @@ const isEnoent = (error: unknown): boolean =>
 export type SessionControllerOptions = {
   onSnapshot: (snapshot: SessionSnapshot) => void;
   onReset: () => FlattenHandler[];
+  onResetWebSocket?: () => WebSocketEndpointConfig[];
   pollIntervalMs?: number;
 };
 
@@ -40,7 +42,7 @@ export class SessionController {
     return this.repository?.sessionPath ?? null;
   }
 
-  public async start(flattenHandlers: FlattenHandler[]): Promise<void> {
+  public async start(flattenHandlers: FlattenHandler[], webSocket: WebSocketEndpointConfig[] = []): Promise<void> {
     const sessionPath = await ensureSessionPath();
     this.repository = new SnapshotRepository(sessionPath);
     this.cleanedUp = false;
@@ -49,7 +51,8 @@ export class SessionController {
 
     const seeded = await this.repository.mutate(() =>
       bumpSnapshot(createEmptySnapshot(), {
-        flattenHandlers: toSerializableFlattenHandlers(flattenHandlers),
+      flattenHandlers: toSerializableFlattenHandlers(flattenHandlers),
+      webSocket,
       })
     );
     this.lastWrittenRevision = seeded.revision;
@@ -90,10 +93,12 @@ export class SessionController {
 
     if (snapshot.state.pendingReset) {
       const flattenHandlers = this.options.onReset();
+      const webSocket = this.options.onResetWebSocket?.() ?? previousWebSocket(snapshot);
       const cleared = await repository.mutate((previous) => {
         if (!previous.state.pendingReset) return previous;
         return bumpSnapshot(previous, {
           flattenHandlers: toSerializableFlattenHandlers(flattenHandlers),
+          webSocket,
           pendingReset: false,
         });
       });
@@ -201,3 +206,5 @@ export class SessionController {
     this.signalHandlers.clear();
   }
 }
+
+const previousWebSocket = (snapshot: SessionSnapshot): WebSocketEndpointConfig[] => snapshot.state.webSocket ?? [];

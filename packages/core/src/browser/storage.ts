@@ -8,8 +8,12 @@ import {
 } from "../shared/types";
 import { customResponseSchema, tempHandlerSchema } from "../shared/schema";
 import { mergeStorageData as mergeStorageDataPure } from "../shared/utils/storage";
+import type { JsonValue } from "../shared/types";
+import { webSocketEndpointsSchema } from "../shared/schema/websocket";
 
 export type BrowserStorageSnapshot = { revision: number; state: PersistedStorageData };
+
+const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() => z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(jsonValueSchema), z.record(jsonValueSchema)]));
 
 const persistedFlattenHandlerSchema = z.object({
   id: z.string(),
@@ -25,6 +29,7 @@ const browserStoragePayloadSchema = z.object({
   revision: z.number().optional(),
   state: z.object({
     flattenHandlers: z.array(persistedFlattenHandlerSchema),
+    webSocket: webSocketEndpointsSchema.optional(),
   }),
 });
 
