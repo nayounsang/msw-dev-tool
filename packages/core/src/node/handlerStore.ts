@@ -25,6 +25,7 @@ const applyExternalSnapshot = (snapshot: SessionSnapshot): void => {
     snapshot,
   });
   baseStore.setState({ flattenHandlers });
+  if (snapshot.state.webSocket) baseStore.getState().hydrateWebSocket(snapshot.state.webSocket);
 };
 
 const resetFromCodeHandlers = (): FlattenHandler[] => {
@@ -49,10 +50,13 @@ export const setupDevToolServer = async (...handlers: Handler[]): Promise<SetupS
   const session = new SessionController({
     onSnapshot: applyExternalSnapshot,
     onReset: resetFromCodeHandlers,
+    onResetWebSocket: () => {
+      return baseStore.getState().webSocket.endpoints;
+    },
   });
 
   try {
-    await session.start(baseStore.getState().flattenHandlers);
+    await session.start(baseStore.getState().flattenHandlers, baseStore.getState().webSocket.endpoints);
     activeSession = session;
     return server;
   } catch (error) {

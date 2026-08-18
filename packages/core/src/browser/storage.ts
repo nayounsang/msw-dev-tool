@@ -8,6 +8,7 @@ import {
 } from "../shared/types";
 import { customResponseSchema, tempHandlerSchema } from "../shared/schema";
 import { mergeStorageData as mergeStorageDataPure } from "../shared/utils/storage";
+import { webSocketEndpointsSchema } from "../shared/schema/websocket";
 
 export type BrowserStorageSnapshot = { revision: number; state: PersistedStorageData };
 
@@ -25,6 +26,7 @@ const browserStoragePayloadSchema = z.object({
   revision: z.number().optional(),
   state: z.object({
     flattenHandlers: z.array(persistedFlattenHandlerSchema),
+    webSocket: webSocketEndpointsSchema.optional(),
   }),
 });
 

@@ -6,6 +6,7 @@ import {
 } from "./http";
 import { HttpHandler } from "./msw";
 import { ValueUnion } from "./utils";
+import type { WebSocketEndpointConfig } from "./websocket";
 
 export const CustomBehavior = {
   DEFAULT: "default",
@@ -65,4 +66,5 @@ export interface StorageData {
 /** Browser storage intentionally excludes the non-serializable MSW handler. */
 export interface PersistedStorageData {
   flattenHandlers: PersistedFlattenHandler[];
+  webSocket?: WebSocketEndpointConfig[];
 }

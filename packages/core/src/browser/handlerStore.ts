@@ -45,6 +45,8 @@ const mapState = (
   flattenHandlers: base.flattenHandlers,
   webSocketEndpoints: base.webSocketEndpoints,
   webSocketListeners: base.webSocketListeners,
+  common: base.common,
+  webSocket: base.webSocket,
   setupDevToolWorker,
   resetMSWDevTool: base.resetMSWDevTool,
   addTempHandler: base.addTempHandler,
@@ -57,6 +59,20 @@ const mapState = (
   removeTempHandler: base.removeTempHandler,
   registerCodeWebSocketEndpoint: base.registerCodeWebSocketEndpoint,
   registerCodeWebSocketListener: base.registerCodeWebSocketListener,
+  registerHandler: base.registerHandler,
+  unregisterHandler: base.unregisterHandler,
+  getHandlerInfo: base.getHandlerInfo,
+  listHandlerInfo: base.listHandlerInfo,
+  addTempWebSocketEndpoint: base.addTempWebSocketEndpoint,
+  addTempWebSocketListener: base.addTempWebSocketListener,
+  removeWebSocketEndpoint: base.removeWebSocketEndpoint,
+  removeWebSocketListener: base.removeWebSocketListener,
+  setWebSocketEndpointEnabled: base.setWebSocketEndpointEnabled,
+  setWebSocketListenerEnabled: base.setWebSocketListenerEnabled,
+  setWebSocketListenerBehavior: base.setWebSocketListenerBehavior,
+  hydrateWebSocket: base.hydrateWebSocket,
+  getWebSocketEndpoint: base.getWebSocketEndpoint,
+  getWebSocketListener: base.getWebSocketListener,
 });
 
 // Guard against SSR ReferenceError: sessionStorage is not defined.
@@ -91,13 +107,15 @@ const baseStore = createHandlerStore<SetupWorker>({
   persist: {
     name: STORAGE_KEY,
     partialize: (state) => ({
-      flattenHandlers: state.flattenHandlers.map(
+    flattenHandlers: state.flattenHandlers.map(
         ({ handler: _handler, ...rest }) => rest
       ),
+      webSocket: state.webSocket.endpoints,
     }),
     getStoredState: readBrowserPersistedState,
     write: writeBrowserPersistedState,
   },
+  getStoredWebSocketState: () => getBrowserStorageSnapshot().state.webSocket,
 });
 
 let cachedBase: HandlerStoreInternalState<SetupWorker> | null = null;

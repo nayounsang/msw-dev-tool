@@ -111,6 +111,69 @@ describe("browser control bridge", () => {
     });
   });
 
+  it("keeps HTTP temp metadata when hydrating WebSocket state", async () => {
+    await setupDevToolWorker(http.get("/hydrate", () => HttpResponse.json({ ok: true })));
+    const state = handlerStore.getState();
+    const endpointId = state.addTempWebSocketEndpoint({
+      endpoint: "ws://browser.test/temp",
+      matcher: { kind: "string", value: "ws://browser.test/temp" },
+    });
+    state.addTempHandler({
+      data: {
+        path: "/hydrate-temp",
+        method: "get",
+        contentType: "application/json",
+        status: "200",
+      },
+    });
+
+    expect(state.getHandlerInfo(endpointId)?.source).toBe("temp");
+    handlerStore.getState().hydrateWebSocket([]);
+
+    expect(handlerStore.getState().getHandlerInfo(endpointId)).toBeUndefined();
+    expect(handlerStore.getState().listHandlerInfo("http")).toEqual(
+      expect.arrayContaining([expect.objectContaining({ endpoint: "/hydrate-temp", source: "temp" })])
+    );
+    expect(handlerStore.getState().webSocketEndpoints).toEqual([]);
+  });
+
+  it("hydrates valid WebSocket state from sessionStorage", async () => {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+      state: {
+        flattenHandlers: [],
+        webSocket: [{
+          info: {
+            id: "websocket:endpoint:string:ws://browser.test/saved:0",
+            kind: "websocket",
+            endpoint: "ws://browser.test/saved",
+            operation: "endpoint",
+            source: "temp",
+          },
+          endpointId: "websocket:endpoint:string:ws://browser.test/saved:0",
+          matcher: { kind: "string", value: "ws://browser.test/saved" },
+          enabled: true,
+          listeners: [],
+        }],
+      },
+    }));
+
+    await setupDevToolWorker();
+
+    expect(handlerStore.getState().getWebSocketEndpoint("websocket:endpoint:string:ws://browser.test/saved:0")).toBeDefined();
+  });
+
+  it("ignores public snapshot assignments for closure-backed slices", async () => {
+    const chat = ws.link("ws://browser.test/closure");
+    await setupDevToolWorker(chat.addEventListener("connection", () => undefined));
+    const endpointId = handlerStore.getState().webSocket.endpoints[0]!.endpointId;
+    const before = handlerStore.getState().getWebSocketEndpoint(endpointId);
+
+    handlerStore.setState({ common: { handlers: [] }, webSocket: { endpoints: [], listeners: [] } });
+
+    expect(handlerStore.getState().common.handlers.length).toBeGreaterThan(0);
+    expect(handlerStore.getState().getWebSocketEndpoint(endpointId)).toEqual(before);
+  });
+
   it("maps direct object and functional updates to the base store", async () => {
     await setupDevToolWorker(http.get("/state", () => HttpResponse.json({ ok: true })));
     const initial = handlerStore.getState();

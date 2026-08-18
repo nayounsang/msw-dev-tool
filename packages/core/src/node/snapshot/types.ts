@@ -3,6 +3,7 @@ import {
   HttpHandlerBehavior,
   HttpMethod,
 } from "../../shared/types";
+import { webSocketEndpointsSchema } from "../../shared/schema/websocket";
 import { customResponseSchema, tempHandlerSchema } from "../../shared/schema";
 
 export const tempHandlerInputSchema = tempHandlerSchema;
@@ -21,6 +22,7 @@ export const sessionSnapshotSchema = z.object({
   revision: z.number(),
   state: z.object({
     flattenHandlers: z.array(serializableFlattenHandlerSchema),
+    webSocket: webSocketEndpointsSchema.optional(),
     pendingReset: z.boolean().optional(),
   }),
   owner: z.object({ pid: z.number().int().nonnegative() }),
