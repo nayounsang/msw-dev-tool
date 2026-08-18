@@ -115,6 +115,7 @@ const baseStore = createHandlerStore<SetupWorker>({
     getStoredState: readBrowserPersistedState,
     write: writeBrowserPersistedState,
   },
+  getStoredWebSocketState: () => getBrowserStorageSnapshot().state.webSocket,
 });
 
 let cachedBase: HandlerStoreInternalState<SetupWorker> | null = null;

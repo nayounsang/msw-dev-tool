@@ -3,7 +3,6 @@ import {
   HttpHandlerBehavior,
   HttpMethod,
 } from "../../shared/types";
-import type { WebSocketEndpointConfig } from "../../shared/types";
 import { webSocketEndpointsSchema } from "../../shared/schema/websocket";
 import { customResponseSchema, tempHandlerSchema } from "../../shared/schema";
 

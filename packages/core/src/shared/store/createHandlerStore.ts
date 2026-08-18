@@ -145,7 +145,7 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
           registry.replace([]);
           registerHttpHandlers(rehydratedHandlers);
           bindWebSocketHandlers(handlers);
-          const persisted = options.persist?.getStoredState()?.webSocket as unknown as import("../types").WebSocketEndpointConfig[] | undefined;
+          const persisted = options.getStoredWebSocketState?.();
           if (persisted) {
             webSocketSlice.hydrate(persisted);
             persisted.flatMap((entry) => entry.listeners).forEach((listener) => registry.registerHandler(listener.info));

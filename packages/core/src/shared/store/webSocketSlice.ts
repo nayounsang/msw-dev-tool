@@ -1,5 +1,4 @@
 import type {
-  DevToolHandlerInfo,
   ManagedWebSocketEndpoint,
   ManagedWebSocketListener,
   SerializableWebSocketMatcher,
