@@ -110,4 +110,22 @@ describe("wrapped ws", () => {
     expect(store.getState().webSocketListeners).toHaveLength(2);
   });
 
+  it("preserves RegExp matchers in the state model", async () => {
+    const regexp = /wrapper\.test\/regexp/i;
+    const endpoint = ws.link(regexp);
+    const handler = endpoint.addEventListener("connection", () => undefined);
+    const store = createHandlerStore<SetupServer>({
+      createRuntime: (handlers) => setupServer(...handlers),
+    });
+
+    const server = await store.getState().setupDevToolRuntime(handler);
+    servers.push(server);
+
+    expect(store.getState().webSocket.endpoints[0]?.matcher).toEqual({
+      kind: "regexp",
+      source: regexp.source,
+      flags: regexp.flags,
+    });
+  });
+
 });

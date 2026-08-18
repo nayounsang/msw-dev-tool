@@ -92,6 +92,35 @@ describe("WebSocket state model", () => {
     slice.reset();
     expect(slice.getState().endpoints.map((entry) => entry.info.id)).toEqual([codeInfo.id]);
   });
+
+  it("avoids endpoint ID collisions after hydrating temporary state", () => {
+    const slice = createWebSocketSlice();
+    const matcher = { kind: "string" as const, value: "ws://example.test/temp" };
+    const first = slice.addTempEndpoint({ endpoint: matcher.value, matcher });
+    const saved = slice.getState().endpoints;
+    slice.replace([]);
+    slice.hydrate(saved);
+
+    const second = slice.addTempEndpoint({ endpoint: matcher.value, matcher });
+
+    expect(second).not.toBe(first);
+    expect(slice.getState().endpoints).toHaveLength(2);
+  });
+
+  it("allocates a fresh listener ID after an earlier listener is removed", () => {
+    const slice = createWebSocketSlice();
+    const endpointId = slice.addTempEndpoint({
+      endpoint: "ws://example.test/temp",
+      matcher: { kind: "string", value: "temp" },
+    });
+    const first = slice.addTempListener({ endpointId, behavior: { preset: "one" } });
+    const second = slice.addTempListener({ endpointId, behavior: { preset: "two" } });
+    slice.removeListener(first);
+    const third = slice.addTempListener({ endpointId, behavior: { preset: "three" } });
+
+    expect(third).not.toBe(second);
+    expect(slice.getState().listeners.map((entry) => entry.info.id)).toEqual([second, third]);
+  });
 });
 
 describe("handler registry", () => {
