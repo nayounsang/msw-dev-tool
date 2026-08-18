@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { http, HttpResponse } from "msw";
+import { ws } from "../msw";
 
 vi.mock("msw/browser", () => ({
   setupWorker: (...handlers: unknown[]) => ({
@@ -91,6 +92,23 @@ describe("browser control bridge", () => {
     expect(result.status).toBe(202);
     expect(result.headers.get("X-Custom")).toBe("yes");
     expect(await result.text()).toBe("custom body");
+  });
+
+  it("registers wrapped WebSocket endpoints through the browser store adapter", async () => {
+    const chat = ws.link("ws://browser.test/chat");
+    await setupDevToolWorker(
+      chat.addEventListener("connection", () => undefined)
+    );
+
+    expect(handlerStore.getState().webSocketEndpoints).toEqual([
+      expect.objectContaining({
+        endpoint: "ws://browser.test/chat",
+        source: "code",
+      }),
+    ]);
+    expect(JSON.parse(sessionStorage.getItem(STORAGE_KEY)!)).toMatchObject({
+      state: { flattenHandlers: [] },
+    });
   });
 
   it("maps direct object and functional updates to the base store", async () => {

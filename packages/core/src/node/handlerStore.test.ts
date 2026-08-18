@@ -2,6 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { http, HttpResponse } from "msw";
+import { ws } from "../msw";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   nodeHandlerStore,
@@ -127,6 +128,22 @@ describe("setupDevToolServer", () => {
       nodeHandlerStore.getState().flattenHandlers.every((h) => h.type === "default")
     ).toBe(true);
     expect((await readSnapshot(sessionPath))?.state.pendingReset).toBeUndefined();
+  });
+
+  it("registers wrapped WebSocket endpoints in the Node Core store", async () => {
+    makeSession();
+    const chat = ws.link("ws://node.test/chat");
+    const server = await setupDevToolServer(
+      chat.addEventListener("connection", () => undefined)
+    );
+
+    expect(nodeHandlerStore.getState().webSocketEndpoints).toEqual([
+      expect.objectContaining({
+        endpoint: "ws://node.test/chat",
+        source: "code",
+      }),
+    ]);
+    server.close();
   });
 
 });

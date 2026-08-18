@@ -15,6 +15,7 @@ import {
   Handler,
 } from "../types";
 import { initMSWDevToolStore } from "../utils";
+import { bindWebSocketHandler } from "../websocket/bind";
 import { createStore, StoreApi } from "./createStore";
 import {
   CreateHandlerStoreOptions,
@@ -51,10 +52,20 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
       const lookupCustomResponse = (id: string) =>
         findHandlerCustomResponse(get().flattenHandlers, id);
 
+      const bindWebSocketHandlers = (handlers: readonly unknown[]) => {
+        const adapter = {
+          registerCodeWebSocketEndpoint: get().registerCodeWebSocketEndpoint,
+          registerCodeWebSocketListener: get().registerCodeWebSocketListener,
+        };
+        handlers.forEach((handler) => bindWebSocketHandler(handler, adapter));
+      };
+
       return {
         flattenHandlers: [],
         runtime: null,
         restHandlers: [],
+        webSocketEndpoints: [],
+        webSocketListeners: [],
         setupDevToolRuntime: async (...handlers: Handler[]) => {
           const wrapped = wrapHandlersWithBehavior(
             handlers,
@@ -91,7 +102,10 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
             runtime,
             flattenHandlers: rehydratedHandlers,
             restHandlers: unsupportedHandlers,
+            webSocketEndpoints: [],
+            webSocketListeners: [],
           });
+          bindWebSocketHandlers(handlers);
 
           return runtime;
         },
@@ -106,7 +120,10 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
             runtime,
             flattenHandlers,
             restHandlers: unsupportedHandlers,
+            webSocketEndpoints: [],
+            webSocketListeners: [],
           });
+          bindWebSocketHandlers(runtime.listHandlers());
         },
         addTempHandler: ({ data }) => {
           const { handler, flattenHandler } = buildTempHandler(
@@ -168,6 +185,32 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
           set({
             runtime,
             flattenHandlers,
+          });
+        },
+        registerCodeWebSocketEndpoint: (endpoint) => {
+          if (
+            get().webSocketEndpoints.some(
+              (current) => current.id === endpoint.id
+            )
+          ) {
+            return;
+          }
+
+          set({
+            webSocketEndpoints: [...get().webSocketEndpoints, endpoint],
+          });
+        },
+        registerCodeWebSocketListener: (listener) => {
+          if (
+            get().webSocketListeners.some(
+              (current) => current.id === listener.id
+            )
+          ) {
+            return;
+          }
+
+          set({
+            webSocketListeners: [...get().webSocketListeners, listener],
           });
         },
       };

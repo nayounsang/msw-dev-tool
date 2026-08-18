@@ -23,6 +23,7 @@ const entries = [
   { input: "src/shared/index.ts", file: "shared/index" },
   { input: "src/node/index.ts", file: "node/index" },
   { input: "src/node/internal.ts", file: "node/internal" },
+  { input: "src/msw/index.ts", file: "msw/index" },
 ];
 
 const jsConfigs = entries.map(({ input, file }) => ({

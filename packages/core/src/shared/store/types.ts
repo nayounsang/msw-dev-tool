@@ -1,4 +1,12 @@
-import { CustomResponse, FlattenHandler, Handler, HttpHandlerBehavior, TempHandlerInput } from "../types";
+import {
+  CustomResponse,
+  FlattenHandler,
+  Handler,
+  HttpHandlerBehavior,
+  ManagedWebSocketEndpoint,
+  ManagedWebSocketListener,
+  TempHandlerInput,
+} from "../types";
 import type { HydratableFlattenHandler } from "../utils/storage";
 import { ListHandlersRuntime } from "../utils";
 import { PersistOptions, StoreApi } from "./createStore";
@@ -9,7 +17,7 @@ export type MswDevToolRuntime = ListHandlersRuntime & {
 };
 
 export type HandlerStoreBaseState = {
-  /** GraphQL or WebSocket handlers are currently not supported. */
+  /** GraphQL handlers and unsupported handlers. */
   restHandlers: unknown[];
   flattenHandlers: FlattenHandler[];
   resetMSWDevTool: () => void;
@@ -20,6 +28,10 @@ export type HandlerStoreBaseState = {
   getHandlerCustomResponse: (id: string) => CustomResponse | undefined;
   setHandlerCustomResponse: (id: string, response: CustomResponse) => void;
   removeTempHandler: (id: string) => void;
+  webSocketEndpoints: ManagedWebSocketEndpoint[];
+  webSocketListeners: ManagedWebSocketListener[];
+  registerCodeWebSocketEndpoint: (endpoint: ManagedWebSocketEndpoint) => void;
+  registerCodeWebSocketListener: (listener: ManagedWebSocketListener) => void;
 };
 
 export type HandlerStoreInternalState<TRuntime extends MswDevToolRuntime> =
