@@ -93,6 +93,40 @@ describe("WebSocket state model", () => {
     expect(slice.getState().endpoints.map((entry) => entry.info.id)).toEqual([codeInfo.id]);
   });
 
+  it("rejects orphan listeners and supports enabling code endpoints", () => {
+    const slice = createWebSocketSlice();
+    expect(() => slice.addTempListener({ endpointId: "missing", behavior: { preset: "reply" } })).toThrow("not found");
+    expect(() => slice.removeEndpoint("missing")).toThrow("not found");
+    expect(() => slice.setEndpointEnabled("missing", true)).toThrow("not found");
+    expect(() => slice.setListenerEnabled("missing", true)).toThrow("not found");
+    expect(() => slice.setListenerBehavior("missing", { preset: "reply" })).toThrow("not found");
+    slice.registerCodeListener({
+      info: {
+        id: "orphan",
+        kind: "websocket",
+        endpoint: "ws://example.test",
+        operation: "message",
+        source: "code",
+      },
+      endpointId: "missing",
+      event: "message",
+    });
+    expect(slice.getState().listeners).toHaveLength(0);
+
+    slice.registerCodeEndpoint({
+      info: {
+        id: "code-enabled",
+        kind: "websocket",
+        endpoint: "ws://example.test",
+        operation: "endpoint",
+        source: "code",
+      },
+      matcher: { kind: "string", value: "ws://example.test" },
+    });
+    slice.setEndpointEnabled("code-enabled", true);
+    expect(slice.getState().endpoints[0]?.enabled).toBe(true);
+  });
+
   it("avoids endpoint ID collisions after hydrating temporary state", () => {
     const slice = createWebSocketSlice();
     const matcher = { kind: "string" as const, value: "ws://example.test/temp" };
@@ -130,6 +164,10 @@ describe("handler registry", () => {
     registry.registerHandler({ id: "ws", kind: "websocket", endpoint: "ws://example.test", operation: "endpoint", source: "temp" });
 
     expect(registry.listHandlerInfo("websocket")).toHaveLength(1);
+    registry.clearTempHandlers("websocket");
+    expect(registry.listHandlerInfo("http")).toHaveLength(1);
+    expect(registry.listHandlerInfo("websocket")).toHaveLength(0);
+    registry.registerHandler({ id: "ws-again", kind: "websocket", endpoint: "ws://example.test", operation: "endpoint", source: "temp" });
     registry.clearTempHandlers();
     expect(registry.listHandlerInfo()).toEqual([
       { id: "http", kind: "http", endpoint: "/users", operation: "get", source: "code" },
