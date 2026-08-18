@@ -67,7 +67,10 @@ export const createWebSocketSlice = (runtime?: WebSocketRuntimeAdapter) => {
       registerListener({ ...input, enabled: true, behavior: defaultBehavior });
     },
     addTempEndpoint: (input: { matcher: SerializableWebSocketMatcher; endpoint: string }) => {
-      const endpointId = `${createWebSocketEndpointId(input.matcher)}:${endpointOrder++}`;
+      let endpointId = "";
+      do {
+        endpointId = `${createWebSocketEndpointId(input.matcher)}:${endpointOrder++}`;
+      } while (state.endpoints.some((entry) => entry.endpointId === endpointId));
       const info: WebSocketHandlerInfo = { id: endpointId, kind: "websocket", endpoint: input.endpoint, operation: "endpoint", source: "temp" };
       const config: WebSocketEndpointConfig = { info, endpointId, matcher: input.matcher, enabled: true, listeners: [] };
       set({ ...state, endpoints: [...state.endpoints, config] });
@@ -77,14 +80,18 @@ export const createWebSocketSlice = (runtime?: WebSocketRuntimeAdapter) => {
     addTempListener: (input: { endpointId: string; behavior: WebSocketBehaviorSelection }) => {
       const endpoint = getEndpoint(input.endpointId);
       if (!endpoint) throw new Error(`WebSocket endpoint not found: ${input.endpointId}`);
-      const index = endpoint.listeners.length;
-      const id = createWebSocketListenerId(input.endpointId, index);
+      let index = endpoint.listeners.length;
+      let listenerId = createWebSocketListenerId(input.endpointId, index);
+      while (getListener(listenerId)) {
+        index += 1;
+        listenerId = createWebSocketListenerId(input.endpointId, index);
+      }
       const listener: WebSocketListenerConfig = {
-        info: { id, kind: "websocket", endpoint: endpoint.info.endpoint, operation: "message", source: "temp" },
+        info: { id: listenerId, kind: "websocket", endpoint: endpoint.info.endpoint, operation: "message", source: "temp" },
         endpointId: input.endpointId, event: "message", enabled: true, behavior: input.behavior,
       };
       registerListener(listener);
-      return id;
+      return listenerId;
     },
     removeEndpoint: (endpointId: string) => {
       const endpoint = getEndpoint(endpointId);

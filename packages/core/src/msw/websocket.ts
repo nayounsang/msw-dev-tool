@@ -8,6 +8,7 @@ import {
   type WebSocketStoreAdapter,
 } from "../shared/websocket/bind";
 import type { ManagedWebSocketListener } from "../shared/types";
+import type { SerializableWebSocketMatcher } from "../shared/types";
 
 type WebSocketConnection = Parameters<WebSocketEventListener<"connection">>[0];
 type WebSocketClient = WebSocketConnection["client"];
@@ -18,6 +19,11 @@ type WebSocketClient = WebSocketConnection["client"];
  */
 const endpointFromMatcher = (matcher: string | RegExp): string =>
   typeof matcher === "string" ? matcher : `/${matcher.source}/${matcher.flags}`;
+
+const serializeMatcher = (matcher: string | RegExp): SerializableWebSocketMatcher =>
+  typeof matcher === "string"
+    ? { kind: "string", value: matcher }
+    : { kind: "regexp", source: matcher.source, flags: matcher.flags };
 
 const createProxyClient = (
   client: WebSocketClient,
@@ -105,6 +111,7 @@ const createWrappedLink = (
         id: endpointId,
         endpoint: endpointFromMatcher(matcher),
         source: "code" as const,
+        matcher: serializeMatcher(matcher),
       };
       const bind = hook.bind;
       hook.bind = (nextAdapter) => {

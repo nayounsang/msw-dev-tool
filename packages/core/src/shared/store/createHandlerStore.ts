@@ -81,7 +81,7 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
       const bindWebSocketHandlers = (handlers: readonly unknown[]) => {
         const adapter = {
           registerCodeWebSocketEndpoint: (endpoint: import("../types").ManagedWebSocketEndpoint) => {
-            webSocketSlice.registerCodeEndpoint({ info: managedEndpointToInfo(endpoint), matcher: { kind: "string", value: endpoint.endpoint } });
+            webSocketSlice.registerCodeEndpoint({ info: managedEndpointToInfo(endpoint), matcher: endpoint.matcher ?? { kind: "string", value: endpoint.endpoint } });
             registry.registerHandler(managedEndpointToInfo(endpoint));
             syncWebSocketState();
           },
@@ -227,7 +227,7 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
           syncWebSocketState({ runtime, flattenHandlers });
         },
         registerCodeWebSocketEndpoint: (endpoint) => {
-          webSocketSlice.registerCodeEndpoint({ info: managedEndpointToInfo(endpoint), matcher: { kind: "string", value: endpoint.endpoint } });
+          webSocketSlice.registerCodeEndpoint({ info: managedEndpointToInfo(endpoint), matcher: endpoint.matcher ?? { kind: "string", value: endpoint.endpoint } });
           registry.registerHandler(managedEndpointToInfo(endpoint));
           syncWebSocketState();
         },

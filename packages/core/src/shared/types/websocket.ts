@@ -1,7 +1,12 @@
+export type SerializableWebSocketMatcher =
+  | { kind: "string"; value: string }
+  | { kind: "regexp"; source: string; flags: string };
+
 export type ManagedWebSocketEndpoint = {
   id: string;
   endpoint: string;
   source: "code";
+  matcher?: SerializableWebSocketMatcher;
 };
 
 export type ManagedWebSocketListener = {
@@ -31,10 +36,6 @@ export type DevToolHandlerInfo = {
   operation: string;
   source: "code" | "temp";
 };
-
-export type SerializableWebSocketMatcher =
-  | { kind: "string"; value: string }
-  | { kind: "regexp"; source: string; flags: string };
 
 export type WebSocketBehaviorSelection = {
   preset: string;
