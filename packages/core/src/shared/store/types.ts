@@ -5,11 +5,16 @@ import {
   HttpHandlerBehavior,
   ManagedWebSocketEndpoint,
   ManagedWebSocketListener,
+  DevToolHandlerInfo,
+  WebSocketBehaviorSelection,
+  WebSocketEndpointConfig,
   TempHandlerInput,
 } from "../types";
 import type { HydratableFlattenHandler } from "../utils/storage";
 import { ListHandlersRuntime } from "../utils";
 import { PersistOptions, StoreApi } from "./createStore";
+import type { HandlerRegistryState } from "./commonSlice";
+import type { WebSocketRuntimeAdapter, WebSocketStoreState } from "./webSocketSlice";
 
 export type MswDevToolRuntime = ListHandlersRuntime & {
   use: (...handlers: Handler[]) => void;
@@ -17,6 +22,8 @@ export type MswDevToolRuntime = ListHandlersRuntime & {
 };
 
 export type HandlerStoreBaseState = {
+  common: HandlerRegistryState;
+  webSocket: WebSocketStoreState;
   /** GraphQL handlers and unsupported handlers. */
   restHandlers: unknown[];
   flattenHandlers: FlattenHandler[];
@@ -32,6 +39,20 @@ export type HandlerStoreBaseState = {
   webSocketListeners: ManagedWebSocketListener[];
   registerCodeWebSocketEndpoint: (endpoint: ManagedWebSocketEndpoint) => void;
   registerCodeWebSocketListener: (listener: ManagedWebSocketListener) => void;
+  registerHandler: (info: DevToolHandlerInfo) => void;
+  unregisterHandler: (id: string) => void;
+  getHandlerInfo: (id: string) => DevToolHandlerInfo | undefined;
+  listHandlerInfo: (kind?: "http" | "websocket") => DevToolHandlerInfo[];
+  addTempWebSocketEndpoint: (input: { matcher: WebSocketEndpointConfig["matcher"]; endpoint: string }) => string;
+  addTempWebSocketListener: (input: { endpointId: string; behavior: WebSocketBehaviorSelection }) => string;
+  removeWebSocketEndpoint: (endpointId: string) => void;
+  removeWebSocketListener: (listenerId: string) => void;
+  setWebSocketEndpointEnabled: (endpointId: string, enabled: boolean) => void;
+  setWebSocketListenerEnabled: (listenerId: string, enabled: boolean) => void;
+  setWebSocketListenerBehavior: (listenerId: string, behavior: WebSocketBehaviorSelection) => void;
+  hydrateWebSocket: (endpoints: WebSocketEndpointConfig[]) => void;
+  getWebSocketEndpoint: (endpointId: string) => WebSocketEndpointConfig | undefined;
+  getWebSocketListener: (listenerId: string) => WebSocketEndpointConfig["listeners"][number] | undefined;
 };
 
 export type HandlerStoreInternalState<TRuntime extends MswDevToolRuntime> =
@@ -50,6 +71,7 @@ export type CreateHandlerStoreOptions<TRuntime extends MswDevToolRuntime> = {
   }) => HydratableFlattenHandler[];
   onSetup?: (args: { runtime: TRuntime; flattenHandlers: FlattenHandler[] }) => void;
   persist?: PersistOptions<HandlerStoreInternalState<TRuntime>>;
+  webSocketRuntime?: WebSocketRuntimeAdapter;
 };
 
 export type HandlerStoreApi<TRuntime extends MswDevToolRuntime> = StoreApi<
