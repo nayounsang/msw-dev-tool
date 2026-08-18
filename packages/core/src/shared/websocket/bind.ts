@@ -10,13 +10,20 @@ export const WEBSOCKET_HANDLER_BIND = Symbol.for(
   "@msw-dev-tool/core/websocket-handler-bind/v1"
 );
 
+export type WebSocketMessageListenerRegistration = {
+  reconnect: () => void;
+  disconnect?: () => void;
+};
+
 export type WebSocketStoreAdapter = {
   registerCodeWebSocketEndpoint(endpoint: ManagedWebSocketEndpoint): void;
   registerCodeWebSocketListener(listener: ManagedWebSocketListener): void;
   getWebSocketEndpoint(endpointId: string): WebSocketEndpointConfig | undefined;
   getWebSocketListener(listenerId: string): WebSocketListenerConfig | undefined;
   registerWebSocketConnection(endpointId: string, client: { close: (code?: number, reason?: string) => void }): void;
-  registerWebSocketMessageListener(endpointId: string, reconnect: () => void): void;
+  unregisterWebSocketConnection(endpointId: string, client: { close: (code?: number, reason?: string) => void }): void;
+  registerWebSocketMessageListener(endpointId: string, registration: WebSocketMessageListenerRegistration): void;
+  unregisterWebSocketMessageListener(endpointId: string, registration: WebSocketMessageListenerRegistration): void;
   connectWebSocket(endpointId: string, server: { connect: () => void }): void;
   dispatchWebSocketMessage(endpointId: string, client: { send: (data: string) => void; close: (code?: number, reason?: string) => void }, event: Event, listenerId?: string, original?: (event: Event) => void): void;
   closeWebSocketConnections(endpointId: string): void;

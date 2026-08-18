@@ -38,6 +38,14 @@ const nextMessage = (socket: WebSocket): Promise<string> =>
     }, { once: true });
   });
 
+const waitFor = async (predicate: () => boolean, timeout = 2_000) => {
+  const started = Date.now();
+  while (!predicate()) {
+    if (Date.now() - started > timeout) throw new Error("waitFor timeout");
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+};
+
 describe("wrapped ws", () => {
   it("binds setup handlers, discovers listeners, and restores them after reset", async () => {
     const chat = ws.link("ws://wrapper.test/chat");
@@ -136,16 +144,28 @@ describe("wrapped ws", () => {
     await new Promise<void>((resolve) => second.addEventListener("close", () => resolve(), { once: true }));
 
     const socket = await openSocket("ws://wrapper.test/reset");
-    const beforeReset = nextMessage(socket);
+    const seen: string[] = [];
+    socket.addEventListener("message", (event) => {
+      seen.push(String(event.data));
+    });
     socket.send("before reset");
-    expect(await beforeReset).toBe("received");
+    await waitFor(() => seen.length === 1);
+    expect(seen).toEqual(["received"]);
     expect(store.getState().webSocketListeners).toHaveLength(2);
 
     store.getState().resetMSWDevTool();
 
-    const afterReset = nextMessage(socket);
     socket.send("after reset");
-    expect(await afterReset).toBe("received");
+    await waitFor(() => seen.length === 2);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(seen).toEqual(["received", "received"]);
+
+    store.getState().resetMSWDevTool();
+
+    socket.send("after second reset");
+    await waitFor(() => seen.length === 3);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(seen).toEqual(["received", "received", "received"]);
     expect(store.getState().webSocketListeners).toHaveLength(2);
   });
 
@@ -166,5 +186,4 @@ describe("wrapped ws", () => {
       flags: regexp.flags,
     });
   });
-
 });

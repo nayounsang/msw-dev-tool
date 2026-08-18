@@ -14,8 +14,8 @@ import {
   FlattenHandler,
   Handler,
 } from "../types";
-import { initMSWDevToolStore } from "../utils";
-import { bindWebSocketHandler } from "../websocket/bind";
+import { deleteEmptySet, initMSWDevToolStore } from "../utils";
+import { bindWebSocketHandler, type WebSocketMessageListenerRegistration } from "../websocket/bind";
 import { createTemporaryWebSocketHandler } from "../../msw/websocket";
 import { webSocketEndpointsSchema } from "../schema/websocket";
 import { webSocketCloseOptionsSchema, webSocketSendOptionsSchema } from "../schema/websocket";
@@ -58,7 +58,7 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
     (set, get) => {
       const registry = createHandlerRegistry();
       const connections = new Map<string, Set<{ close: (code?: number, reason?: string) => void }>>();
-      const reconnectors = new Map<string, Set<() => void>>();
+      const reconnectors = new Map<string, Set<WebSocketMessageListenerRegistration>>();
       const temporaryHandlers = new Map<string, unknown>();
       let codeWebSocketHandlers: readonly Handler[] = [];
       const webSocketSlice = createWebSocketSlice({
@@ -90,10 +90,22 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
           if (!set) { set = new Set(); connections.set(id, set); }
           set.add(client);
         },
-        registerWebSocketMessageListener: (id: string, reconnect: () => void) => {
+        unregisterWebSocketConnection: (id: string, client: { close: (code?: number, reason?: string) => void }) => {
+          const set = connections.get(id);
+          if (!set) return;
+          set.delete(client);
+          deleteEmptySet(connections, id, set);
+        },
+        registerWebSocketMessageListener: (id: string, registration: WebSocketMessageListenerRegistration) => {
           let set = reconnectors.get(id);
           if (!set) { set = new Set(); reconnectors.set(id, set); }
-          set.add(reconnect);
+          set.add(registration);
+        },
+        unregisterWebSocketMessageListener: (id: string, registration: WebSocketMessageListenerRegistration) => {
+          const set = reconnectors.get(id);
+          if (!set) return;
+          set.delete(registration);
+          deleteEmptySet(reconnectors, id, set);
         },
         connectWebSocket: (_id: string, server: { connect: () => void }) => server.connect(),
         dispatchWebSocketMessage: (endpointId: string, client: { send: (data: string) => void; close: (code?: number, reason?: string) => void }, event: Event, listenerId?: string, original?: (event: Event) => void) => {
@@ -123,7 +135,10 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
           reconnectors.delete(id);
         },
         resetWebSocketConnections: () => {
-          reconnectors.forEach((listeners) => listeners.forEach((reconnect) => reconnect()));
+          reconnectors.forEach((listeners) => listeners.forEach(({ disconnect, reconnect }) => {
+            disconnect?.();
+            reconnect();
+          }));
         },
       };
       const syncWebSocketState = (extra: Partial<HandlerStoreInternalState<TRuntime>> = {}) => {
