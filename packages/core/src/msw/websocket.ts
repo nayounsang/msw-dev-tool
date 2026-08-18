@@ -51,6 +51,10 @@ const createProxyClient = (
           // Only message listeners are discovered. Lifecycle events (`close` and
           // `error`) are reserved for future support.
           if (type === "message") {
+            if (typeof listener !== "function") {
+              Reflect.apply(target.addEventListener, target, [type, listener, options]);
+              return;
+            }
             const order = nextMessageListenerOrder++;
             const listenerId = `${endpointId}:message:${order}`;
             registerListener({
@@ -60,10 +64,6 @@ const createProxyClient = (
               event: "message",
               source: "code",
             });
-            if (typeof listener !== "function") {
-              Reflect.apply(target.addEventListener, target, [type, listener, options]);
-              return;
-            }
             const dispatch = (event: Event) => adapter.dispatchWebSocketMessage(
               endpointId, target, event, listenerId,
               (nextEvent) => Reflect.apply(listener, target, [nextEvent]),
