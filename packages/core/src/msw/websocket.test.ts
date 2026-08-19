@@ -38,12 +38,25 @@ const nextMessage = (socket: WebSocket): Promise<string> =>
     }, { once: true });
   });
 
+const waitFor = async (predicate: () => boolean, timeout = 2_000) => {
+  const started = Date.now();
+  while (!predicate()) {
+    if (Date.now() - started > timeout) throw new Error("waitFor timeout");
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+};
+
 describe("wrapped ws", () => {
   it("binds setup handlers, discovers listeners, and restores them after reset", async () => {
     const chat = ws.link("ws://wrapper.test/chat");
     const ignored = ws.link("ws://wrapper.test/ignored");
     const reset = ws.link("ws://wrapper.test/reset");
     const handler = chat.addEventListener("connection", ({ client }) => {
+      try {
+        client.addEventListener("message", { handleEvent() { return undefined; } });
+      } catch {
+        // MSW clients only accept function listeners; the proxy must skip managed registration first.
+      }
       client.addEventListener("message", (event) => {
         client.send(`reply:${event.data}`);
       }, { once: false });
@@ -89,6 +102,26 @@ describe("wrapped ws", () => {
       },
     ]);
 
+    const firstListenerId = `${handler.id}:message:0`;
+    store.getState().setWebSocketListenerBehavior(firstListenerId, {
+      preset: "send",
+      options: { message: "configured reply" },
+    });
+    const configuredReply = nextMessage(first);
+    first.send("configured");
+    expect(await configuredReply).toBe("configured reply");
+
+    store.getState().setWebSocketListenerBehavior(firstListenerId, {
+      preset: "close",
+      options: { code: 4000, reason: "configured close" },
+    });
+    const closed = new Promise<number>((resolve) => {
+      first.addEventListener("close", (event) => resolve(event.code), { once: true });
+    });
+    first.send("close");
+    expect(await closed).toBe(4000);
+    store.getState().setWebSocketListenerBehavior(firstListenerId, { preset: "default" });
+
     // A second connection repeats registration order zero and is upserted.
     const second = await openSocket("ws://wrapper.test/chat");
     const secondReply = nextMessage(second);
@@ -96,17 +129,58 @@ describe("wrapped ws", () => {
     expect(await secondReply).toBe("reply:two");
     expect(store.getState().webSocketListeners).toHaveLength(1);
 
+    store.getState().setWebSocketListenerEnabled(firstListenerId, false);
+    second.send("disabled listener");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    store.getState().setWebSocketListenerEnabled(firstListenerId, true);
+    store.getState().setWebSocketListenerBehavior(firstListenerId, {
+      preset: "send",
+      options: {},
+    });
+    second.send("invalid send options");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    store.getState().setWebSocketListenerBehavior(firstListenerId, {
+      preset: "close",
+      options: { reason: 1 },
+    });
+    second.send("invalid close options");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    store.getState().setWebSocketEndpointEnabled(handler.id, false);
+    await new Promise<void>((resolve) => second.addEventListener("close", () => resolve(), { once: true }));
+
+    // Connect while disabled — exercises the passthrough (connectWebSocket) branch in websocket.ts.
+    const passthrough = new WebSocket("ws://wrapper.test/chat");
+    sockets.push(passthrough);
+    await new Promise<void>((resolve) => {
+      passthrough.addEventListener("open", resolve, { once: true });
+      passthrough.addEventListener("error", resolve, { once: true });
+    });
+
+    store.getState().setWebSocketEndpointEnabled(handler.id, true);
+
     const socket = await openSocket("ws://wrapper.test/reset");
-    const beforeReset = nextMessage(socket);
+    const seen: string[] = [];
+    socket.addEventListener("message", (event) => {
+      seen.push(String(event.data));
+    });
     socket.send("before reset");
-    expect(await beforeReset).toBe("received");
+    await waitFor(() => seen.length === 1);
+    expect(seen).toEqual(["received"]);
     expect(store.getState().webSocketListeners).toHaveLength(2);
 
     store.getState().resetMSWDevTool();
 
-    const afterReset = nextMessage(socket);
     socket.send("after reset");
-    expect(await afterReset).toBe("received");
+    await waitFor(() => seen.length === 2);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(seen).toEqual(["received", "received"]);
+
+    store.getState().resetMSWDevTool();
+
+    socket.send("after second reset");
+    await waitFor(() => seen.length === 3);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(seen).toEqual(["received", "received", "received"]);
     expect(store.getState().webSocketListeners).toHaveLength(2);
   });
 
@@ -127,5 +201,4 @@ describe("wrapped ws", () => {
       flags: regexp.flags,
     });
   });
-
 });

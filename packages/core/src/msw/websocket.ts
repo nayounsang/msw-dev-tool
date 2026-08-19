@@ -29,6 +29,7 @@ const createProxyClient = (
   client: WebSocketClient,
   endpointId: string,
   registerListener: (listener: ManagedWebSocketListener) => void,
+  adapter: WebSocketStoreAdapter,
 ): WebSocketClient => {
   let nextMessageListenerOrder = 0;
   /**
@@ -50,20 +51,39 @@ const createProxyClient = (
           // Only message listeners are discovered. Lifecycle events (`close` and
           // `error`) are reserved for future support.
           if (type === "message") {
+            if (typeof listener !== "function") {
+              Reflect.apply(target.addEventListener, target, [type, listener, options]);
+              return;
+            }
             const order = nextMessageListenerOrder++;
+            const listenerId = `${endpointId}:message:${order}`;
             registerListener({
-              id: `${endpointId}:message:${order}`,
+              id: listenerId,
               endpointId,
               order,
               event: "message",
               source: "code",
             });
+            const dispatch = (event: Event) => adapter.dispatchWebSocketMessage(
+              endpointId, target, event, listenerId,
+              (nextEvent) => Reflect.apply(listener, target, [nextEvent]),
+            );
+            Reflect.apply(target.addEventListener, target, [type, dispatch, options]);
+            const registration = {
+              reconnect: () => {
+                Reflect.apply(target.addEventListener, target, [type, dispatch, options]);
+              },
+              disconnect: () => {
+                Reflect.apply(target.removeEventListener, target, [type, dispatch, options]);
+              },
+            };
+            adapter.registerWebSocketMessageListener(endpointId, registration);
+            target.addEventListener("close", () => {
+              adapter.unregisterWebSocketMessageListener(endpointId, registration);
+            }, { once: true });
+            return;
           }
-          Reflect.apply(target.addEventListener, target, [
-            type,
-            listener,
-            options,
-          ]);
+          Reflect.apply(target.addEventListener, target, [type, listener, options]);
         };
         methods.set(property, addEventListener);
         return addEventListener;
@@ -99,9 +119,18 @@ const createWrappedLink = (
           listener(connection);
           return;
         }
+        const boundAdapter = adapter;
+        boundAdapter.registerWebSocketConnection(endpointId, connection.client);
+        connection.client.addEventListener("close", () => {
+          boundAdapter.unregisterWebSocketConnection(endpointId, connection.client);
+        }, { once: true });
+        if (!boundAdapter.getWebSocketEndpoint(endpointId)?.enabled) {
+          boundAdapter.connectWebSocket(endpointId, connection.server);
+          return;
+        }
         listener({
           ...connection,
-          client: createProxyClient(connection.client, endpointId, registerListener),
+          client: createProxyClient(connection.client, endpointId, registerListener, boundAdapter),
         });
       });
 
@@ -137,3 +166,35 @@ const createWrappedLink = (
 };
 
 export const wrappedWs: typeof originalWs = { link: createWrappedLink };
+
+/** Creates a live MSW handler for a temporary endpoint. */
+export const createTemporaryWebSocketHandler = (
+  matcher: string | RegExp,
+  endpointId: string,
+  adapter: WebSocketStoreAdapter,
+) => originalWs.link(matcher).addEventListener("connection", ({ client, server }) => {
+  adapter.registerWebSocketConnection(endpointId, client);
+  client.addEventListener("close", () => {
+    adapter.unregisterWebSocketConnection(endpointId, client);
+  }, { once: true });
+  if (!adapter.getWebSocketEndpoint(endpointId)?.enabled) {
+    adapter.connectWebSocket(endpointId, server);
+    return;
+  }
+  const dispatch = (event: Event) => {
+    adapter.dispatchWebSocketMessage(endpointId, client, event, undefined, undefined);
+  };
+  client.addEventListener("message", dispatch);
+  const registration = {
+    reconnect: () => {
+      client.addEventListener("message", dispatch);
+    },
+    disconnect: () => {
+      client.removeEventListener("message", dispatch);
+    },
+  };
+  adapter.registerWebSocketMessageListener(endpointId, registration);
+  client.addEventListener("close", () => {
+    adapter.unregisterWebSocketMessageListener(endpointId, registration);
+  }, { once: true });
+});

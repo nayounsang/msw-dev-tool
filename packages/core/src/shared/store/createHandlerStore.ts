@@ -14,9 +14,11 @@ import {
   FlattenHandler,
   Handler,
 } from "../types";
-import { initMSWDevToolStore } from "../utils";
-import { bindWebSocketHandler } from "../websocket/bind";
+import { deleteEmptySet, initMSWDevToolStore } from "../utils";
+import { bindWebSocketHandler, type WebSocketMessageListenerRegistration } from "../websocket/bind";
+import { createTemporaryWebSocketHandler } from "../../msw/websocket";
 import { webSocketEndpointsSchema } from "../schema/websocket";
+import { webSocketCloseOptionsSchema, webSocketSendOptionsSchema } from "../schema/websocket";
 import { createHandlerRegistry } from "./commonSlice";
 import {
   createWebSocketSlice,
@@ -55,7 +57,90 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
   const store = createStore<HandlerStoreInternalState<TRuntime>>(
     (set, get) => {
       const registry = createHandlerRegistry();
-      const webSocketSlice = createWebSocketSlice(options.webSocketRuntime);
+      const connections = new Map<string, Set<{ close: (code?: number, reason?: string) => void }>>();
+      const reconnectors = new Map<string, Set<WebSocketMessageListenerRegistration>>();
+      const temporaryHandlers = new Map<string, unknown>();
+      let codeWebSocketHandlers: readonly Handler[] = [];
+      const webSocketSlice = createWebSocketSlice({
+        ...options.webSocketRuntime,
+        closeEndpointConnections: (id) => {
+          connections.get(id)?.forEach((client) => client.close());
+          connections.delete(id);
+          reconnectors.delete(id);
+          options.webSocketRuntime?.closeEndpointConnections?.(id);
+        },
+      });
+      const webSocketAdapter = {
+        registerCodeWebSocketEndpoint: (endpoint: import("../types").ManagedWebSocketEndpoint) => {
+          webSocketSlice.registerCodeEndpoint({ info: managedEndpointToInfo(endpoint), matcher: endpoint.matcher ?? { kind: "string", value: endpoint.endpoint } });
+          registry.registerHandler(managedEndpointToInfo(endpoint));
+          syncWebSocketState();
+        },
+        registerCodeWebSocketListener: (listener: import("../types").ManagedWebSocketListener) => {
+          const endpoint = webSocketSlice.getState().endpoints.find((entry) => entry.endpointId === listener.endpointId);
+          const info = managedListenerToInfo(listener, endpoint?.info.endpoint);
+          webSocketSlice.registerCodeListener({ info, endpointId: listener.endpointId, event: listener.event });
+          registry.registerHandler(info);
+          syncWebSocketState();
+        },
+        getWebSocketEndpoint: (id: string) => webSocketSlice.getState().endpoints.find((entry) => entry.endpointId === id),
+        getWebSocketListener: (id: string) => webSocketSlice.getState().listeners.find((entry) => entry.info.id === id),
+        registerWebSocketConnection: (id: string, client: { close: (code?: number, reason?: string) => void }) => {
+          let set = connections.get(id);
+          if (!set) { set = new Set(); connections.set(id, set); }
+          set.add(client);
+        },
+        unregisterWebSocketConnection: (id: string, client: { close: (code?: number, reason?: string) => void }) => {
+          const set = connections.get(id);
+          if (!set) return;
+          set.delete(client);
+          deleteEmptySet(connections, id, set);
+        },
+        registerWebSocketMessageListener: (id: string, registration: WebSocketMessageListenerRegistration) => {
+          let set = reconnectors.get(id);
+          if (!set) { set = new Set(); reconnectors.set(id, set); }
+          set.add(registration);
+        },
+        unregisterWebSocketMessageListener: (id: string, registration: WebSocketMessageListenerRegistration) => {
+          const set = reconnectors.get(id);
+          if (!set) return;
+          set.delete(registration);
+          deleteEmptySet(reconnectors, id, set);
+        },
+        connectWebSocket: (_id: string, server: { connect: () => void }) => server.connect(),
+        dispatchWebSocketMessage: (endpointId: string, client: { send: (data: string) => void; close: (code?: number, reason?: string) => void }, event: Event, listenerId?: string, original?: (event: Event) => void) => {
+          const endpoint = webSocketSlice.getState().endpoints.find((entry) => entry.endpointId === endpointId);
+          if (!endpoint?.enabled) return;
+          const listeners = listenerId
+            ? [webSocketSlice.getState().listeners.find((entry) => entry.info.id === listenerId)]
+            : endpoint.listeners;
+          listeners.forEach((config) => {
+            if (!config?.enabled) return;
+            const behavior = config.behavior;
+            if (behavior.preset === "default") { original?.(event); return; }
+            if (behavior.preset === "send") {
+              const options = webSocketSendOptionsSchema.safeParse(behavior.options);
+              if (options.success) client.send(options.data.message);
+              return;
+            }
+            if (behavior.preset === "close") {
+              const options = webSocketCloseOptionsSchema.safeParse(behavior.options);
+              if (options.success) client.close(options.data.code, options.data.reason);
+            }
+          });
+        },
+        closeWebSocketConnections: (id: string) => {
+          connections.get(id)?.forEach((client) => client.close());
+          connections.delete(id);
+          reconnectors.delete(id);
+        },
+        resetWebSocketConnections: () => {
+          reconnectors.forEach((listeners) => listeners.forEach(({ disconnect, reconnect }) => {
+            disconnect?.();
+            reconnect();
+          }));
+        },
+      };
       const syncWebSocketState = (extra: Partial<HandlerStoreInternalState<TRuntime>> = {}) => {
         const webSocket = webSocketSlice.getState();
         set({ ...extra,
@@ -80,21 +165,25 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
         findHandlerCustomResponse(get().flattenHandlers, id);
 
       const bindWebSocketHandlers = (handlers: readonly unknown[]) => {
-        const adapter = {
-          registerCodeWebSocketEndpoint: (endpoint: import("../types").ManagedWebSocketEndpoint) => {
-            webSocketSlice.registerCodeEndpoint({ info: managedEndpointToInfo(endpoint), matcher: endpoint.matcher ?? { kind: "string", value: endpoint.endpoint } });
-            registry.registerHandler(managedEndpointToInfo(endpoint));
-            syncWebSocketState();
-          },
-          registerCodeWebSocketListener: (listener: import("../types").ManagedWebSocketListener) => {
-            const endpoint = webSocketSlice.getState().endpoints.find((entry) => entry.endpointId === listener.endpointId);
-            const info = managedListenerToInfo(listener, endpoint?.info.endpoint);
-            webSocketSlice.registerCodeListener({ info, endpointId: listener.endpointId, event: listener.event });
-            registry.registerHandler(info);
-            syncWebSocketState();
-          },
-        };
-        handlers.forEach((handler) => bindWebSocketHandler(handler, adapter));
+        handlers.forEach((handler) => bindWebSocketHandler(handler, webSocketAdapter));
+      };
+      const installTempEndpoint = (config: import("../types").WebSocketEndpointConfig, runtime: TRuntime) => {
+        const matcher = config.matcher.kind === "string" ? config.matcher.value : new RegExp(config.matcher.source, config.matcher.flags);
+        const handler = createTemporaryWebSocketHandler(matcher, config.endpointId, webSocketAdapter);
+        temporaryHandlers.set(config.endpointId, handler);
+        runtime.use(handler);
+      };
+      const rebuildRuntimeWebSocketHandlers = (
+        runtime: TRuntime,
+        flattenHandlers = get().flattenHandlers,
+      ) => {
+        runtime.resetHandlers();
+        registerTempHandlers(runtime, flattenHandlers);
+        bindWebSocketHandlers(runtime.listHandlers());
+        temporaryHandlers.clear();
+        webSocketSlice.getState().endpoints
+          .filter((entry) => entry.info.source === "temp")
+          .forEach((entry) => installTempEndpoint(entry, runtime));
       };
 
       return {
@@ -153,11 +242,13 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
           registry.replace([]);
           registerHttpHandlers(rehydratedHandlers);
           bindWebSocketHandlers(handlers);
+          codeWebSocketHandlers = handlers;
           if (persisted) {
             webSocketSlice.hydrate(persisted);
             const hydrated = webSocketSlice.getState();
             hydrated.endpoints.flatMap((entry) => [entry.info, ...entry.listeners.map((listener) => listener.info)])
               .forEach((info) => registry.registerHandler(info));
+            webSocketSlice.getState().endpoints.filter((entry) => entry.info.source === "temp").forEach((entry) => installTempEndpoint(entry, runtime));
           }
           syncWebSocketState();
 
@@ -170,10 +261,13 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
           const { flattenHandlers, unsupportedHandlers } =
             initMSWDevToolStore(runtime);
 
+          webSocketAdapter.resetWebSocketConnections();
+          temporaryHandlers.clear();
           webSocketSlice.reset();
           registry.replace(registry.getState().handlers.filter((entry) => entry.source === "code"));
           registerHttpHandlers(flattenHandlers);
-          bindWebSocketHandlers(runtime.listHandlers());
+          if (codeWebSocketHandlers.length > 0) runtime.use(...codeWebSocketHandlers);
+          bindWebSocketHandlers(codeWebSocketHandlers.length > 0 ? codeWebSocketHandlers : runtime.listHandlers());
           syncWebSocketState({ runtime, flattenHandlers, restHandlers: unsupportedHandlers });
         },
         addTempHandler: ({ data }) => {
@@ -228,10 +322,8 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
             id
           );
 
-          runtime.resetHandlers();
-          registerTempHandlers(runtime, flattenHandlers);
-
           registry.unregisterHandler(id);
+          rebuildRuntimeWebSocketHandlers(runtime, flattenHandlers);
           syncWebSocketState({ runtime, flattenHandlers });
         },
         registerCodeWebSocketEndpoint: (endpoint) => {
@@ -250,9 +342,19 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
         unregisterHandler: (id) => { registry.unregisterHandler(id); syncWebSocketState(); },
         getHandlerInfo: (id) => registry.getHandlerInfo(id),
         listHandlerInfo: (kind) => registry.listHandlerInfo(kind),
-        addTempWebSocketEndpoint: (input) => { const id = webSocketSlice.addTempEndpoint(input); const info = webSocketSlice.getState().endpoints.find((entry) => entry.endpointId === id)?.info; if (info) registry.registerHandler(info); syncWebSocketState(); return id; },
+        addTempWebSocketEndpoint: (input) => { const id = webSocketSlice.addTempEndpoint(input); const endpoint = webSocketSlice.getState().endpoints.find((entry) => entry.endpointId === id); const info = endpoint?.info; if (info) { registry.registerHandler(info); installTempEndpoint(endpoint!, get().getRuntime()); } syncWebSocketState(); return id; },
         addTempWebSocketListener: (input) => { const id = webSocketSlice.addTempListener(input); const info = webSocketSlice.getState().listeners.find((entry) => entry.info.id === id)?.info; if (info) registry.registerHandler(info); syncWebSocketState(); return id; },
-        removeWebSocketEndpoint: (id) => { const endpoint = webSocketSlice.getState().endpoints.find((entry) => entry.endpointId === id); webSocketSlice.removeEndpoint(id); if (endpoint) { registry.unregisterHandler(id); endpoint.listeners.forEach((listener) => registry.unregisterHandler(listener.info.id)); } syncWebSocketState(); },
+        removeWebSocketEndpoint: (id) => {
+          const endpoint = webSocketSlice.getState().endpoints.find((entry) => entry.endpointId === id);
+          webSocketSlice.removeEndpoint(id);
+          if (endpoint) {
+            registry.unregisterHandler(id);
+            endpoint.listeners.forEach((listener) => registry.unregisterHandler(listener.info.id));
+          }
+          const runtime = get().runtime;
+          if (runtime) rebuildRuntimeWebSocketHandlers(runtime);
+          syncWebSocketState();
+        },
         removeWebSocketListener: (id) => { webSocketSlice.removeListener(id); registry.unregisterHandler(id); syncWebSocketState(); },
         setWebSocketEndpointEnabled: (id, enabled) => { webSocketSlice.setEndpointEnabled(id, enabled); syncWebSocketState(); },
         setWebSocketListenerEnabled: (id, enabled) => { webSocketSlice.setListenerEnabled(id, enabled); syncWebSocketState(); },
@@ -263,6 +365,8 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
           const hydrated = webSocketSlice.getState();
           hydrated.endpoints.flatMap((entry) => [entry.info, ...entry.listeners.map((listener) => listener.info)])
             .forEach((info) => registry.registerHandler(info));
+          const runtime = get().runtime;
+          if (runtime) rebuildRuntimeWebSocketHandlers(runtime);
           syncWebSocketState();
         },
         getWebSocketEndpoint: (id) => webSocketSlice.getState().endpoints.find((entry) => entry.endpointId === id),
