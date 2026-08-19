@@ -3,6 +3,10 @@ import type {
   HttpHandlerBehavior,
   PersistedFlattenHandler,
   TempHandlerInput,
+  WebSocketEndpointConfig,
+  WebSocketListenerConfig,
+  WebSocketBehaviorSelection,
+  SerializableWebSocketMatcher,
 } from "@msw-dev-tool/core/shared";
 
 export type CliHandler = PersistedFlattenHandler;
@@ -15,6 +19,19 @@ export type CliSessionInfo = {
 
 export type CliMutationResult = CliSessionInfo & { handler: CliHandler };
 
+export type CliWebSocketInfo = {
+  endpoints: WebSocketEndpointConfig[];
+};
+
+export type CliWebSocketEndpointResult = {
+  endpoint: WebSocketEndpointConfig;
+};
+
+export type CliWebSocketListenerResult = {
+  endpoint: WebSocketEndpointConfig;
+  listener: WebSocketListenerConfig;
+};
+
 export type CliSession = {
   describe(): Promise<CliSessionInfo>;
   list(): Promise<CliHandler[]>;
@@ -24,6 +41,15 @@ export type CliSession = {
   addTemp(data: TempHandlerInput): Promise<CliMutationResult>;
   removeTemp(id: string): Promise<CliSessionInfo>;
   reset(): Promise<CliSessionInfo>;
+  listWebSocket(): Promise<WebSocketEndpointConfig[]>;
+  getWebSocketEndpoint(endpointId: string): Promise<WebSocketEndpointConfig | undefined>;
+  addWebSocketEndpoint(matcher: SerializableWebSocketMatcher): Promise<CliWebSocketEndpointResult>;
+  removeWebSocketEndpoint(endpointId: string): Promise<CliWebSocketInfo>;
+  setWebSocketEndpointEnabled(endpointId: string, enabled: boolean): Promise<CliWebSocketEndpointResult>;
+  addWebSocketListener(endpointId: string, behavior: WebSocketBehaviorSelection): Promise<CliWebSocketListenerResult>;
+  removeWebSocketListener(listenerId: string): Promise<CliWebSocketInfo>;
+  setWebSocketListenerEnabled(listenerId: string, enabled: boolean): Promise<CliWebSocketListenerResult>;
+  setWebSocketListenerBehavior(listenerId: string, behavior: WebSocketBehaviorSelection): Promise<CliWebSocketListenerResult>;
 };
 
 export type ParsedArgs = {

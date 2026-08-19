@@ -30,6 +30,19 @@ describe("FileSnapshotCliSession", () => {
     vi.useRealTimers();
   });
 
+  it("rejects all WebSocket stub methods as not implemented", async () => {
+    const session = new FileSnapshotCliSession("/tmp/session.json");
+    await expect(session.listWebSocket()).rejects.toThrow("not implemented");
+    await expect(session.getWebSocketEndpoint("id")).rejects.toThrow("not implemented");
+    await expect(session.addWebSocketEndpoint({ kind: "string", value: "ws://localhost" })).rejects.toThrow("not implemented");
+    await expect(session.removeWebSocketEndpoint("id")).rejects.toThrow("not implemented");
+    await expect(session.setWebSocketEndpointEnabled("id", true)).rejects.toThrow("not implemented");
+    await expect(session.addWebSocketListener("id", { preset: "send" })).rejects.toThrow("not implemented");
+    await expect(session.removeWebSocketListener("id")).rejects.toThrow("not implemented");
+    await expect(session.setWebSocketListenerEnabled("id", true)).rejects.toThrow("not implemented");
+    await expect(session.setWebSocketListenerBehavior("id", { preset: "close" })).rejects.toThrow("not implemented");
+  });
+
   it("reports mutations that cannot find the resulting handler", async () => {
     vi.useFakeTimers();
     api.setSnapshotBehavior.mockReturnValue(snapshot([]));
