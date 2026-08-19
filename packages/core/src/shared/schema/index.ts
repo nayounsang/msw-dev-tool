@@ -26,4 +26,4 @@ export {
   isValidHandlerPath,
 } from "./handler";
 export type { TempHandlerSchema, HandlerSchema, CustomResponseSchema } from "./handler";
-export { webSocketEndpointsSchema, webSocketEndpointSchema, webSocketListenerSchema, serializableWebSocketMatcherSchema } from "./websocket";
+export { webSocketEndpointsSchema, webSocketEndpointSchema, webSocketListenerSchema, serializableWebSocketMatcherSchema, webSocketBehaviorSchema, webSocketSendOptionsSchema, webSocketCloseOptionsSchema } from "./websocket";

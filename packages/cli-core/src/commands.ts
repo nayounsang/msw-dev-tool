@@ -2,6 +2,8 @@ import {
   customResponseSchema,
   HttpHandlerBehavior,
   tempHandlerSchema,
+  webSocketBehaviorSchema,
+  serializableWebSocketMatcherSchema,
 } from "@msw-dev-tool/core/shared";
 import type { CliCommand, CliCommandContext, JsonResult } from "./types";
 
@@ -109,6 +111,97 @@ export const commands: CliCommand[] = [
     usage: "reset",
     async execute(context) {
       return withMetadata({ ok: true, ...(await context.session.reset()) }, context);
+    },
+  },
+  {
+    name: "ws-list",
+    usage: "ws-list",
+    async execute(context) {
+      return withMetadata({ ok: true, endpoints: await context.session.listWebSocket() }, context);
+    },
+  },
+  {
+    name: "ws-get-endpoint",
+    usage: "ws-get-endpoint <endpointId>",
+    async execute(context, { positionals }) {
+      const id = positionals[1];
+      if (!id) throw new Error("Usage: ws-get-endpoint <endpointId>");
+      const endpoint = await context.session.getWebSocketEndpoint(id);
+      if (!endpoint) throw new Error(`WebSocket endpoint not found for id: ${id}`);
+      return withMetadata({ ok: true, endpoint }, context);
+    },
+  },
+  {
+    name: "ws-add-endpoint",
+    usage: "ws-add-endpoint --json '<matcherJson>'",
+    async execute(context, { flags }) {
+      if (typeof flags.json !== "string") {
+        throw new Error("Usage: ws-add-endpoint --json '<matcherJson>'");
+      }
+      const matcher = serializableWebSocketMatcherSchema.parse(JSON.parse(flags.json) as unknown);
+      return withMetadata({ ok: true, ...(await context.session.addWebSocketEndpoint(matcher)) }, context);
+    },
+  },
+  {
+    name: "ws-remove-endpoint",
+    usage: "ws-remove-endpoint <endpointId>",
+    async execute(context, { positionals }) {
+      const id = positionals[1];
+      if (!id) throw new Error("Usage: ws-remove-endpoint <endpointId>");
+      return withMetadata({ ok: true, ...(await context.session.removeWebSocketEndpoint(id)) }, context);
+    },
+  },
+  {
+    name: "ws-set-endpoint-enabled",
+    usage: "ws-set-endpoint-enabled <endpointId> <true|false>",
+    async execute(context, { positionals }) {
+      const [id, enabledStr] = [positionals[1], positionals[2]];
+      if (!id || enabledStr === undefined) throw new Error("Usage: ws-set-endpoint-enabled <endpointId> <true|false>");
+      if (enabledStr !== "true" && enabledStr !== "false") throw new Error("enabled must be true or false");
+      return withMetadata({ ok: true, ...(await context.session.setWebSocketEndpointEnabled(id, enabledStr === "true")) }, context);
+    },
+  },
+  {
+    name: "ws-add-listener",
+    usage: "ws-add-listener <endpointId> --json '<behaviorJson>'",
+    async execute(context, { flags, positionals }) {
+      const id = positionals[1];
+      if (!id || typeof flags.json !== "string") {
+        throw new Error("Usage: ws-add-listener <endpointId> --json '<behaviorJson>'");
+      }
+      const behavior = webSocketBehaviorSchema.parse(JSON.parse(flags.json) as unknown);
+      return withMetadata({ ok: true, ...(await context.session.addWebSocketListener(id, behavior)) }, context);
+    },
+  },
+  {
+    name: "ws-remove-listener",
+    usage: "ws-remove-listener <listenerId>",
+    async execute(context, { positionals }) {
+      const id = positionals[1];
+      if (!id) throw new Error("Usage: ws-remove-listener <listenerId>");
+      return withMetadata({ ok: true, ...(await context.session.removeWebSocketListener(id)) }, context);
+    },
+  },
+  {
+    name: "ws-set-listener-enabled",
+    usage: "ws-set-listener-enabled <listenerId> <true|false>",
+    async execute(context, { positionals }) {
+      const [id, enabledStr] = [positionals[1], positionals[2]];
+      if (!id || enabledStr === undefined) throw new Error("Usage: ws-set-listener-enabled <listenerId> <true|false>");
+      if (enabledStr !== "true" && enabledStr !== "false") throw new Error("enabled must be true or false");
+      return withMetadata({ ok: true, ...(await context.session.setWebSocketListenerEnabled(id, enabledStr === "true")) }, context);
+    },
+  },
+  {
+    name: "ws-set-listener-behavior",
+    usage: "ws-set-listener-behavior <listenerId> --json '<behaviorJson>'",
+    async execute(context, { flags, positionals }) {
+      const id = positionals[1];
+      if (!id || typeof flags.json !== "string") {
+        throw new Error("Usage: ws-set-listener-behavior <listenerId> --json '<behaviorJson>'");
+      }
+      const behavior = webSocketBehaviorSchema.parse(JSON.parse(flags.json) as unknown);
+      return withMetadata({ ok: true, ...(await context.session.setWebSocketListenerBehavior(id, behavior)) }, context);
     },
   },
 ];
