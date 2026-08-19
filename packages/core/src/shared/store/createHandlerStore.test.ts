@@ -158,6 +158,30 @@ describe("createHandlerStore WebSocket coordination", () => {
     expect(() => store.getState().getRuntime()).toThrow("MSW Dev Tool runtime is not initialized");
   });
 
+  it("hydrates and removes temporary endpoints before the runtime exists", () => {
+    const store = createHandlerStore<SetupServer>({
+      createRuntime: (handlers) => setupServer(...handlers),
+    });
+    const endpointId = "websocket:endpoint:string:ws://temp.test/offline:0";
+    store.getState().hydrateWebSocket([{
+      info: {
+        id: endpointId,
+        kind: "websocket",
+        endpoint: "ws://temp.test/offline",
+        operation: "endpoint",
+        source: "temp",
+      },
+      endpointId,
+      matcher: { kind: "string", value: "ws://temp.test/offline" },
+      enabled: true,
+      listeners: [],
+    }]);
+
+    expect(store.getState().getWebSocketEndpoint(endpointId)).toBeDefined();
+    store.getState().removeWebSocketEndpoint(endpointId);
+    expect(store.getState().getWebSocketEndpoint(endpointId)).toBeUndefined();
+  });
+
   it("rejects malformed persisted WebSocket state at the store boundary", async () => {
     let runtime: SetupServer | undefined;
     const store = createHandlerStore<SetupServer>({

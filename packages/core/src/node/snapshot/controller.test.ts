@@ -80,6 +80,11 @@ describe("SessionController", () => {
 
     expect(onReset).toHaveBeenCalledTimes(1);
     expect((await readSnapshot(sessionPath))?.state.pendingReset).toBeUndefined();
+
+    // Second sync on the same revision exercises the "lastWrittenRevision === revision" branch.
+    await controller.sync();
+    expect(onReset).toHaveBeenCalledTimes(1);
+
     await controller.dispose();
     expect(fs.existsSync(sessionPath)).toBe(false);
     expect(fs.existsSync(`${sessionPath}.lock`)).toBe(false);
@@ -116,6 +121,93 @@ describe("SessionController", () => {
 
     expect(onResetWebSocket).toHaveBeenCalledTimes(1);
     expect((await readSnapshot(sessionPath))?.state.webSocket).toEqual([]);
+    await controller.dispose();
+  });
+
+  it("recovers previous WebSocket state when a reset snapshot omits it", async () => {
+    const sessionPath = createTempSessionPath();
+    const controller = new SessionController({
+      onSnapshot: vi.fn(),
+      onReset: () => [createFlattenHandler()],
+    });
+
+    await controller.start([createFlattenHandler()]);
+    const seeded = (await readSnapshot(sessionPath))!;
+    await writeSnapshot(sessionPath, {
+      ...seeded,
+      revision: seeded.revision + 1,
+      state: {
+        flattenHandlers: seeded.state.flattenHandlers,
+        pendingReset: true,
+      },
+    } as typeof seeded);
+
+    await controller.sync();
+
+    expect((await readSnapshot(sessionPath))?.state.webSocket).toEqual([]);
+    await controller.dispose();
+  });
+
+  it("ignores a sync error and continues", async () => {
+    createTempSessionPath();
+    const onSnapshot = vi.fn();
+    const controller = new SessionController({
+      onSnapshot,
+      onReset: () => [createFlattenHandler()],
+    });
+
+    await controller.start([createFlattenHandler()]);
+    // Force syncNow to throw by clearing the repository reference via dispose internals.
+    // Instead, write an invalid JSON file to trigger a read error on the next sync.
+    const sessionPath = controller.sessionPath!;
+    await fs.promises.writeFile(sessionPath, "not json");
+
+    await expect(controller.sync()).resolves.toBeUndefined();
+    expect(onSnapshot).not.toHaveBeenCalled();
+    await controller.dispose();
+  });
+
+  it("skips sync while disposing", async () => {
+    createTempSessionPath();
+    const onSnapshot = vi.fn();
+    const controller = new SessionController({
+      onSnapshot,
+      onReset: () => [createFlattenHandler()],
+    });
+
+    await controller.start([createFlattenHandler()]);
+    const disposePromise = controller.dispose();
+    // sync called after dispose starts should be a no-op
+    await controller.sync();
+    await disposePromise;
+    expect(onSnapshot).not.toHaveBeenCalled();
+  });
+
+  it("fires onSnapshot for newer revisions written by other processes", async () => {
+    const sessionPath = createTempSessionPath();
+    const onSnapshot = vi.fn();
+    const controller = new SessionController({
+      onSnapshot,
+      onReset: () => [createFlattenHandler()],
+    });
+
+    await controller.start([createFlattenHandler()]);
+    const seeded = (await readSnapshot(sessionPath))!;
+    const next = bumpSnapshot(seeded, {
+      flattenHandlers: seeded.state.flattenHandlers.map((h) => ({
+        ...h,
+        behavior: "delay" as typeof h.behavior,
+      })),
+    });
+    await writeSnapshot(sessionPath, next);
+
+    await controller.sync();
+    expect(onSnapshot).toHaveBeenCalledOnce();
+    expect(onSnapshot).toHaveBeenCalledWith(next);
+
+    // Second sync with same revision triggers the lastWrittenRevision === revision branch (L84).
+    await controller.sync();
+    expect(onSnapshot).toHaveBeenCalledOnce();
     await controller.dispose();
   });
 });

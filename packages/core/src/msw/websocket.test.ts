@@ -52,6 +52,11 @@ describe("wrapped ws", () => {
     const ignored = ws.link("ws://wrapper.test/ignored");
     const reset = ws.link("ws://wrapper.test/reset");
     const handler = chat.addEventListener("connection", ({ client }) => {
+      try {
+        client.addEventListener("message", { handleEvent() { return undefined; } });
+      } catch {
+        // MSW clients only accept function listeners; the proxy must skip managed registration first.
+      }
       client.addEventListener("message", (event) => {
         client.send(`reply:${event.data}`);
       }, { once: false });
@@ -142,6 +147,16 @@ describe("wrapped ws", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     store.getState().setWebSocketEndpointEnabled(handler.id, false);
     await new Promise<void>((resolve) => second.addEventListener("close", () => resolve(), { once: true }));
+
+    // Connect while disabled — exercises the passthrough (connectWebSocket) branch in websocket.ts.
+    const passthrough = new WebSocket("ws://wrapper.test/chat");
+    sockets.push(passthrough);
+    await new Promise<void>((resolve) => {
+      passthrough.addEventListener("open", resolve, { once: true });
+      passthrough.addEventListener("error", resolve, { once: true });
+    });
+
+    store.getState().setWebSocketEndpointEnabled(handler.id, true);
 
     const socket = await openSocket("ws://wrapper.test/reset");
     const seen: string[] = [];

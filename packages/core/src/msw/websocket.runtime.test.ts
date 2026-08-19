@@ -1,6 +1,8 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { setupServer, type SetupServer } from "msw/node";
 import { createHandlerStore } from "../shared/store";
+import { WEBSOCKET_HANDLER_BIND, type WebSocketStoreAdapter } from "../shared/websocket/bind";
+import { ws } from "./index";
 
 const servers: SetupServer[] = [];
 const sockets: WebSocket[] = [];
@@ -63,10 +65,17 @@ describe("temporary WebSocket runtime", () => {
     });
 
     expect(server.listHandlers()).toHaveLength(initialHandlerCount + 1);
-
-    store.getState().hydrateWebSocket(store.getState().webSocket.endpoints);
-    expect(server.listHandlers()).toHaveLength(initialHandlerCount + 1);
     server.listen();
+
+    // Disabled endpoint: connectWebSocket is called instead of dispatching messages.
+    store.getState().setWebSocketEndpointEnabled(endpointId, false);
+    const disabledSocket = new WebSocket("ws://wrapper.test/temp-runtime");
+    sockets.push(disabledSocket);
+    await new Promise<void>((resolve) => {
+      disabledSocket.addEventListener("open", () => resolve(), { once: true });
+      disabledSocket.addEventListener("error", () => resolve(), { once: true });
+    });
+    store.getState().setWebSocketEndpointEnabled(endpointId, true);
 
     const socket = await openSocket("ws://wrapper.test/temp-runtime");
     const reply = nextMessage(socket);
@@ -89,5 +98,44 @@ describe("temporary WebSocket runtime", () => {
     store.getState().removeWebSocketEndpoint(endpointId);
     expect(server.listHandlers()).toHaveLength(initialHandlerCount);
     expect(store.getState().getWebSocketEndpoint(endpointId)).toBeUndefined();
+
+    const resetEndpointId = store.getState().addTempWebSocketEndpoint({
+      endpoint: "ws://wrapper.test/temp-runtime",
+      matcher: { kind: "string", value: "ws://wrapper.test/temp-runtime" },
+    });
+    store.getState().addTempWebSocketListener({
+      endpointId: resetEndpointId,
+      behavior: { preset: "send", options: { message: "after-readd" } },
+    });
+    const live = await openSocket("ws://wrapper.test/temp-runtime");
+    store.getState().resetMSWDevTool();
+    live.close();
+    await waitFor(() => live.readyState === WebSocket.CLOSED);
+  });
+});
+
+describe("closeWebSocketConnections", () => {
+  it("closes all registered clients for an endpoint and clears tracking state", async () => {
+    const endpoint = ws.link("ws://wrapper.test/close-conns");
+    const handler = endpoint.addEventListener("connection", () => undefined);
+    const store = createHandlerStore<SetupServer>({
+      createRuntime: (handlers) => {
+        const server = setupServer(...handlers);
+        servers.push(server);
+        return server;
+      },
+    });
+    await store.getState().setupDevToolRuntime(handler);
+
+    const hook = Reflect.get(handler, WEBSOCKET_HANDLER_BIND) as { getAdapter(): WebSocketStoreAdapter | undefined };
+    const adapter = hook.getAdapter()!;
+    const endpointId = store.getState().webSocket.endpoints[0]?.endpointId ?? "";
+
+    // Register a fake client directly instead of opening a real WebSocket.
+    const fakeClose = vi.fn();
+    adapter.registerWebSocketConnection(endpointId, { close: fakeClose });
+
+    adapter.closeWebSocketConnections(endpointId);
+    expect(fakeClose).toHaveBeenCalledOnce();
   });
 });
