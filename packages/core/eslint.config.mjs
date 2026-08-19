@@ -35,6 +35,12 @@ export default tseslint.config(
     },
   },
   {
+    files: ["src/**/*.test.{js,mjs,cjs,ts,tsx}"],
+    rules: {
+      "@typescript-eslint/consistent-type-assertions": "off",
+    },
+  },
+  {
     files: ["src/**/*.{js,mjs,cjs,ts,tsx}"],
     ignores: ["src/**/*.test.{js,mjs,cjs,ts,tsx}"],
     rules: {
