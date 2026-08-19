@@ -51,7 +51,8 @@
     "clean": "rm -rf dist && rm -rf node_modules",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "yarn build && vitest run"
+    "test": "yarn build && vitest run",
+    "test:coverage": "yarn build && vitest run --coverage"
   },
   "devDependencies": {
     "@eslint/js": "^9.24.0",

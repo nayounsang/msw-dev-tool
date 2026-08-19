@@ -34,7 +34,8 @@
     "dev": "tsc -p tsconfig.json --watch",
     "clean": "rm -rf dist && rm -rf node_modules",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@msw-dev-tool/cli-core": "workspace:*"
