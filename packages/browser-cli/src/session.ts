@@ -45,4 +45,13 @@ export class CdpBrowserCliSession implements CliSession {
   public addTemp(data: TempHandlerInput): Promise<CliMutationResult> { return this.invoke("addTemp", [data]); }
   public removeTemp(id: string): Promise<CliSessionInfo> { return this.invoke("removeTemp", [id]); }
   public reset(): Promise<CliSessionInfo> { return this.invoke("reset"); }
+  public async listWebSocket(): Promise<never[]> { throw new Error("not implemented"); }
+  public async getWebSocketEndpoint(): Promise<undefined> { throw new Error("not implemented"); }
+  public async addWebSocketEndpoint(): Promise<never> { throw new Error("not implemented"); }
+  public async removeWebSocketEndpoint(): Promise<never> { throw new Error("not implemented"); }
+  public async setWebSocketEndpointEnabled(): Promise<never> { throw new Error("not implemented"); }
+  public async addWebSocketListener(): Promise<never> { throw new Error("not implemented"); }
+  public async removeWebSocketListener(): Promise<never> { throw new Error("not implemented"); }
+  public async setWebSocketListenerEnabled(): Promise<never> { throw new Error("not implemented"); }
+  public async setWebSocketListenerBehavior(): Promise<never> { throw new Error("not implemented"); }
 }
