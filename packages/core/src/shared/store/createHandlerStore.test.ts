@@ -9,6 +9,35 @@ afterEach(() => {
 });
 
 describe("createHandlerStore WebSocket coordination", () => {
+  it("keeps a code listener when a temporary listener was added before connection", async () => {
+    const store = createHandlerStore<SetupServer>({
+      createRuntime: (handlers) => setupServer(...handlers),
+    });
+    await store.getState().setupDevToolRuntime();
+    store.getState().registerCodeWebSocketEndpoint({
+      id: "code-endpoint",
+      endpoint: "ws://code.test/chat",
+      source: "code",
+    });
+
+    const tempListenerId = store.getState().addTempWebSocketListener({
+      endpointId: "code-endpoint",
+      behavior: { preset: "send", options: { message: "temp" } },
+    });
+    store.getState().registerCodeWebSocketListener({
+      id: "code-endpoint:message:0",
+      endpointId: "code-endpoint",
+      order: 0,
+      event: "message",
+      source: "code",
+    });
+
+    expect(store.getState().getWebSocketEndpoint("code-endpoint")?.listeners.map((listener) => listener.info.id)).toEqual([
+      tempListenerId,
+      "code-endpoint:message:0",
+    ]);
+  });
+
   it("coordinates temporary lifecycle and direct code registration", async () => {
     const runtime = {
       addTempEndpoint: vi.fn(),
