@@ -14,8 +14,8 @@ export const BrowserWebSocketProbe = () => {
     const socket = new WebSocket(ENDPOINT);
     let finished = false;
     const timer = window.setTimeout(() => {
+      finish("timeout");
       socket.close();
-      setResult("timeout");
     }, 2_000);
     const finish = (next: Result) => {
       if (finished) return;
