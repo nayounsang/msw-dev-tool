@@ -1,3 +1,10 @@
+# IMPORTANT
+
+This is **deprecated** legacy package. It is not being maintained, and there are no plans to do so.
+Install with `@msw-dev-tool/core` and `@msw-dev-tool/react`.
+See [docs](https://msw-dev-tool-docs.vercel.app/docs/get-started) for installation.
+
+
 # Install
 
 - npm:
