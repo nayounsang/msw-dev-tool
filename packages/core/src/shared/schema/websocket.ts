@@ -4,8 +4,14 @@ const webSocketInfoSchema = z.object({
 });
 export const webSocketSendOptionsSchema = z.object({ message: z.string() }).strict();
 export const webSocketCloseOptionsSchema = z.object({
-  code: z.number().int().optional(),
-  reason: z.string().optional(),
+  code: z.number().int().refine(
+    (code) => code === 1000 || (code >= 3000 && code <= 4999),
+    "WebSocket close code must be 1000 or between 3000 and 4999"
+  ).optional(),
+  reason: z.string().refine(
+    (reason) => new TextEncoder().encode(reason).byteLength <= 123,
+    "WebSocket close reason must not exceed 123 UTF-8 bytes"
+  ).optional(),
 }).strict();
 export const webSocketBehaviorSchema = z.union([
   z.object({ preset: z.literal("default") }).strict(),

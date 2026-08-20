@@ -2,6 +2,8 @@ import { ensureMswServer } from "@/mocks/node";
 
 export const runtime = "nodejs";
 
+const APPROVED_SOCKET_TARGET = "ws://node.example.local/chat";
+
 const waitForSocketResult = (target: string, message: string) => new Promise<
   { type: "message"; data: string } | { type: "close"; code: number; reason: string }
 >((resolve, reject) => {
@@ -27,9 +29,13 @@ const waitForSocketResult = (target: string, message: string) => new Promise<
 });
 
 export async function GET(request: Request) {
-  await ensureMswServer();
   const url = new URL(request.url);
-  const target = url.searchParams.get("target") ?? "ws://node.example.local/chat";
+  const target = url.searchParams.get("target") ?? APPROVED_SOCKET_TARGET;
+  if (target !== APPROVED_SOCKET_TARGET) {
+    return Response.json({ error: "Unsupported WebSocket target" }, { status: 400 });
+  }
+
+  await ensureMswServer();
   const message = url.searchParams.get("message") ?? "hello";
   return Response.json(await waitForSocketResult(target, message));
 }

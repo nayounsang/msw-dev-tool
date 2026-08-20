@@ -63,4 +63,23 @@ describe("websocket schema", () => {
       options: { code: "4000" },
     })).toThrow();
   });
+
+  it("accepts only WebSocket-compatible close arguments", () => {
+    for (const code of [1000, 3000, 4999]) {
+      expect(() => webSocketBehaviorSchema.parse({ preset: "close", options: { code } })).not.toThrow();
+    }
+    for (const code of [999, 1001, 2999, 5000]) {
+      expect(() => webSocketBehaviorSchema.parse({ preset: "close", options: { code } }))
+        .toThrow("WebSocket close code must be 1000 or between 3000 and 4999");
+    }
+
+    expect(() => webSocketBehaviorSchema.parse({
+      preset: "close",
+      options: { reason: "€".repeat(41) },
+    })).not.toThrow();
+    expect(() => webSocketBehaviorSchema.parse({
+      preset: "close",
+      options: { reason: "€".repeat(41) + "a" },
+    })).toThrow("WebSocket close reason must not exceed 123 UTF-8 bytes");
+  });
 });
