@@ -14,7 +14,8 @@ import {
   BrowserControlBridge,
 } from "../shared/controlProtocol";
 import { HandlerSchema } from "./schema";
-import { tempHandlerSchema } from "../shared/schema";
+import { tempHandlerSchema, webSocketBehaviorSchema } from "../shared/schema";
+import { webSocketEndpointFromMatcher } from "../shared/websocket/state";
 import { getBrowserStorageSnapshot, mergeStorageData } from "./storage";
 
 export { BROWSER_CONTROL_KEY, BrowserControlBridge } from "../shared/controlProtocol";
@@ -174,6 +175,18 @@ const requireHandler = (id: string) => {
   return handler;
 };
 
+const requireWebSocketEndpoint = (id: string) => {
+  const endpoint = handlerStore.getState().getWebSocketEndpoint(id);
+  if (!endpoint) throw new Error(`WebSocket endpoint not found: ${id}`);
+  return endpoint;
+};
+
+const requireWebSocketListener = (id: string) => {
+  const listener = handlerStore.getState().getWebSocketListener(id);
+  if (!listener) throw new Error(`WebSocket listener not found: ${id}`);
+  return listener;
+};
+
 const registerBrowserControlBridge = () => {
   if (typeof window === "undefined") return;
   const bridge: BrowserControlBridge = {
@@ -207,6 +220,47 @@ const registerBrowserControlBridge = () => {
     reset: () => {
       handlerStore.getState().resetMSWDevTool();
       return describeBrowserSession();
+    },
+    listWebSocket: () => handlerStore.getState().webSocket.endpoints,
+    getWebSocketEndpoint: (endpointId) => handlerStore.getState().getWebSocketEndpoint(endpointId),
+    addWebSocketEndpoint: (matcher) => {
+      const endpointId = handlerStore.getState().addTempWebSocketEndpoint({
+        matcher,
+        endpoint: webSocketEndpointFromMatcher(matcher),
+      });
+      return { endpoint: requireWebSocketEndpoint(endpointId) };
+    },
+    removeWebSocketEndpoint: (endpointId) => {
+      handlerStore.getState().removeWebSocketEndpoint(endpointId);
+      return { endpoints: handlerStore.getState().webSocket.endpoints };
+    },
+    setWebSocketEndpointEnabled: (endpointId, enabled) => {
+      handlerStore.getState().setWebSocketEndpointEnabled(endpointId, enabled);
+      return { endpoint: requireWebSocketEndpoint(endpointId) };
+    },
+    addWebSocketListener: (endpointId, behavior) => {
+      const listenerId = handlerStore.getState().addTempWebSocketListener({
+        endpointId,
+        behavior: webSocketBehaviorSchema.parse(behavior),
+      });
+      return { endpoint: requireWebSocketEndpoint(endpointId), listener: requireWebSocketListener(listenerId) };
+    },
+    removeWebSocketListener: (listenerId) => {
+      handlerStore.getState().removeWebSocketListener(listenerId);
+      return { endpoints: handlerStore.getState().webSocket.endpoints };
+    },
+    setWebSocketListenerEnabled: (listenerId, enabled) => {
+      handlerStore.getState().setWebSocketListenerEnabled(listenerId, enabled);
+      const listener = requireWebSocketListener(listenerId);
+      return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener };
+    },
+    setWebSocketListenerBehavior: (listenerId, behavior) => {
+      handlerStore.getState().setWebSocketListenerBehavior(
+        listenerId,
+        webSocketBehaviorSchema.parse(behavior)
+      );
+      const listener = requireWebSocketListener(listenerId);
+      return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener };
     },
   };
   window[BROWSER_CONTROL_KEY] = bridge;
