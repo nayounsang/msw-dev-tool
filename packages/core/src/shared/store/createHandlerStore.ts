@@ -14,8 +14,9 @@ import {
   FlattenHandler,
   Handler,
 } from "../types";
+import type { WebSocketData } from "msw";
 import { deleteEmptySet, initMSWDevToolStore } from "../utils";
-import { bindWebSocketHandler, type WebSocketMessageListenerRegistration } from "../websocket/bind";
+import { bindWebSocketHandler, type ManagedWebSocketClient, type WebSocketMessageListenerRegistration } from "../websocket/bind";
 import { createTemporaryWebSocketHandler } from "../../msw/websocket";
 import { webSocketEndpointsSchema } from "../schema/websocket";
 import { webSocketCloseOptionsSchema, webSocketSendOptionsSchema } from "../schema/websocket";
@@ -39,6 +40,9 @@ export type {
   MswDevToolRuntime,
 } from "./types";
 
+const isWebSocketMessageEvent = (event: Event): event is MessageEvent<WebSocketData> =>
+  "data" in event;
+
 const registerTempHandlers = (
   runtime: MswDevToolRuntime,
   flattenHandlers: FlattenHandler[]
@@ -57,16 +61,27 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
   const store = createStore<HandlerStoreInternalState<TRuntime>>(
     (set, get) => {
       const registry = createHandlerRegistry();
-      const connections = new Map<string, Set<{ close: (code?: number, reason?: string) => void }>>();
+      const connections = new Map<string, Set<ManagedWebSocketClient>>();
       const reconnectors = new Map<string, Set<WebSocketMessageListenerRegistration>>();
+      const sequenceTimers = new WeakMap<object, Set<ReturnType<typeof setTimeout>>>();
+      const clearSequenceTimers = (client: object) => {
+        sequenceTimers.get(client)?.forEach((timer) => clearTimeout(timer));
+        sequenceTimers.delete(client);
+      };
+      const closeConnections = (id: string) => {
+        connections.get(id)?.forEach((client) => {
+          clearSequenceTimers(client);
+          client.close();
+        });
+        connections.delete(id);
+        reconnectors.delete(id);
+      };
       const temporaryHandlers = new Map<string, unknown>();
       let codeWebSocketHandlers: readonly Handler[] = [];
       const webSocketSlice = createWebSocketSlice({
         ...options.webSocketRuntime,
         closeEndpointConnections: (id) => {
-          connections.get(id)?.forEach((client) => client.close());
-          connections.delete(id);
-          reconnectors.delete(id);
+          closeConnections(id);
           options.webSocketRuntime?.closeEndpointConnections?.(id);
         },
       });
@@ -85,12 +100,13 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
         },
         getWebSocketEndpoint: (id: string) => webSocketSlice.getState().endpoints.find((entry) => entry.endpointId === id),
         getWebSocketListener: (id: string) => webSocketSlice.getState().listeners.find((entry) => entry.info.id === id),
-        registerWebSocketConnection: (id: string, client: { close: (code?: number, reason?: string) => void }) => {
+        registerWebSocketConnection: (id: string, client: ManagedWebSocketClient) => {
           let set = connections.get(id);
           if (!set) { set = new Set(); connections.set(id, set); }
           set.add(client);
         },
-        unregisterWebSocketConnection: (id: string, client: { close: (code?: number, reason?: string) => void }) => {
+        unregisterWebSocketConnection: (id: string, client: ManagedWebSocketClient) => {
+          clearSequenceTimers(client);
           const set = connections.get(id);
           if (!set) return;
           set.delete(client);
@@ -108,7 +124,7 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
           deleteEmptySet(reconnectors, id, set);
         },
         connectWebSocket: (_id: string, server: { connect: () => void }) => server.connect(),
-        dispatchWebSocketMessage: (endpointId: string, client: { send: (data: string) => void; close: (code?: number, reason?: string) => void }, event: Event, listenerId?: string, original?: (event: Event) => void) => {
+        dispatchWebSocketMessage: (endpointId: string, client: ManagedWebSocketClient, event: Event, listenerId?: string, original?: (event: Event) => void) => {
           const endpoint = webSocketSlice.getState().endpoints.find((entry) => entry.endpointId === endpointId);
           if (!endpoint?.enabled) return;
           const listeners = listenerId
@@ -126,13 +142,36 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
             if (defaultAction.preset === "close") {
               const options = webSocketCloseOptionsSchema.safeParse(defaultAction.options);
               if (options.success) client.close(options.data.code, options.data.reason);
+              return;
+            }
+            if (defaultAction.preset === "echo") {
+              if (isWebSocketMessageEvent(event)) client.send(event.data);
+              return;
+            }
+            if (defaultAction.preset === "send-null") {
+              client.send("null");
+              return;
+            }
+            if (defaultAction.preset === "no-reply") {
+              return;
+            }
+            if (defaultAction.preset === "send-sequence") {
+              const message = "Test message from MSW Dev Tool";
+              client.send(message);
+              const timers = sequenceTimers.get(client) ?? new Set<ReturnType<typeof setTimeout>>();
+              sequenceTimers.set(client, timers);
+              [1_000, 2_000].forEach((delay) => {
+                const timer = setTimeout(() => {
+                  timers.delete(timer);
+                  client.send(message);
+                }, delay);
+                timers.add(timer);
+              });
             }
           });
         },
         closeWebSocketConnections: (id: string) => {
-          connections.get(id)?.forEach((client) => client.close());
-          connections.delete(id);
-          reconnectors.delete(id);
+          closeConnections(id);
         },
         resetWebSocketConnections: () => {
           reconnectors.forEach((listeners) => listeners.forEach(({ disconnect, reconnect }) => {

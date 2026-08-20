@@ -59,7 +59,7 @@ describe("temporary WebSocket runtime", () => {
       endpoint: "ws://wrapper.test/temp-runtime",
       matcher: { kind: "string", value: "ws://wrapper.test/temp-runtime" },
     });
-    store.getState().addTempWebSocketListener({
+    const listenerId = store.getState().addTempWebSocketListener({
       endpointId,
       behavior: { preset: "send", options: { message: "temp-reply" } },
     });
@@ -81,11 +81,41 @@ describe("temporary WebSocket runtime", () => {
     const reply = nextMessage(socket);
     socket.send("ping");
     expect(await reply).toBe("temp-reply");
+
+    store.getState().setWebSocketListenerBehavior(listenerId, { preset: "echo" });
+    const echoed = nextMessage(socket);
+    socket.send("echo this");
+    expect(await echoed).toBe("echo this");
+
+    store.getState().setWebSocketListenerBehavior(listenerId, { preset: "send-null" });
+    const nullMessage = nextMessage(socket);
+    socket.send("null please");
+    expect(await nullMessage).toBe("null");
+
+    store.getState().setWebSocketListenerBehavior(listenerId, { preset: "no-reply" });
+    let replied = false;
+    socket.addEventListener("message", () => { replied = true; }, { once: true });
+    socket.send("wait");
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    expect(replied).toBe(false);
+    expect(socket.readyState).toBe(WebSocket.OPEN);
+
+    store.getState().setWebSocketListenerBehavior(listenerId, { preset: "send-sequence" });
+    const messages: string[] = [];
+    const completed = new Promise<void>((resolve) => {
+      socket.addEventListener("message", (event) => {
+        messages.push(String(event.data));
+        if (messages.length === 3) resolve();
+      });
+    });
+    socket.send("start");
+    await completed;
+    expect(messages).toEqual(["Test message from MSW Dev Tool", "Test message from MSW Dev Tool", "Test message from MSW Dev Tool"]);
     socket.close();
     await waitFor(() => socket.readyState === WebSocket.CLOSED);
 
     store.getState().setWebSocketListenerBehavior(
-      store.getState().webSocket.listeners[0]!.info.id,
+      listenerId,
       { preset: "close", options: { code: 4001, reason: "temp-close" } },
     );
     const closing = await openSocket("ws://wrapper.test/temp-runtime");
@@ -137,5 +167,41 @@ describe("closeWebSocketConnections", () => {
 
     adapter.closeWebSocketConnections(endpointId);
     expect(fakeClose).toHaveBeenCalledOnce();
+  });
+
+  it("cancels scheduled sequence messages before closing connections", async () => {
+    vi.useFakeTimers();
+    try {
+      const endpoint = ws.link("ws://wrapper.test/cancel-sequence");
+      const handler = endpoint.addEventListener("connection", () => undefined);
+      const store = createHandlerStore<SetupServer>({
+        createRuntime: (handlers) => setupServer(...handlers),
+      });
+      await store.getState().setupDevToolRuntime(handler);
+      const hook = Reflect.get(handler, WEBSOCKET_HANDLER_BIND) as { getAdapter(): WebSocketStoreAdapter | undefined };
+      const adapter = hook.getAdapter()!;
+      const endpointId = store.getState().webSocket.endpoints[0]!.endpointId;
+      const listenerId = `${endpointId}:message:0`;
+      store.getState().registerCodeWebSocketListener({
+        id: listenerId,
+        endpointId,
+        order: 0,
+        event: "message",
+        source: "code",
+      });
+      store.getState().setWebSocketListenerBehavior(listenerId, { preset: "send-sequence" });
+      const client = { send: vi.fn(), close: vi.fn() };
+      adapter.registerWebSocketConnection(endpointId, client);
+      adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
+      expect(client.send).toHaveBeenCalledTimes(1);
+
+      adapter.closeWebSocketConnections(endpointId);
+      await vi.advanceTimersByTimeAsync(2_000);
+
+      expect(client.close).toHaveBeenCalledOnce();
+      expect(client.send).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

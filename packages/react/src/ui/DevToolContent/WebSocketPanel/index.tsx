@@ -14,14 +14,43 @@ import { Input } from "../../Components/Input";
 import { Select } from "../../Components/Select";
 
 type EndpointFormValues = { matcherType: "string" | "regexp"; value: string; flags: string };
-type ListenerFormValues = { preset: "send" | "close"; message: string; code: string; reason: string };
 type FormErrors = Record<string, string | undefined>;
+
+const TEST_MESSAGE = "Test message from MSW Dev Tool";
+
+const behaviorOptions = [
+  { label: "Default", value: "default", behavior: { preset: "default" } },
+  { label: "No reply (delay)", value: "no-reply", behavior: { preset: "no-reply" } },
+  { label: "Send null", value: "send-null", behavior: { preset: "send-null" } },
+  { label: "Close (4000 — Error)", value: "close-4000", behavior: { preset: "close", options: { code: 4000, reason: "Error" } } },
+  { label: "Send test message", value: "send", behavior: { preset: "send", options: { message: TEST_MESSAGE } } },
+  { label: "Echo message", value: "echo", behavior: { preset: "echo" } },
+  { label: "Repeat message (3 times, every 1 sec)", value: "send-sequence", behavior: { preset: "send-sequence" } },
+  { label: "Close (1000 — Normal)", value: "close-1000", behavior: { preset: "close", options: { code: 1000, reason: "Normal closure" } } },
+  { label: "Close (4001 — Unauthorized)", value: "close-4001", behavior: { preset: "close", options: { code: 4001, reason: "Unauthorized" } } },
+  { label: "Close (4008 — Rate limited)", value: "close-4008", behavior: { preset: "close", options: { code: 4008, reason: "Rate limited" } } },
+] as const satisfies ReadonlyArray<{ label: string; value: string; behavior: WebSocketBehaviorSelection }>;
+
+const closeBehaviorValue = (code?: number) => `close-${code ?? 1000}`;
+
+const behaviorValue = (behavior: WebSocketBehaviorSelection) =>
+  behavior.preset === "close"
+    ? closeBehaviorValue((behavior.options as { code?: number } | undefined)?.code)
+    : behavior.preset;
+
+const behaviorLabel = (behavior: WebSocketBehaviorSelection) =>
+  behavior.preset === "close"
+    ? `Close (${(behavior.options as { code?: number } | undefined)?.code ?? 1000})`
+    : behavior.preset;
+
+const selectableBehaviorOptions = (source: WebSocketListenerConfig["info"]["source"]) =>
+  behaviorOptions.filter((option) => source === "code" || option.value !== "default");
 
 const matcherLabel = (matcher: SerializableWebSocketMatcher) =>
   matcher.kind === "string" ? matcher.value : `/${matcher.source}/${matcher.flags}`;
 
 const Toggle = ({ checked, label, onChange }: { checked: boolean; label: string; onChange: (checked: boolean) => void }) => (
-  <label className="msw-dt-ws-toggle">
+  <label className="msw-dt-ws-toggle" onClick={(event) => event.stopPropagation()}>
     <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} aria-label={label} />
     <span aria-hidden="true" />
   </label>
@@ -61,37 +90,17 @@ const EndpointForm = ({ onClose }: { onClose: () => void }) => {
 
 const ListenerForm = ({ endpoint, onClose }: { endpoint: WebSocketEndpointConfig; onClose: () => void }) => {
   const addListener = useHandlerStore((state) => state.addTempWebSocketListener);
-  const [values, setValues] = useState<ListenerFormValues>({ preset: "send", message: "", code: "", reason: "" });
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [preset, setPreset] = useState("send");
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
-    const defaultAction: WebSocketBehaviorSelection = values.preset === "send"
-      ? { preset: "send", options: { message: values.message } }
-      : { preset: "close", options: { ...(values.code ? { code: Number(values.code) } : {}), ...(values.reason ? { reason: values.reason } : {}) } };
-    if (defaultAction.preset === "send" && !(defaultAction.options as { message: string }).message.trim()) {
-      setErrors({ form: "Message is required for send behavior" });
-      return;
-    }
-    if (defaultAction.preset === "close") {
-      const close = defaultAction.options as { code?: number; reason?: string };
-      if (close.code !== undefined && (Number.isNaN(close.code) || !Number.isInteger(close.code) || (close.code !== 1000 && (close.code < 3000 || close.code > 4999)))) {
-        setErrors({ form: "WebSocket close code must be 1000 or between 3000 and 4999" });
-        return;
-      }
-      if (close.reason !== undefined && new TextEncoder().encode(close.reason).byteLength > 123) {
-        setErrors({ form: "WebSocket close reason must not exceed 123 UTF-8 bytes" });
-        return;
-      }
-    }
-    addListener({ endpointId: endpoint.endpointId, behavior: defaultAction });
+    const behavior = selectableBehaviorOptions("temp").find((option) => option.value === preset)?.behavior;
+    if (!behavior) return;
+    addListener({ endpointId: endpoint.endpointId, behavior });
     onClose();
   };
   return <form onSubmit={submit} className="msw-dt-ws-form">
-    <label className="msw-dt-label" htmlFor={`ws-action-${endpoint.endpointId}`}>Default action</label>
-    <Select id={`ws-action-${endpoint.endpointId}`} label="Default action" value={values.preset} onValueChange={(value) => setValues({ ...values, preset: (value ?? "send") as ListenerFormValues["preset"] })} options={[{ label: "send(message)", value: "send" }, { label: "close(code/reason)", value: "close" }]} />
-    {values.preset === "send" && <><label className="msw-dt-label" htmlFor="ws-message">Message</label><Input id="ws-message" value={values.message} onChange={(event) => setValues({ ...values, message: event.target.value })} /></>}
-    {values.preset === "close" && <><label className="msw-dt-label" htmlFor="ws-close-code">Close code</label><Input id="ws-close-code" type="number" value={values.code} onChange={(event) => setValues({ ...values, code: event.target.value })} /><label className="msw-dt-label" htmlFor="ws-close-reason">Close reason</label><Input id="ws-close-reason" value={values.reason} onChange={(event) => setValues({ ...values, reason: event.target.value })} /></>}
-    {errors.form && <p className="msw-dt-error-text">{errors.form}</p>}
+    <label className="msw-dt-label" htmlFor={`ws-action-${endpoint.endpointId}`}>Response behavior</label>
+    <Select id={`ws-action-${endpoint.endpointId}`} label="Response behavior" value={preset} onValueChange={(value) => setPreset(value ?? "send")} options={selectableBehaviorOptions("temp").map(({ label, value }) => ({ label, value }))} />
     <Button type="submit">Add listener</Button>
   </form>;
 };
@@ -103,15 +112,31 @@ const ListenerDialog = ({ endpoint }: { endpoint: WebSocketEndpointConfig }) => 
 
 const ListenerBehaviorSelect = ({ listener }: { listener: WebSocketListenerConfig }) => {
   const setEnabled = useHandlerStore((state) => state.setWebSocketListenerEnabled);
+  const setBehavior = useHandlerStore((state) => state.setWebSocketListenerBehavior);
+  const responseOptions = selectableBehaviorOptions(listener.info.source).map(({ label, value }) => ({ label, value }));
+  const currentValue = behaviorValue(listener.behavior);
+  const options = [
+    ...responseOptions.slice(0, 1),
+    { label: "Disable mock", value: "disable" },
+    ...responseOptions.slice(1),
+    ...(responseOptions.some((option) => option.value === currentValue) ? [] : [{ label: behaviorLabel(listener.behavior), value: currentValue }]),
+  ];
 
   return <Select
     label={`Behavior for ${listener.info.id}`}
-    value={listener.enabled ? "default" : "disable"}
-    options={[{ label: "Default", value: "default" }, { label: "Disable mock", value: "disable" }]}
+    value={listener.enabled ? currentValue : "disable"}
+    options={options}
     className="msw-dt-w-behavior-select"
     onValueChange={(value) => {
       if (!value) return;
-      setEnabled(listener.info.id, value !== "disable");
+      if (value === "disable") {
+        setEnabled(listener.info.id, false);
+        return;
+      }
+      const behavior = selectableBehaviorOptions(listener.info.source).find((option) => option.value === value)?.behavior;
+      if (!behavior) return;
+      setBehavior(listener.info.id, behavior);
+      setEnabled(listener.info.id, true);
     }}
   />;
 };
@@ -123,11 +148,11 @@ const EndpointRow = ({ endpoint }: { endpoint: WebSocketEndpointConfig }) => {
   const setEndpointEnabled = useHandlerStore((state) => state.setWebSocketEndpointEnabled);
   const isTemp = endpoint.info.source === "temp";
   return <>
-    <tr className="msw-dt-ws-endpoint-row">
-      <td><Button variant="ghost" className="msw-dt-ws-endpoint-trigger" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{matcherLabel(endpoint.matcher)}</Button></td>
+    <tr className="msw-dt-ws-endpoint-row" onClick={() => setExpanded(!expanded)}>
+      <td><Button variant="ghost" className="msw-dt-ws-endpoint-trigger" aria-expanded={expanded}>{matcherLabel(endpoint.matcher)}</Button></td>
       <td>{endpoint.listeners.length}</td>
       <td><Toggle checked={endpoint.enabled} label={`Enable mock for ${matcherLabel(endpoint.matcher)}`} onChange={(enabled) => setEndpointEnabled(endpoint.endpointId, enabled)} /></td>
-      <td><Button variant="ghost" color="danger" disabled={!isTemp} title={isTemp ? "Delete endpoint" : "Endpoints generated from codebase cannot be deleted"} aria-label={isTemp ? `Delete endpoint ${matcherLabel(endpoint.matcher)}` : "Endpoints generated from codebase cannot be deleted"} className={isTemp ? "msw-dt-danger-text" : "msw-dt-disabled-text"} onClick={() => removeEndpoint(endpoint.endpointId)}><Trash2 size={16} /></Button></td>
+      <td onClick={(event) => event.stopPropagation()}><Button variant="ghost" color="danger" disabled={!isTemp} title={isTemp ? "Delete endpoint" : "Endpoints generated from codebase cannot be deleted"} aria-label={isTemp ? `Delete endpoint ${matcherLabel(endpoint.matcher)}` : "Endpoints generated from codebase cannot be deleted"} className={isTemp ? "msw-dt-danger-text" : "msw-dt-disabled-text"} onClick={() => removeEndpoint(endpoint.endpointId)}><Trash2 size={16} /></Button></td>
     </tr>
     {expanded && <tr className="msw-dt-ws-detail-row"><td colSpan={4}><div className="msw-dt-ws-listeners">
       <div className="msw-dt-ws-listener-toolbar"><ListenerDialog endpoint={endpoint} /></div>
