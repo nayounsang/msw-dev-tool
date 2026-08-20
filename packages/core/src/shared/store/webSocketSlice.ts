@@ -7,6 +7,16 @@ import type {
   WebSocketListenerConfig,
   WebSocketHandlerInfo,
 } from "../types";
+import {
+  addTemporaryWebSocketEndpoint,
+  addTemporaryWebSocketListener,
+  removeTemporaryWebSocketEndpoint,
+  removeTemporaryWebSocketListener,
+  resetWebSocketEndpoints,
+  setWebSocketEndpointEnabled,
+  setWebSocketListenerBehavior,
+  setWebSocketListenerEnabled,
+} from "../websocket/state";
 
 export type WebSocketRuntimeAdapter = {
   addTempEndpoint?: (config: WebSocketEndpointConfig) => void;
@@ -20,24 +30,11 @@ export type WebSocketStoreState = {
   listeners: WebSocketListenerConfig[];
 };
 
-export const canonicalWebSocketMatcher = (
-  matcher: SerializableWebSocketMatcher
-): string => matcher.kind === "string"
-  ? `string:${matcher.value}`
-  : `regexp:${matcher.source}/${matcher.flags}`;
-
 const defaultBehavior: WebSocketBehaviorSelection = { preset: "default" };
-
-export const createWebSocketEndpointId = (matcher: SerializableWebSocketMatcher) =>
-  `websocket:endpoint:${canonicalWebSocketMatcher(matcher)}`;
-
-export const createWebSocketListenerId = (endpointId: string, index: number) =>
-  `${endpointId}:message:${index}`;
+export { canonicalWebSocketMatcher, createWebSocketEndpointId, createWebSocketListenerId } from "../websocket/state";
 
 export const createWebSocketSlice = (runtime?: WebSocketRuntimeAdapter) => {
   let state: WebSocketStoreState = { endpoints: [], listeners: [] };
-  let endpointOrder = 0;
-
   const getEndpoint = (id: string) => state.endpoints.find((entry) => entry.endpointId === id);
   const getListener = (id: string) => state.listeners.find((entry) => entry.info.id === id);
   const set = (next: WebSocketStoreState) => { state = next; };
@@ -66,59 +63,39 @@ export const createWebSocketSlice = (runtime?: WebSocketRuntimeAdapter) => {
       registerListener({ ...input, enabled: true, behavior: defaultBehavior });
     },
     addTempEndpoint: (input: { matcher: SerializableWebSocketMatcher; endpoint: string }) => {
-      let endpointId = "";
-      do {
-        endpointId = `${createWebSocketEndpointId(input.matcher)}:${endpointOrder++}`;
-      } while (state.endpoints.some((entry) => entry.endpointId === endpointId));
-      const info: WebSocketHandlerInfo = { id: endpointId, kind: "websocket", endpoint: input.endpoint, operation: "endpoint", source: "temp" };
-      const config: WebSocketEndpointConfig = { info, endpointId, matcher: input.matcher, enabled: true, listeners: [] };
-      set({ ...state, endpoints: [...state.endpoints, config] });
-      runtime?.addTempEndpoint?.(config);
-      return endpointId;
+      const next = addTemporaryWebSocketEndpoint(state.endpoints, input.matcher, input.endpoint);
+      set({ ...state, endpoints: next.endpoints });
+      runtime?.addTempEndpoint?.(next.endpoint);
+      return next.endpoint.endpointId;
     },
     addTempListener: (input: { endpointId: string; behavior: WebSocketBehaviorSelection }) => {
-      const endpoint = getEndpoint(input.endpointId);
-      if (!endpoint) throw new Error(`WebSocket endpoint not found: ${input.endpointId}`);
-      let index = endpoint.listeners.length;
-      let listenerId = createWebSocketListenerId(input.endpointId, index);
-      while (getListener(listenerId)) {
-        index += 1;
-        listenerId = createWebSocketListenerId(input.endpointId, index);
-      }
-      const listener: WebSocketListenerConfig = {
-        info: { id: listenerId, kind: "websocket", endpoint: endpoint.info.endpoint, operation: "message", source: "temp" },
-        endpointId: input.endpointId, event: "message", enabled: true, behavior: input.behavior,
-      };
-      registerListener(listener);
-      return listenerId;
+      const next = addTemporaryWebSocketListener(state.endpoints, input.endpointId, input.behavior);
+      set({ endpoints: next.endpoints, listeners: [...state.listeners, next.listener] });
+      return next.listener.info.id;
     },
     removeEndpoint: (endpointId: string) => {
-      const endpoint = getEndpoint(endpointId);
-      if (!endpoint) throw new Error(`WebSocket endpoint not found: ${endpointId}`);
-      if (endpoint.info.source !== "temp") throw new Error(`WebSocket endpoints generated from codebase cannot be deleted (id: ${endpointId})`);
+      const next = removeTemporaryWebSocketEndpoint(state.endpoints, endpointId);
       runtime?.closeEndpointConnections?.(endpointId);
       runtime?.removeEndpoint?.(endpointId);
-      const listenerIds = new Set(endpoint.listeners.map((entry) => entry.info.id));
-      set({ endpoints: state.endpoints.filter((entry) => entry.endpointId !== endpointId), listeners: state.listeners.filter((entry) => !listenerIds.has(entry.info.id)) });
+      const listenerIds = new Set(next.endpoint.listeners.map((entry) => entry.info.id));
+      set({ endpoints: next.endpoints, listeners: state.listeners.filter((entry) => !listenerIds.has(entry.info.id)) });
     },
     removeListener: (listenerId: string) => {
-      const listener = getListener(listenerId);
-      if (!listener) throw new Error(`WebSocket listener not found: ${listenerId}`);
-      if (listener.info.source !== "temp") throw new Error(`WebSocket listeners generated from codebase cannot be deleted (id: ${listenerId})`);
-      set({ endpoints: state.endpoints.map((entry) => ({ ...entry, listeners: entry.listeners.filter((item) => item.info.id !== listenerId) })), listeners: state.listeners.filter((entry) => entry.info.id !== listenerId) });
+      const next = removeTemporaryWebSocketListener(state.endpoints, listenerId);
+      set({ endpoints: next.endpoints, listeners: state.listeners.filter((entry) => entry.info.id !== listenerId) });
     },
     setEndpointEnabled: (endpointId: string, enabled: boolean) => {
-      if (!getEndpoint(endpointId)) throw new Error(`WebSocket endpoint not found: ${endpointId}`);
+      const next = setWebSocketEndpointEnabled(state.endpoints, endpointId, enabled);
       if (!enabled) runtime?.closeEndpointConnections?.(endpointId);
-      set({ ...state, endpoints: state.endpoints.map((entry) => entry.endpointId === endpointId ? { ...entry, enabled } : entry) });
+      set({ ...state, endpoints: next.endpoints });
     },
     setListenerEnabled: (listenerId: string, enabled: boolean) => {
-      if (!getListener(listenerId)) throw new Error(`WebSocket listener not found: ${listenerId}`);
-      set({ endpoints: state.endpoints.map((endpoint) => ({ ...endpoint, listeners: endpoint.listeners.map((entry) => entry.info.id === listenerId ? { ...entry, enabled } : entry) })), listeners: state.listeners.map((entry) => entry.info.id === listenerId ? { ...entry, enabled } : entry) });
+      const next = setWebSocketListenerEnabled(state.endpoints, listenerId, enabled);
+      set({ endpoints: next.endpoints, listeners: state.listeners.map((entry) => entry.info.id === listenerId ? next.listener : entry) });
     },
     setListenerBehavior: (listenerId: string, behavior: WebSocketBehaviorSelection) => {
-      if (!getListener(listenerId)) throw new Error(`WebSocket listener not found: ${listenerId}`);
-      set({ endpoints: state.endpoints.map((endpoint) => ({ ...endpoint, listeners: endpoint.listeners.map((entry) => entry.info.id === listenerId ? { ...entry, behavior } : entry) })), listeners: state.listeners.map((entry) => entry.info.id === listenerId ? { ...entry, behavior } : entry) });
+      const next = setWebSocketListenerBehavior(state.endpoints, listenerId, behavior);
+      set({ endpoints: next.endpoints, listeners: state.listeners.map((entry) => entry.info.id === listenerId ? next.listener : entry) });
     },
     replace: (next: WebSocketEndpointConfig[]) => {
       set({ endpoints: next, listeners: next.flatMap((entry) => entry.listeners) });
@@ -132,7 +109,8 @@ export const createWebSocketSlice = (runtime?: WebSocketRuntimeAdapter) => {
     },
     reset: () => {
       runtime?.resetTempEndpoints?.();
-      state = { endpoints: state.endpoints.filter((entry) => entry.info.source === "code").map((entry) => ({ ...entry, listeners: entry.listeners.filter((listener) => listener.info.source === "code") })), listeners: state.listeners.filter((entry) => entry.info.source === "code") };
+      const endpoints = resetWebSocketEndpoints(state.endpoints);
+      state = { endpoints, listeners: endpoints.flatMap((entry) => entry.listeners) };
     },
   };
 };

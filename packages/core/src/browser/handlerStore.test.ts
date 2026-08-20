@@ -111,6 +111,50 @@ describe("browser control bridge", () => {
     });
   });
 
+  it("exposes WebSocket endpoint and listener mutations through the browser bridge", async () => {
+    await setupDevToolWorker();
+    const bridge = getBridge();
+    const added = bridge.addWebSocketEndpoint({
+      kind: "regexp",
+      source: "browser\\.example\\.local/cli-e2e",
+      flags: "i",
+    });
+    const listener = bridge.addWebSocketListener(added.endpoint.endpointId, {
+      preset: "send",
+      options: { message: "hello" },
+    });
+
+    expect(bridge.listWebSocket()).toEqual([expect.objectContaining({
+      endpointId: added.endpoint.endpointId,
+      matcher: { kind: "regexp", source: "browser\\.example\\.local/cli-e2e", flags: "i" },
+    })]);
+    expect(bridge.getWebSocketEndpoint(added.endpoint.endpointId)).toEqual(listener.endpoint);
+    expect(bridge.setWebSocketEndpointEnabled(added.endpoint.endpointId, false).endpoint.enabled).toBe(false);
+    expect(bridge.setWebSocketListenerEnabled(listener.listener.info.id, false).listener.enabled).toBe(false);
+    expect(bridge.setWebSocketListenerBehavior(listener.listener.info.id, { preset: "close", options: { code: 4001 } }).listener.behavior).toEqual({
+      preset: "close", options: { code: 4001 },
+    });
+    const persistedBeforeInvalidBehavior = sessionStorage.getItem(STORAGE_KEY);
+    expect(() => bridge.addWebSocketListener(added.endpoint.endpointId, { preset: "invalid" })).toThrow();
+    expect(() => bridge.setWebSocketListenerBehavior(listener.listener.info.id, { preset: "invalid" })).toThrow();
+    expect(bridge.getWebSocketEndpoint(added.endpoint.endpointId)?.listeners).toEqual([
+      expect.objectContaining({ behavior: { preset: "close", options: { code: 4001 } } }),
+    ]);
+    expect(sessionStorage.getItem(STORAGE_KEY)).toBe(persistedBeforeInvalidBehavior);
+    expect(bridge.removeWebSocketListener(listener.listener.info.id).endpoints[0]?.listeners).toEqual([]);
+    expect(bridge.removeWebSocketEndpoint(added.endpoint.endpointId).endpoints).toEqual([]);
+    const matcher = { kind: "string" as const, value: "ws://browser.test/load" };
+    const results = await Promise.all(
+      Array.from({ length: 20 }, () => Promise.resolve().then(() => bridge.addWebSocketEndpoint(matcher)))
+    );
+
+    expect(new Set(results.map((result) => result.endpoint.endpointId)).size).toBe(20);
+    expect(bridge.listWebSocket()).toHaveLength(20);
+    expect(() => bridge.removeWebSocketEndpoint("missing-endpoint")).toThrow(
+      "WebSocket endpoint not found: missing-endpoint"
+    );
+  });
+
   it("keeps HTTP temp metadata when hydrating WebSocket state", async () => {
     await setupDevToolWorker(http.get("/hydrate", () => HttpResponse.json({ ok: true })));
     const state = handlerStore.getState();

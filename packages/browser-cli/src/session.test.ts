@@ -114,16 +114,61 @@ describe("CdpBrowserCliSession", () => {
     await expect(new CdpBrowserCliSession(client).describe()).rejects.toThrow("CDP evaluation failed");
   });
 
-  it("rejects all WebSocket stub methods as not implemented", async () => {
-    const session = new CdpBrowserCliSession({ call: vi.fn() } as unknown as CdpClient);
-    await expect(session.listWebSocket()).rejects.toThrow("not implemented");
-    await expect(session.getWebSocketEndpoint("id")).rejects.toThrow("not implemented");
-    await expect(session.addWebSocketEndpoint({ kind: "string", value: "ws://localhost" })).rejects.toThrow("not implemented");
-    await expect(session.removeWebSocketEndpoint("id")).rejects.toThrow("not implemented");
-    await expect(session.setWebSocketEndpointEnabled("id", true)).rejects.toThrow("not implemented");
-    await expect(session.addWebSocketListener("id", { preset: "send" })).rejects.toThrow("not implemented");
-    await expect(session.removeWebSocketListener("id")).rejects.toThrow("not implemented");
-    await expect(session.setWebSocketListenerEnabled("id", true)).rejects.toThrow("not implemented");
-    await expect(session.setWebSocketListenerBehavior("id", { preset: "close" })).rejects.toThrow("not implemented");
+  it("forwards every WebSocket operation with serializable arguments", async () => {
+    const listWebSocket = vi.fn(() => []);
+    const getWebSocketEndpoint = vi.fn(() => undefined);
+    const addWebSocketEndpoint = vi.fn(() => ({ endpoint: { endpointId: "endpoint-a" } }));
+    const removeWebSocketEndpoint = vi.fn(() => ({ endpoints: [] }));
+    const setWebSocketEndpointEnabled = vi.fn(() => ({ endpoint: { endpointId: "endpoint-a" } }));
+    const addWebSocketListener = vi.fn(() => ({ endpoint: { endpointId: "endpoint-a" }, listener: { info: { id: "listener-a" } } }));
+    const removeWebSocketListener = vi.fn(() => ({ endpoints: [] }));
+    const setWebSocketListenerEnabled = vi.fn(() => ({ endpoint: { endpointId: "endpoint-a" }, listener: { info: { id: "listener-a" } } }));
+    const setWebSocketListenerBehavior = vi.fn(() => ({ endpoint: { endpointId: "endpoint-a" }, listener: { info: { id: "listener-a" } } }));
+    const { client, call } = createEvaluatingClient({
+      methods: {
+        listWebSocket: 1, getWebSocketEndpoint: 1, addWebSocketEndpoint: 1,
+        removeWebSocketEndpoint: 1, setWebSocketEndpointEnabled: 1, addWebSocketListener: 1,
+        removeWebSocketListener: 1, setWebSocketListenerEnabled: 1, setWebSocketListenerBehavior: 1,
+      },
+      listWebSocket, getWebSocketEndpoint, addWebSocketEndpoint, removeWebSocketEndpoint,
+      setWebSocketEndpointEnabled, addWebSocketListener, removeWebSocketListener,
+      setWebSocketListenerEnabled, setWebSocketListenerBehavior,
+    });
+    const session = new CdpBrowserCliSession(client);
+    const matcher = { kind: "regexp" as const, source: "browser\\.example", flags: "i" };
+    const behavior = { preset: "send", options: { message: "hello" } } as const;
+
+    await expect(session.listWebSocket()).resolves.toEqual([]);
+    await expect(session.getWebSocketEndpoint("endpoint-a")).resolves.toBeUndefined();
+    await session.addWebSocketEndpoint(matcher);
+    await session.removeWebSocketEndpoint("endpoint-a");
+    await session.setWebSocketEndpointEnabled("endpoint-a", false);
+    await session.addWebSocketListener("endpoint-a", behavior);
+    await session.removeWebSocketListener("listener-a");
+    await session.setWebSocketListenerEnabled("listener-a", false);
+    await session.setWebSocketListenerBehavior("listener-a", { preset: "close", options: { code: 4001, reason: "done" } });
+
+    expect(addWebSocketEndpoint).toHaveBeenCalledWith(matcher);
+    expect(addWebSocketListener).toHaveBeenCalledWith("endpoint-a", behavior);
+    expect(call).toHaveBeenCalledTimes(9);
+    expect(call.mock.calls[2]?.[1].expression).toContain('"source":"browser\\\\.example"');
+    expect(call.mock.calls[4]?.[1].expression).toContain("false");
+  });
+
+  it.each([
+    ["the capability manifest is missing", {}, true],
+    ["the WebSocket method version is incompatible", { methods: { addWebSocketEndpoint: 2 } }, true],
+    ["the WebSocket method implementation is missing", { methods: { addWebSocketEndpoint: 1 } }, false],
+  ])("rejects WebSocket invocation when %s", async (_scenario, bridge, includeImplementation) => {
+    const addWebSocketEndpoint = vi.fn();
+    const { client } = createEvaluatingClient({
+      ...bridge,
+      ...(includeImplementation ? { addWebSocketEndpoint } : {}),
+    });
+
+    await expect(new CdpBrowserCliSession(client).addWebSocketEndpoint({ kind: "string", value: "ws://localhost" })).rejects.toThrow(
+      'MSW Dev Tool browser control method "addWebSocketEndpoint" version 1 is unavailable. Update @msw-dev-tool/core.'
+    );
+    expect(addWebSocketEndpoint).not.toHaveBeenCalled();
   });
 });

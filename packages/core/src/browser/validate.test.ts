@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { isValidHtml, isValidUrl, isValidXml } from "./validate";
 
 describe("isValidUrl", () => {
@@ -16,5 +16,13 @@ describe("isValidXml / isValidHtml", () => {
   it("accepts well-formed markup documents", () => {
     expect(isValidXml("<root></root>")).toBe(true);
     expect(isValidHtml("<div></div>")).toBe(true);
+  });
+
+  it("returns false when DOM parsing throws", () => {
+    const spy = vi.spyOn(DOMParser.prototype, "parseFromString").mockImplementation(() => {
+      throw new Error("parser unavailable");
+    });
+    expect(isValidXml("<root />")).toBe(false);
+    spy.mockRestore();
   });
 });
