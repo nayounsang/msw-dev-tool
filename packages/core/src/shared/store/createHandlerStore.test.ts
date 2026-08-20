@@ -117,7 +117,7 @@ describe("createHandlerStore WebSocket coordination", () => {
     });
     store.getState().addTempWebSocketListener({
       endpointId,
-      behavior: { preset: "default" },
+      behavior: { preset: "send", options: { message: "hydrated" } },
     });
     store.getState().hydrateWebSocket(store.getState().webSocket.endpoints);
 
