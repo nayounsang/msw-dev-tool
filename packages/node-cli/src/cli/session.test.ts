@@ -1,18 +1,33 @@
 import { describe, expect, it, vi } from "vitest";
 
 const api = vi.hoisted(() => ({
-  addSnapshotTempHandler: vi.fn(), getSnapshotHandler: vi.fn(), listSnapshotHandlers: vi.fn(), readSessionSnapshot: vi.fn(),
+  addSnapshotTempHandler: vi.fn(), getSnapshotHandler: vi.fn(), listSnapshotHandlers: vi.fn(), readSnapshotOrEmpty: vi.fn(),
   removeSnapshotTempHandler: vi.fn(), requestSnapshotReset: vi.fn(), setSnapshotBehavior: vi.fn(), setSnapshotCustomResponse: vi.fn(),
+  addSnapshotWebSocketEndpoint: vi.fn(), addSnapshotWebSocketListener: vi.fn(), getSnapshotWebSocketEndpoint: vi.fn(), listSnapshotWebSocketEndpoints: vi.fn(),
+  removeSnapshotWebSocketEndpoint: vi.fn(), removeSnapshotWebSocketListener: vi.fn(), setSnapshotWebSocketEndpointEnabled: vi.fn(),
+  setSnapshotWebSocketListenerBehavior: vi.fn(), setSnapshotWebSocketListenerEnabled: vi.fn(),
 }));
 vi.mock("@msw-dev-tool/core/node/internal", () => api);
 import { FileSnapshotCliSession } from "./session";
 
 const snapshot = (handlers = [{ id: "a" }]) => ({ revision: 2, state: { flattenHandlers: handlers, pendingReset: false } });
+const wsEndpoint = {
+  endpointId: "ws-1",
+  info: { id: "ws-1", kind: "websocket" as const, endpoint: "ws://example.test/chat", operation: "endpoint", source: "temp" as const },
+  matcher: { kind: "string" as const, value: "ws://example.test/chat" },
+  enabled: true,
+  listeners: [],
+};
+const wsListener = {
+  info: { id: "ws-1:message:0", kind: "websocket" as const, endpoint: "ws://example.test/chat", operation: "message", source: "temp" as const },
+  endpointId: "ws-1", event: "message" as const, enabled: true, behavior: { preset: "send" },
+};
+const wsSnapshot = (endpoint = wsEndpoint) => ({ revision: 2, state: { flattenHandlers: [], webSocket: [endpoint] } });
 
 describe("FileSnapshotCliSession", () => {
   it("adapts reads and every mutation result", async () => {
     vi.useFakeTimers();
-    api.readSessionSnapshot.mockReturnValue(snapshot());
+    api.readSnapshotOrEmpty.mockReturnValue(snapshot());
     api.listSnapshotHandlers.mockReturnValue([{ id: "a" }]);
     api.getSnapshotHandler.mockReturnValue({ id: "a" });
     api.setSnapshotBehavior.mockReturnValue(snapshot());
@@ -30,17 +45,35 @@ describe("FileSnapshotCliSession", () => {
     vi.useRealTimers();
   });
 
-  it("rejects all WebSocket stub methods as not implemented", async () => {
+  it("adapts all WebSocket reads and mutations", async () => {
+    vi.useFakeTimers();
+    const endpointWithListener = { ...wsEndpoint, listeners: [wsListener] };
+    api.listSnapshotWebSocketEndpoints.mockResolvedValue([wsEndpoint]);
+    api.getSnapshotWebSocketEndpoint.mockResolvedValue(wsEndpoint);
+    api.addSnapshotWebSocketEndpoint.mockReturnValue(wsSnapshot());
+    api.removeSnapshotWebSocketEndpoint.mockReturnValue(wsSnapshot());
+    api.setSnapshotWebSocketEndpointEnabled.mockReturnValue(wsSnapshot());
+    api.addSnapshotWebSocketListener.mockReturnValue(wsSnapshot(endpointWithListener));
+    api.removeSnapshotWebSocketListener.mockReturnValue(wsSnapshot());
+    api.setSnapshotWebSocketListenerEnabled.mockReturnValue(wsSnapshot(endpointWithListener));
+    api.setSnapshotWebSocketListenerBehavior.mockReturnValue(wsSnapshot(endpointWithListener));
     const session = new FileSnapshotCliSession("/tmp/session.json");
-    await expect(session.listWebSocket()).rejects.toThrow("not implemented");
-    await expect(session.getWebSocketEndpoint("id")).rejects.toThrow("not implemented");
-    await expect(session.addWebSocketEndpoint({ kind: "string", value: "ws://localhost" })).rejects.toThrow("not implemented");
-    await expect(session.removeWebSocketEndpoint("id")).rejects.toThrow("not implemented");
-    await expect(session.setWebSocketEndpointEnabled("id", true)).rejects.toThrow("not implemented");
-    await expect(session.addWebSocketListener("id", { preset: "send" })).rejects.toThrow("not implemented");
-    await expect(session.removeWebSocketListener("id")).rejects.toThrow("not implemented");
-    await expect(session.setWebSocketListenerEnabled("id", true)).rejects.toThrow("not implemented");
-    await expect(session.setWebSocketListenerBehavior("id", { preset: "close" })).rejects.toThrow("not implemented");
+    await expect(session.listWebSocket()).resolves.toEqual([wsEndpoint]);
+    await expect(session.getWebSocketEndpoint("ws-1")).resolves.toEqual(wsEndpoint);
+    const calls = [
+      session.addWebSocketEndpoint(wsEndpoint.matcher),
+      session.removeWebSocketEndpoint("ws-1"),
+      session.setWebSocketEndpointEnabled("ws-1", false),
+      session.addWebSocketListener("ws-1", { preset: "send" }),
+      session.removeWebSocketListener(wsListener.info.id),
+      session.setWebSocketListenerEnabled(wsListener.info.id, false),
+      session.setWebSocketListenerBehavior(wsListener.info.id, { preset: "close" }),
+    ];
+    await vi.advanceTimersByTimeAsync(300);
+    await expect(Promise.all(calls)).resolves.toHaveLength(7);
+    expect(api.addSnapshotWebSocketEndpoint).toHaveBeenCalledWith("/tmp/session.json", wsEndpoint.matcher);
+    expect(api.setSnapshotWebSocketListenerBehavior).toHaveBeenCalledWith("/tmp/session.json", wsListener.info.id, { preset: "close" });
+    vi.useRealTimers();
   });
 
   it("reports mutations that cannot find the resulting handler", async () => {

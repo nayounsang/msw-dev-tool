@@ -15,7 +15,16 @@ import {
   removeSnapshotTempHandler,
   requestSnapshotReset,
   getSnapshotHandler,
+  getSnapshotWebSocketEndpoint,
   listSnapshotHandlers,
+  listSnapshotWebSocketEndpoints,
+  addSnapshotWebSocketEndpoint,
+  addSnapshotWebSocketListener,
+  removeSnapshotWebSocketEndpoint,
+  removeSnapshotWebSocketListener,
+  setSnapshotWebSocketEndpointEnabled,
+  setSnapshotWebSocketListenerBehavior,
+  setSnapshotWebSocketListenerEnabled,
   readSnapshotOrEmpty,
   getSessionPathForPid,
   listSessionPids,
@@ -29,6 +38,7 @@ import {
 } from "../../shared/types";
 import { FlattenHandler } from "../../shared/types";
 import { getRowId } from "../../shared/utils/store";
+import { webSocketEndpointSchema } from "../../shared/schema/websocket";
 
 const require = createRequire(import.meta.url);
 const tempDirs: string[] = [];
@@ -123,6 +133,140 @@ describe("snapshot file protocol", () => {
     expect(next.state.flattenHandlers).toHaveLength(1);
     expect(next.state.flattenHandlers[0]?.type).toBe("temp");
     expect(next.state.flattenHandlers[0]?.tempInput?.path).toBe("/api/tmp");
+  });
+
+  it("reads and mutates WebSocket endpoints in a snapshot", async () => {
+    const dir = makeTempDir();
+    const sessionPath = path.join(dir, "session.json");
+    await fs.promises.writeFile(sessionPath, JSON.stringify({
+      revision: 0,
+      owner: { pid: process.pid },
+      state: { flattenHandlers: [] },
+    }));
+
+    await expect(listSnapshotWebSocketEndpoints(sessionPath)).resolves.toEqual([]);
+    const added = await addSnapshotWebSocketEndpoint(sessionPath, { kind: "string", value: "ws://snapshot.test/chat" });
+    const endpoint = added.state.webSocket![0]!;
+    expect(endpoint).toMatchObject({
+      endpointId: "websocket:endpoint:string:ws://snapshot.test/chat:0",
+      info: { source: "temp", endpoint: "ws://snapshot.test/chat" },
+      enabled: true,
+    });
+    const withListener = await addSnapshotWebSocketListener(sessionPath, endpoint.endpointId, { preset: "send", options: { message: "hello" } });
+    const listener = withListener.state.webSocket![0]!.listeners[0]!;
+
+    await setSnapshotWebSocketEndpointEnabled(sessionPath, endpoint.endpointId, false);
+    await setSnapshotWebSocketListenerEnabled(sessionPath, listener.info.id, false);
+    await setSnapshotWebSocketListenerBehavior(sessionPath, listener.info.id, { preset: "close", options: { code: 4000 } });
+    await expect(getSnapshotWebSocketEndpoint(sessionPath, endpoint.endpointId)).resolves.toMatchObject({
+      enabled: false,
+      listeners: [{ enabled: false, behavior: { preset: "close", options: { code: 4000 } } }],
+    });
+
+    await removeSnapshotWebSocketListener(sessionPath, listener.info.id);
+    await removeSnapshotWebSocketEndpoint(sessionPath, endpoint.endpointId);
+    await expect(listSnapshotWebSocketEndpoints(sessionPath)).resolves.toEqual([]);
+  });
+
+  it("rejects invalid WebSocket targets and preserves code-source entries", async () => {
+    const dir = makeTempDir();
+    const sessionPath = path.join(dir, "session.json");
+    const codeEndpoint = webSocketEndpointSchema.parse({
+      info: { id: "code-chat", kind: "websocket", endpoint: "ws://code.test/chat", operation: "endpoint", source: "code" },
+      endpointId: "code-chat",
+      matcher: { kind: "string", value: "ws://code.test/chat" },
+      enabled: true,
+      listeners: [{
+        info: { id: "code-chat:message:0", kind: "websocket", endpoint: "ws://code.test/chat", operation: "message", source: "code" },
+        endpointId: "code-chat", event: "message", enabled: true, behavior: { preset: "default" },
+      }],
+    });
+    await writeSnapshot(sessionPath, bumpSnapshot(createEmptySnapshot(), { webSocket: [codeEndpoint] }));
+
+    await expect(removeSnapshotWebSocketEndpoint(sessionPath, "code-chat")).rejects.toThrow("cannot be deleted");
+    await expect(removeSnapshotWebSocketListener(sessionPath, "code-chat:message:0")).rejects.toThrow("cannot be deleted");
+    await expect(setSnapshotWebSocketEndpointEnabled(sessionPath, "missing", false)).rejects.toThrow("not found");
+    await expect(addSnapshotWebSocketListener(sessionPath, "missing", { preset: "send" })).rejects.toThrow("not found");
+    await expect(removeSnapshotWebSocketListener(sessionPath, "missing")).rejects.toThrow("not found");
+    await expect(setSnapshotWebSocketListenerEnabled(sessionPath, "missing", false)).rejects.toThrow("not found");
+    await expect(setSnapshotWebSocketListenerBehavior(sessionPath, "missing", { preset: "close" })).rejects.toThrow("not found");
+    await expect(listSnapshotWebSocketEndpoints(sessionPath)).resolves.toEqual([codeEndpoint]);
+  });
+
+  it("preserves regexp matchers and allocates fresh endpoint and listener IDs", async () => {
+    const dir = makeTempDir();
+    const sessionPath = path.join(dir, "session.json");
+    await writeSnapshot(sessionPath, createEmptySnapshot());
+    const matcher = { kind: "string" as const, value: "ws://snapshot.test/chat" };
+
+    const first = (await addSnapshotWebSocketEndpoint(sessionPath, matcher)).state.webSocket![0]!;
+    const second = (await addSnapshotWebSocketEndpoint(sessionPath, matcher)).state.webSocket![1]!;
+    expect([first.endpointId, second.endpointId]).toEqual([
+      "websocket:endpoint:string:ws://snapshot.test/chat:0",
+      "websocket:endpoint:string:ws://snapshot.test/chat:1",
+    ]);
+
+    const firstListener = (await addSnapshotWebSocketListener(sessionPath, first.endpointId, { preset: "send", options: { message: "first" } }))
+      .state.webSocket![0]!.listeners[0]!;
+    const secondListener = (await addSnapshotWebSocketListener(sessionPath, first.endpointId, { preset: "send", options: { message: "second" } }))
+      .state.webSocket![0]!.listeners[1]!;
+    await removeSnapshotWebSocketListener(sessionPath, firstListener.info.id);
+    const replacement = (await addSnapshotWebSocketListener(sessionPath, first.endpointId, { preset: "send", options: { message: "replacement" } }))
+      .state.webSocket![0]!.listeners.find((listener) => listener.info.id !== secondListener.info.id)!;
+    expect(replacement.info.id).toBe(`${first.endpointId}:message:2`);
+
+    const regexp = await addSnapshotWebSocketEndpoint(sessionPath, {
+      kind: "regexp",
+      source: "snapshot\\.test/regex",
+      flags: "i",
+    });
+    expect(regexp.state.webSocket!.at(-1)!.info.endpoint).toBe("/snapshot\\.test/regex/i");
+  });
+
+  it("rejects invalid WebSocket mutations without changing the snapshot", async () => {
+    const dir = makeTempDir();
+    const sessionPath = path.join(dir, "session.json");
+    await writeSnapshot(sessionPath, createEmptySnapshot());
+    const endpoint = (await addSnapshotWebSocketEndpoint(sessionPath, {
+      kind: "string",
+      value: "ws://snapshot.test/chat",
+    })).state.webSocket![0]!;
+    const listener = (await addSnapshotWebSocketListener(sessionPath, endpoint.endpointId, {
+      preset: "send",
+      options: { message: "before" },
+    })).state.webSocket![0]!.listeners[0]!;
+
+    await expect(addSnapshotWebSocketEndpoint(sessionPath, {
+      kind: "regexp",
+      source: "snapshot.test",
+      flags: "invalid",
+    })).rejects.toThrow("WebSocket regular-expression matcher must be valid");
+    await expect(addSnapshotWebSocketListener(sessionPath, endpoint.endpointId, { preset: "send" }))
+      .rejects.toThrow();
+    await expect(setSnapshotWebSocketListenerBehavior(sessionPath, listener.info.id, { preset: "close", options: { code: "4000" } }))
+      .rejects.toThrow();
+
+    await expect(getSnapshotWebSocketEndpoint(sessionPath, endpoint.endpointId)).resolves.toMatchObject({
+      listeners: [{ behavior: { preset: "send", options: { message: "before" } } }],
+    });
+    await expect(listSnapshotWebSocketEndpoints(sessionPath)).resolves.toHaveLength(1);
+  });
+
+  it("serializes concurrent WebSocket endpoint mutations without lost updates", async () => {
+    const dir = makeTempDir();
+    const sessionPath = path.join(dir, "session.json");
+    await writeSnapshot(sessionPath, createEmptySnapshot());
+
+    await Promise.all(Array.from({ length: 2 }, (_, index) =>
+      addSnapshotWebSocketEndpoint(sessionPath, {
+        kind: "string",
+        value: `ws://snapshot.test/concurrent/${index}`,
+      })
+    ));
+
+    const endpoints = await listSnapshotWebSocketEndpoints(sessionPath);
+    expect(endpoints).toHaveLength(2);
+    expect(new Set(endpoints.map((endpoint) => endpoint.endpointId))).toHaveLength(2);
   });
 
   it("uses PID-named session files in the caller cwd", async () => {

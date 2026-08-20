@@ -47,9 +47,20 @@ describe("websocket schema", () => {
     });
   });
 
-  it("rejects unsupported behavior presets", () => {
+  it("rejects invalid matchers and behavior options", () => {
+    expect(() => serializableWebSocketMatcherSchema.parse({
+      kind: "regexp",
+      source: "schema.test",
+      flags: "invalid",
+    })).toThrow("WebSocket regular-expression matcher must be valid");
+
     expect(() => webSocketBehaviorSchema.parse({
       preset: "reply",
-    })).toThrow("WebSocket behavior must be default, send, or close");
+    })).toThrow();
+    expect(() => webSocketBehaviorSchema.parse({ preset: "send" })).toThrow();
+    expect(() => webSocketBehaviorSchema.parse({
+      preset: "close",
+      options: { code: "4000" },
+    })).toThrow();
   });
 });
