@@ -1,5 +1,20 @@
 # @msw-dev-tool/browser-cli
 
+## 2.1.0
+
+### Minor Changes
+
+- 78bb3e4: Add WebSocket endpoint and listener management through Browser CLI CDP sessions.
+
+### Patch Changes
+
+- Updated dependencies [78bb3e4]
+- Updated dependencies [f87749f]
+- Updated dependencies [3618a42]
+- Updated dependencies [3ff94dd]
+  - @msw-dev-tool/core@1.7.0
+  - @msw-dev-tool/cli-core@0.2.5
+
 ## 2.0.3
 
 ### Patch Changes
