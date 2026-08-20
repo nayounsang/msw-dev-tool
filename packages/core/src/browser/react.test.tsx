@@ -12,6 +12,14 @@ function UnstableSelectorComponent() {
   return <span data-testid="ids">{ids.length}</span>;
 }
 
+function SelectorChangeComponent({ selectCount }: { selectCount: boolean }) {
+  const value = useHandlerStore(selectCount
+    ? (state) => state.flattenHandlers.length
+    : (state) => state.restHandlers.length
+  );
+  return <span data-testid="value">{value}</span>;
+}
+
 describe("useHandlerStore", () => {
   it("does not loop when selector returns a new array reference", async () => {
     const container = document.createElement("div");
@@ -28,5 +36,14 @@ describe("useHandlerStore", () => {
     await act(async () => {
       root.unmount();
     });
+  });
+
+  it("recomputes when a caller supplies a new selector", async () => {
+    const container = document.createElement("div");
+    const root = createRoot(container);
+    await act(async () => root.render(<SelectorChangeComponent selectCount />));
+    await act(async () => root.render(<SelectorChangeComponent selectCount={false} />));
+    expect(container.querySelector("[data-testid='value']")?.textContent).toBe("0");
+    await act(async () => root.unmount());
   });
 });
