@@ -178,4 +178,20 @@ describe("shared CLI commands", () => {
     await expect(findCommand("set-behavior")!.execute(context, { flags: {}, positionals: ["set-behavior", "a", "bad"] })).rejects.toThrow("Unknown behavior");
     await expect(findCommand("add-temp")!.execute(context, { flags: {}, positionals: ["add-temp"] })).rejects.toThrow("Usage");
   });
+
+  it("rejects invalid custom response JSON and schema before session mutation", async () => {
+    const session = createSession();
+    session.setCustomResponse = vi.fn();
+    const context = { session };
+    await expect(findCommand("set-custom-response")!.execute(context, {
+      flags: { json: "{bad}" }, positionals: ["set-custom-response", "handler-a"],
+    })).rejects.toThrow("Custom response must be valid JSON");
+    await expect(findCommand("set-custom-response")!.execute(context, {
+      flags: { json: "{\"status\":\"wrong\"}" }, positionals: ["set-custom-response", "handler-a"],
+    })).rejects.toThrow();
+    await expect(findCommand("set-custom-response")!.execute(context, {
+      flags: {}, positionals: ["set-custom-response", "handler-a"],
+    })).rejects.toThrow("Usage: set-custom-response");
+    expect(session.setCustomResponse).not.toHaveBeenCalled();
+  });
 });

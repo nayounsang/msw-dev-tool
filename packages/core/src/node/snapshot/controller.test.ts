@@ -36,6 +36,13 @@ afterEach(() => {
 });
 
 describe("SessionController", () => {
+  it("does nothing when synchronized before start", async () => {
+    const onSnapshot = vi.fn();
+    const controller = new SessionController({ onSnapshot, onReset: () => [] });
+    await expect(controller.sync()).resolves.toBeUndefined();
+    expect(onSnapshot).not.toHaveBeenCalled();
+  });
+
   it("seeds a session and applies each newer non-reset snapshot once", async () => {
     const sessionPath = createTempSessionPath();
     const onSnapshot = vi.fn();
@@ -210,4 +217,5 @@ describe("SessionController", () => {
     expect(onSnapshot).toHaveBeenCalledOnce();
     await controller.dispose();
   });
+
 });

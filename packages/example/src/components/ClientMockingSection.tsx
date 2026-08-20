@@ -3,6 +3,7 @@
 import { UserList } from "./UserList";
 import { UserInfo } from "./UserInfo";
 import { OtherHostUserList } from "./OtherHostUserList";
+import { BrowserWebSocketProbe } from "./BrowserWebSocketProbe";
 
 export const ClientMockingSection = () => {
   return (
@@ -11,6 +12,7 @@ export const ClientMockingSection = () => {
       <UserList />
       <UserInfo />
       <OtherHostUserList />
+      <BrowserWebSocketProbe />
     </div>
   );
 };

@@ -88,18 +88,7 @@ yarn add @msw-dev-tool/core @msw-dev-tool/react --dev
 
 ### Legacy Package
 
-The `msw-dev-tool` package is now **legacy** and will be deprecated in the future. However, it is still **stable** and fully supported. For new projects, please use the new package structure above.
-
-```bash
-# Using pnpm
-pnpm add -D msw-dev-tool
-
-# Using npm
-npm i msw-dev-tool --save-dev
-
-# Using yarn
-yarn add msw-dev-tool --dev
-```
+The `msw-dev-tool` package is now **legacy** and will be deprecated in the future. For new projects, please use the new package structure above.
 
 For detailed installation and setup instructions, see the [Getting Started Guide](https://msw-dev-tool-docs.vercel.app/docs/get-started).
 

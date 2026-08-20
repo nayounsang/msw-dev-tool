@@ -29,6 +29,7 @@ import {
   getSessionPathForPid,
   listSessionPids,
   applySnapshotToRuntime,
+  SnapshotRepository,
 } from "./index";
 import {
   HttpHandlerBehavior,
@@ -56,6 +57,17 @@ afterEach(() => {
 });
 
 describe("snapshot file protocol", () => {
+  it("exercises the SnapshotRepository read, write, and mutation boundary", async () => {
+    const dir = makeTempDir();
+    const repository = new SnapshotRepository(path.join(dir, "session.json"));
+    await expect(repository.read()).resolves.toBeNull();
+    await expect(repository.readOrEmpty()).resolves.toEqual(createEmptySnapshot());
+
+    await repository.write(createEmptySnapshot());
+    const next = await repository.mutate((snapshot) => bumpSnapshot(snapshot, { flattenHandlers: [] }));
+    await expect(repository.read()).resolves.toEqual(next);
+  });
+
   it("writes and reads snapshots atomically", async () => {
     const dir = makeTempDir();
     const sessionPath = path.join(dir, "session.json");

@@ -1,9 +1,20 @@
-import { CliHandler, CliMutationResult, CliSession, CliSessionInfo } from "@msw-dev-tool/cli-core";
+import {
+  CliHandler,
+  CliMutationResult,
+  CliSession,
+  CliSessionInfo,
+  CliWebSocketEndpointResult,
+  CliWebSocketInfo,
+  CliWebSocketListenerResult,
+} from "@msw-dev-tool/cli-core";
 import {
   BROWSER_CONTROL_KEY,
   CustomResponse,
   HttpHandlerBehavior,
+  SerializableWebSocketMatcher,
   TempHandlerInput,
+  WebSocketBehaviorSelection,
+  WebSocketEndpointConfig,
 } from "@msw-dev-tool/core/shared";
 import { CdpClient } from "./cdp";
 
@@ -18,6 +29,15 @@ const REQUIRED_BROWSER_CONTROL_METHOD_VERSIONS = {
   addTemp: 1,
   removeTemp: 1,
   reset: 1,
+  listWebSocket: 1,
+  getWebSocketEndpoint: 1,
+  addWebSocketEndpoint: 1,
+  removeWebSocketEndpoint: 1,
+  setWebSocketEndpointEnabled: 1,
+  addWebSocketListener: 1,
+  removeWebSocketListener: 1,
+  setWebSocketListenerEnabled: 1,
+  setWebSocketListenerBehavior: 1,
 } as const;
 
 type BrowserControlMethod = keyof typeof REQUIRED_BROWSER_CONTROL_METHOD_VERSIONS;
@@ -45,13 +65,29 @@ export class CdpBrowserCliSession implements CliSession {
   public addTemp(data: TempHandlerInput): Promise<CliMutationResult> { return this.invoke("addTemp", [data]); }
   public removeTemp(id: string): Promise<CliSessionInfo> { return this.invoke("removeTemp", [id]); }
   public reset(): Promise<CliSessionInfo> { return this.invoke("reset"); }
-  public async listWebSocket(): Promise<never[]> { throw new Error("not implemented"); }
-  public async getWebSocketEndpoint(): Promise<undefined> { throw new Error("not implemented"); }
-  public async addWebSocketEndpoint(): Promise<never> { throw new Error("not implemented"); }
-  public async removeWebSocketEndpoint(): Promise<never> { throw new Error("not implemented"); }
-  public async setWebSocketEndpointEnabled(): Promise<never> { throw new Error("not implemented"); }
-  public async addWebSocketListener(): Promise<never> { throw new Error("not implemented"); }
-  public async removeWebSocketListener(): Promise<never> { throw new Error("not implemented"); }
-  public async setWebSocketListenerEnabled(): Promise<never> { throw new Error("not implemented"); }
-  public async setWebSocketListenerBehavior(): Promise<never> { throw new Error("not implemented"); }
+  public listWebSocket(): Promise<WebSocketEndpointConfig[]> { return this.invoke("listWebSocket"); }
+  public getWebSocketEndpoint(endpointId: string): Promise<WebSocketEndpointConfig | undefined> {
+    return this.invoke("getWebSocketEndpoint", [endpointId]);
+  }
+  public addWebSocketEndpoint(matcher: SerializableWebSocketMatcher): Promise<CliWebSocketEndpointResult> {
+    return this.invoke("addWebSocketEndpoint", [matcher]);
+  }
+  public removeWebSocketEndpoint(endpointId: string): Promise<CliWebSocketInfo> {
+    return this.invoke("removeWebSocketEndpoint", [endpointId]);
+  }
+  public setWebSocketEndpointEnabled(endpointId: string, enabled: boolean): Promise<CliWebSocketEndpointResult> {
+    return this.invoke("setWebSocketEndpointEnabled", [endpointId, enabled]);
+  }
+  public addWebSocketListener(endpointId: string, behavior: WebSocketBehaviorSelection): Promise<CliWebSocketListenerResult> {
+    return this.invoke("addWebSocketListener", [endpointId, behavior]);
+  }
+  public removeWebSocketListener(listenerId: string): Promise<CliWebSocketInfo> {
+    return this.invoke("removeWebSocketListener", [listenerId]);
+  }
+  public setWebSocketListenerEnabled(listenerId: string, enabled: boolean): Promise<CliWebSocketListenerResult> {
+    return this.invoke("setWebSocketListenerEnabled", [listenerId, enabled]);
+  }
+  public setWebSocketListenerBehavior(listenerId: string, behavior: WebSocketBehaviorSelection): Promise<CliWebSocketListenerResult> {
+    return this.invoke("setWebSocketListenerBehavior", [listenerId, behavior]);
+  }
 }
