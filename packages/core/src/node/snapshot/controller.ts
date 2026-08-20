@@ -85,13 +85,6 @@ export class SessionController {
       return;
     }
 
-    if (snapshot.revision < this.lastWrittenRevision) {
-      console.warn(
-        `[msw-dev-tool] snapshot revision ${snapshot.revision} is older than last written revision ${this.lastWrittenRevision}; ignoring`
-      );
-      return;
-    }
-
     if (snapshot.state.pendingReset) {
       const flattenHandlers = this.options.onReset();
       const webSocket = this.options.onResetWebSocket?.() ?? previousWebSocket(snapshot);

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { STORAGE_KEY } from "../shared/const";
 import {
   CustomBehavior,
@@ -13,6 +13,8 @@ describe("getStorageData", () => {
   beforeEach(() => {
     sessionStorage.clear();
   });
+
+  afterEach(() => vi.unstubAllGlobals());
 
   it("returns empty flattenHandlers when key is missing", () => {
     expect(getStorageData()).toEqual({ flattenHandlers: [] });
@@ -109,6 +111,15 @@ describe("getStorageData", () => {
     expect(() => getBrowserStorageSnapshot()).toThrow(
       `Invalid msw-dev-tool sessionStorage payload for key "${STORAGE_KEY}": Expected number, received string`
     );
+  });
+
+  it("reports invalid JSON and supports SSR without sessionStorage", () => {
+    sessionStorage.setItem(STORAGE_KEY, "{");
+    expect(() => getBrowserStorageSnapshot()).toThrow("invalid JSON");
+
+    vi.stubGlobal("sessionStorage", undefined);
+    expect(getBrowserStorageSnapshot()).toEqual({ revision: 0, state: { flattenHandlers: [] } });
+    expect(getStorageData()).toEqual({ flattenHandlers: [] });
   });
 });
 

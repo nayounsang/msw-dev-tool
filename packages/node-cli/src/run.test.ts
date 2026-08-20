@@ -85,5 +85,13 @@ describe("node-cli", () => {
     const { pid } = createSessionFile();
     await expect(runCli(["--pid", String(pid), "get"])).rejects.toThrow("Usage: get <id>");
     await expect(runCli(["--pid", "not-a-pid", "list"])).rejects.toThrow("--pid must be a numeric process ID");
+    await expect(runCli(["--pid", "999999", "list"])).rejects.toThrow("No msw-dev-tool session found for PID 999999");
+  });
+
+  it("reports that no session is available when discovery is empty", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "msw-dev-tool-cli-empty-"));
+    tempDirs.push(dir);
+    process.chdir(dir);
+    await expect(runCli(["list"])).rejects.toThrow("No msw-dev-tool sessions found");
   });
 });
