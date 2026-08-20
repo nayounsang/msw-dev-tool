@@ -5,7 +5,8 @@ import { createEmptySnapshot } from "./serialize";
 import { sessionSnapshotSchema, SessionSnapshot } from "./types";
 
 const LOCK_STALE_MS = 15_000;
-const LOCK_MAX_ATTEMPTS = 10;
+// TODO: Add a per-path in-memory queue if same-process mutation contention becomes common.
+const LOCK_MAX_ATTEMPTS = 30;
 const LOCK_BACKOFF_MS = { min: 50, max: 500, factor: 1.5 } as const;
 
 const pathExists = async (filePath: string): Promise<boolean> => {
