@@ -19,6 +19,11 @@ export const createWebSocketEndpointId = (matcher: SerializableWebSocketMatcher)
 export const createWebSocketListenerId = (endpointId: string, index: number) =>
   `${endpointId}:message:${index}`;
 
+/** Temporary listeners use a separate namespace so they never collide with
+ * listeners discovered from code when a connection is established later. */
+export const createTemporaryWebSocketListenerId = (endpointId: string, index: number) =>
+  `${endpointId}:temp:message:${index}`;
+
 export const webSocketEndpointFromMatcher = (matcher: SerializableWebSocketMatcher): string =>
   matcher.kind === "string" ? matcher.value : `/${matcher.source}/${matcher.flags}`;
 
@@ -89,12 +94,15 @@ export const addTemporaryWebSocketListener = (
 ) => {
   const endpoint = findEndpoint(endpoints, endpointId);
   const behavior = behaviorInput;
+  if (behavior.preset === "default") {
+    throw new Error("Temporary WebSocket listeners require a send or close default action");
+  }
   let index = endpoint.listeners.length;
-  let listenerId = createWebSocketListenerId(endpointId, index);
+  let listenerId = createTemporaryWebSocketListenerId(endpointId, index);
   const listeners = endpoints.flatMap((entry) => entry.listeners);
   while (listeners.some((listener) => listener.info.id === listenerId)) {
     index += 1;
-    listenerId = createWebSocketListenerId(endpointId, index);
+    listenerId = createTemporaryWebSocketListenerId(endpointId, index);
   }
   const listener: WebSocketListenerConfig = {
     info: { id: listenerId, kind: "websocket", endpoint: endpoint.info.endpoint, operation: "message", source: "temp" },
@@ -147,8 +155,11 @@ export const setWebSocketListenerBehavior = (
   listenerId: string,
   behaviorInput: WebSocketBehaviorSelection
 ) => {
-  findListener(endpoints, listenerId);
+  const { listener: currentListener } = findListener(endpoints, listenerId);
   const behavior = behaviorInput;
+  if (currentListener.info.source === "temp" && behavior.preset === "default") {
+    throw new Error("Temporary WebSocket listeners require a send or close default action");
+  }
   const nextEndpoints = endpoints.map((endpoint) => ({
     ...endpoint,
     listeners: endpoint.listeners.map((entry) =>

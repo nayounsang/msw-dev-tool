@@ -116,15 +116,15 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
             : endpoint.listeners;
           listeners.forEach((config) => {
             if (!config?.enabled) return;
-            const behavior = config.behavior;
-            if (behavior.preset === "default") { original?.(event); return; }
-            if (behavior.preset === "send") {
-              const options = webSocketSendOptionsSchema.safeParse(behavior.options);
+            const defaultAction = config.behavior;
+            if (defaultAction.preset === "default") { original?.(event); return; }
+            if (defaultAction.preset === "send") {
+              const options = webSocketSendOptionsSchema.safeParse(defaultAction.options);
               if (options.success) client.send(options.data.message);
               return;
             }
-            if (behavior.preset === "close") {
-              const options = webSocketCloseOptionsSchema.safeParse(behavior.options);
+            if (defaultAction.preset === "close") {
+              const options = webSocketCloseOptionsSchema.safeParse(defaultAction.options);
               if (options.success) client.close(options.data.code, options.data.reason);
             }
           });

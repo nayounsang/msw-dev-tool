@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const ENDPOINT = "ws://browser.example.local/cli-e2e";
+const ENDPOINT = "ws://browser.example.local/chat";
 
 type Result = "idle" | "connecting" | `message: ${string}` | `close: ${number} ${string}` | "timeout" | "error";
 

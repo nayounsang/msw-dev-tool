@@ -7,7 +7,13 @@ import { useHandlerStore } from "@msw-dev-tool/core/browser";
 import { Flex } from "../../Components/Flex";
 import { Button } from "../../Components/Button";
 
-export const ToolButtonGroup = () => {
+export const ToolButtonGroup = ({
+  showAddHandler = true,
+  secondaryAction,
+}: {
+  showAddHandler?: boolean;
+  secondaryAction?: React.ReactNode;
+}) => {
   const resetMSWDevTool = useHandlerStore((state) => state.resetMSWDevTool);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -17,7 +23,8 @@ export const ToolButtonGroup = () => {
         <RotateCcw size={16} />
         Reset Dev tool
       </Button>
-      <Dialog.Root open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      {secondaryAction}
+      {showAddHandler && <Dialog.Root open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <Dialog.Trigger render={<Button><Plus size={16} />Add Temp Handler</Button>} />
         <Dialog.Portal>
           <Dialog.Backdrop className="msw-dt-dialog-backdrop" forceRender />
@@ -38,7 +45,7 @@ export const ToolButtonGroup = () => {
             </div>
           </Dialog.Popup>
         </Dialog.Portal>
-      </Dialog.Root>
+      </Dialog.Root>}
     </Flex>
   );
 };

@@ -225,7 +225,7 @@ describe("snapshot file protocol", () => {
     await removeSnapshotWebSocketListener(sessionPath, firstListener.info.id);
     const replacement = (await addSnapshotWebSocketListener(sessionPath, first.endpointId, { preset: "send", options: { message: "replacement" } }))
       .state.webSocket![0]!.listeners.find((listener) => listener.info.id !== secondListener.info.id)!;
-    expect(replacement.info.id).toBe(`${first.endpointId}:message:2`);
+    expect(replacement.info.id).toBe(`${first.endpointId}:temp:message:2`);
 
     const regexp = await addSnapshotWebSocketEndpoint(sessionPath, {
       kind: "regexp",

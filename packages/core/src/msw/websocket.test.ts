@@ -115,11 +115,11 @@ describe("wrapped ws", () => {
       preset: "close",
       options: { code: 4000, reason: "configured close" },
     });
-    const closed = new Promise<number>((resolve) => {
-      first.addEventListener("close", (event) => resolve(event.code), { once: true });
+    const closed = new Promise<{ code: number; reason: string }>((resolve) => {
+      first.addEventListener("close", (event) => resolve({ code: event.code, reason: event.reason }), { once: true });
     });
     first.send("close");
-    expect(await closed).toBe(4000);
+    await expect(closed).resolves.toEqual({ code: 4000, reason: "configured close" });
     store.getState().setWebSocketListenerBehavior(firstListenerId, { preset: "default" });
 
     // A second connection repeats registration order zero and is upserted.

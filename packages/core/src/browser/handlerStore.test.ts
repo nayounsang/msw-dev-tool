@@ -137,6 +137,12 @@ describe("browser control bridge", () => {
     const persistedBeforeInvalidBehavior = sessionStorage.getItem(STORAGE_KEY);
     expect(() => bridge.addWebSocketListener(added.endpoint.endpointId, { preset: "invalid" })).toThrow();
     expect(() => bridge.setWebSocketListenerBehavior(listener.listener.info.id, { preset: "invalid" })).toThrow();
+    expect(() => bridge.addWebSocketListener(added.endpoint.endpointId, { preset: "default" })).toThrow(
+      "Temporary WebSocket listeners require a send or close default action"
+    );
+    expect(() => bridge.setWebSocketListenerBehavior(listener.listener.info.id, { preset: "default" })).toThrow(
+      "Temporary WebSocket listeners require a send or close default action"
+    );
     expect(bridge.getWebSocketEndpoint(added.endpoint.endpointId)?.listeners).toEqual([
       expect.objectContaining({ behavior: { preset: "close", options: { code: 4001 } } }),
     ]);
