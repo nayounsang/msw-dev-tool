@@ -1,5 +1,17 @@
 # @msw-dev-tool/core
 
+## 1.7.0
+
+### Minor Changes
+
+- 78bb3e4: Add WebSocket endpoint and listener management through Browser CLI CDP sessions.
+- 3618a42: Add unified WebSocket endpoint and listener state management, lifecycle controls, and Browser/Node session persistence.
+- 3ff94dd: Add the environment-neutral `@msw-dev-tool/core/msw` WebSocket wrapper and in-memory discovery of code-defined WebSocket endpoints and message listeners.
+
+### Patch Changes
+
+- f87749f: Apply WebSocket endpoint and listener state changes to browser and Node runtimes, including temporary handler lifecycle and message behavior controls.
+
 ## 1.6.0
 
 ### Minor Changes
