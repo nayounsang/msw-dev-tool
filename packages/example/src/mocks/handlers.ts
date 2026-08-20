@@ -1,8 +1,11 @@
 import { http, HttpResponse, RequestHandler, WebSocketHandler } from "msw";
+import { ws } from "@msw-dev-tool/core/msw";
 import { users } from "./data";
 
 /** Absolute URL used by RSC so SSR fetch does not hit the Next server itself. */
 export const SSR_USERS_URL = "https://ssr.example.local/users";
+
+const browserChat = ws.link("ws://browser.example.local/chat");
 
 export const handlers: Array<RequestHandler | WebSocketHandler> = [
   // Node's fetch requires an absolute URL, unlike browser fetch.
@@ -21,5 +24,10 @@ export const handlers: Array<RequestHandler | WebSocketHandler> = [
   }),
   http.get(SSR_USERS_URL, () => {
     return HttpResponse.json(users, { status: 200 });
+  }),
+  browserChat.addEventListener("connection", ({ client }) => {
+    client.addEventListener("message", (event) => {
+      client.send(`echo:${String(event.data)}`);
+    });
   }),
 ];
