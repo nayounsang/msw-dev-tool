@@ -55,7 +55,7 @@ const meta: MetaRecord = {
     title: "Playground",
   },
   "temp-handler": {
-    title: "Temp Handler",
+    display: "hidden",
   },
 };
 
