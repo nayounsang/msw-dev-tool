@@ -174,6 +174,7 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
           closeConnections(id);
         },
         resetWebSocketConnections: () => {
+          connections.forEach((clients) => clients.forEach(clearSequenceTimers));
           reconnectors.forEach((listeners) => listeners.forEach(({ disconnect, reconnect }) => {
             disconnect?.();
             reconnect();

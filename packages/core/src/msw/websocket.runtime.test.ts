@@ -204,4 +204,39 @@ describe("closeWebSocketConnections", () => {
       vi.useRealTimers();
     }
   });
+
+  it("cancels scheduled sequence messages during a Dev Tool reset", async () => {
+    vi.useFakeTimers();
+    try {
+      const endpoint = ws.link("ws://wrapper.test/reset-sequence");
+      const handler = endpoint.addEventListener("connection", () => undefined);
+      const store = createHandlerStore<SetupServer>({
+        createRuntime: (handlers) => setupServer(...handlers),
+      });
+      await store.getState().setupDevToolRuntime(handler);
+      const hook = Reflect.get(handler, WEBSOCKET_HANDLER_BIND) as { getAdapter(): WebSocketStoreAdapter | undefined };
+      const adapter = hook.getAdapter()!;
+      const endpointId = store.getState().webSocket.endpoints[0]!.endpointId;
+      const listenerId = `${endpointId}:message:0`;
+      store.getState().registerCodeWebSocketListener({
+        id: listenerId,
+        endpointId,
+        order: 0,
+        event: "message",
+        source: "code",
+      });
+      store.getState().setWebSocketListenerBehavior(listenerId, { preset: "send-sequence" });
+      const client = { send: vi.fn(), close: vi.fn() };
+      adapter.registerWebSocketConnection(endpointId, client);
+      adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
+      expect(client.send).toHaveBeenCalledTimes(1);
+
+      adapter.resetWebSocketConnections();
+      await vi.advanceTimersByTimeAsync(2_000);
+
+      expect(client.send).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
