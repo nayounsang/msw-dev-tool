@@ -1,48 +1,10 @@
-# IMPORTANT
+# Deprecated package
 
-This is **deprecated** legacy package. It is not being maintained, and there are no plans to do so.
-Install with `@msw-dev-tool/core` and `@msw-dev-tool/react`.
-See [docs](https://msw-dev-tool-docs.vercel.app/docs/get-started) for installation.
+`msw-dev-tool` is a deprecated legacy package and is no longer maintained.
 
+Migrate to the modular packages instead:
 
-# Install
+- `@msw-dev-tool/core`
+- `@msw-dev-tool/react`
 
-- npm:
-
-```bash
-npm i msw-dev-tool --save-dev
-```
-
-- yarn:
-
-```bash
-yarn add msw-dev-tool --dev
-```
-
-- pnpm:
-
-```bash
-pnpm add msw-dev-tool --save-dev
-```
-
-# How to use?
-
-view [docs](https://msw-dev-tool-docs.vercel.app/docs/get-started)
-
-# What features?
-
-## Handler Table
-
-**view [docs](https://msw-dev-tool-docs.vercel.app/docs/handler-table)**
-
-The handler table is a table that shows all the handlers in the project and control them.
-
-## Debugger
-
-**view [docs](https://msw-dev-tool-docs.vercel.app/docs/debugger)**
-
-The Debugger allows you to test your mock handlers interactively:
-
-1. Open the Debugger by clicking any row in the Handler Table
-2. Enter the request parameters in the input fields
-3. Send a test request to see the mocked response
+See the [Getting Started guide](https://msw-dev-tool-docs.vercel.app/docs/get-started) to migrate.

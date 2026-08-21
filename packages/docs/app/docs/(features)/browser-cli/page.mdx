@@ -1,131 +1,91 @@
 ---
-description: "Browser CLI for AI agents to control msw-dev-tool with Chrome DevTools Protocol"
+description: "Machine-readable browser CLI control for HTTP and WebSocket scenarios"
 ---
 
 import { Callout, Tabs } from "nextra/components";
 
 # Browser CLI
 
-<Callout type="info">
-  **`@msw-dev-tool/browser-cli` is built for AI agents.** It exposes machine-readable,
-  one-shot commands so an agent can programmatically control an in-browser
-  msw-dev-tool session. It is not a human interactive TUI.
-</Callout>
+`@msw-dev-tool/browser-cli` lets an AI agent or script control HTTP and WebSocket scenarios in a browser MSW Dev Tool session through Chrome DevTools Protocol (CDP). Set a scenario with the CLI, inspect the same target through CDP, and verify the user-visible result.
 
-`@msw-dev-tool/browser-cli` lets an AI agent control an in-browser MSW Dev Tool
-session through Chrome DevTools Protocol (CDP). It uses the same handler commands
-and JSON output conventions as the Node CLI, but requires an explicit browser tab.
+## Configuration
 
-## Install
+### Install and connect the runtime
 
 ```bash copy
 pnpm add -D @msw-dev-tool/browser-cli @msw-dev-tool/core msw
 ```
 
-## Chrome and MCP setup
+The target tab must run `setupDevToolWorker(...handlers)`. Start a separate Chrome profile with remote debugging enabled:
 
-Start the Chrome instance controlled by your AI with remote debugging enabled.
-Use a separate profile: this port gives local processes full browser-debugging
-access.
-
-{/* prettier-ignore */}
 <Tabs items={["macOS", "Windows", "Linux"]}>
   <Tabs.Tab>
   ```bash copy
-  open -na "Google Chrome" --args \
-    --remote-debugging-address=127.0.0.1 \
-    --remote-debugging-port=9222 \
-    --user-data-dir=/private/tmp/chrome-debug-9222
+  open -na "Google Chrome" --args --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 --user-data-dir=/private/tmp/chrome-debug-9222
   ```
   </Tabs.Tab>
   <Tabs.Tab>
   ```powershell copy
-  & "C:\Program Files\Google\Chrome\Application\chrome.exe" `
-    --remote-debugging-address=127.0.0.1 `
-    --remote-debugging-port=9222 `
-    --user-data-dir="$env:TEMP\chrome-debug-9222"
+  & "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 --user-data-dir="$env:TEMP\chrome-debug-9222"
   ```
   </Tabs.Tab>
   <Tabs.Tab>
   ```bash copy
-  google-chrome \
-    --remote-debugging-address=127.0.0.1 \
-    --remote-debugging-port=9222 \
-    --user-data-dir=/tmp/chrome-debug-9222
+  google-chrome --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-debug-9222
   ```
   </Tabs.Tab>
 </Tabs>
 
-<Callout type="warning">
-  Before using Chrome DevTools MCP or `@msw-dev-tool/browser-cli`, keep the Chrome
-  instance started above running. Both connect to its `http://127.0.0.1:9222`
-  debugging endpoint, not to an ordinarily opened Chrome window.
-</Callout>
+### Choose a target
 
-### Install a dedicated Chrome DevTools MCP server
-
-We recommend configuring a dedicated Chrome DevTools MCP server for this endpoint:
-
-```toml copy
-[mcp_servers.chrome-devtools]
-command = "npx"
-args = ["-y", "chrome-devtools-mcp@latest", "--browser-url=http://127.0.0.1:9222"]
-```
-
-When using a separate server through a global MCP configuration, you can assign
-it a different ID in the `[mcp_servers.<id>]` header. You can also configure the
-server as a project-local MCP.
-
-Your MCP client and `msw-dev-tool-browser` can then inspect the same Chrome tabs. See
-the [Chrome DevTools MCP guide for connecting to a running Chrome instance](https://github.com/ChromeDevTools/chrome-devtools-mcp#connecting-to-a-running-chrome-instance)
-for other operating systems and remote-debugging details.
-
-### Agent instruction
-
-Add the following instruction for agents that use the Browser CLI:
-
-```text copy
-When using @msw-dev-tool/browser-cli, use the chrome-devtools MCP server
-configured for http://127.0.0.1:9222. Before using it, make sure Chrome is
-running with the remote-debugging configuration shown above.
-```
-
-Your application must call `setupDevToolWorker(...handlers)` in the target tab.
-That registers the in-page control endpoint used by the CLI.
-
-## Choose a tab
-
-`sessionStorage` is scoped to a tab, even for pages on the same origin. List the
-available page targets and copy the intended id:
+List browser page targets and select the tab that has initialized `setupDevToolWorker()`. `sessionStorage` is tab-scoped, so every mutation requires that target ID.
 
 ```bash copy
 msw-dev-tool-browser tabs --cdp-url http://127.0.0.1:9222
+msw-dev-tool-browser session --cdp-url http://127.0.0.1:9222 --target <target-id>
 ```
 
-Every other command requires both `--cdp-url` and `--target`:
+<Callout type="warning">
+The remote-debugging endpoint gives local processes browser-debugging access. Keep the separate Chrome profile running and do not use a regular browsing profile.
+</Callout>
+
+## Commands & API
+
+All commands print machine-readable JSON. Replace `<cdp>` with `--cdp-url http://127.0.0.1:9222 --target <target-id>` in the examples below.
+
+### HTTP scenarios
 
 ```bash copy
-msw-dev-tool-browser list --cdp-url http://127.0.0.1:9222 --target <target-id>
-msw-dev-tool-browser set-behavior '<handler-id>' delay --cdp-url http://127.0.0.1:9222 --target <target-id>
+msw-dev-tool-browser list <cdp>
+msw-dev-tool-browser get '{"path":"/api/items","method":"get"}' <cdp>
+msw-dev-tool-browser set-behavior '{"path":"/api/items","method":"get"}' delay <cdp>
+msw-dev-tool-browser set-custom-response '{"path":"/api/items","method":"get"}' --json '{"status":200,"body":"[]"}' <cdp>
+msw-dev-tool-browser set-behavior '{"path":"/api/items","method":"get"}' 'custom response' <cdp>
+msw-dev-tool-browser add-temp --json '{"path":"/api/preview","method":"get","contentType":"application/json","status":"200","response":"{\\"ok\\":true}"}' <cdp>
+msw-dev-tool-browser remove-temp '{"path":"/api/preview","method":"get"}' <cdp>
+msw-dev-tool-browser reset <cdp>
 ```
 
-## Commands
+```json
+{"ok":true,"handlers":[{"id":"{\\"path\\":\\"/api/items\\",\\"method\\":\\"get\\"}","path":"/api/items","method":"get","behavior":"default"}]}
+```
+
+### WebSocket scenarios
 
 ```bash copy
-msw-dev-tool-browser session --cdp-url ... --target <target-id>
-msw-dev-tool-browser list --cdp-url ... --target <target-id>
-msw-dev-tool-browser get '<handler-id>' --cdp-url ... --target <target-id>
-msw-dev-tool-browser set-behavior '<handler-id>' delay --cdp-url ... --target <target-id>
-msw-dev-tool-browser add-temp --json '<temp-handler-json>' --cdp-url ... --target <target-id>
-msw-dev-tool-browser remove-temp '<handler-id>' --cdp-url ... --target <target-id>
-msw-dev-tool-browser reset --cdp-url ... --target <target-id>
+msw-dev-tool-browser ws-list <cdp>
+msw-dev-tool-browser ws-get-endpoint 'websocket:endpoint:ws://localhost:8080/chat' <cdp>
+msw-dev-tool-browser ws-add-endpoint --json '{"kind":"string","value":"ws://localhost:8080/preview"}' <cdp>
+msw-dev-tool-browser ws-set-endpoint-enabled 'websocket:endpoint:ws://localhost:8080/chat' false <cdp>
+msw-dev-tool-browser ws-add-listener 'websocket:endpoint:ws://localhost:8080/preview:0' --json '{"preset":"send","options":{"message":"hello"}}' <cdp>
+msw-dev-tool-browser ws-set-listener-behavior '<listener-id>' --json '{"preset":"close"}' <cdp>
+msw-dev-tool-browser ws-set-listener-enabled '<listener-id>' false <cdp>
+msw-dev-tool-browser ws-remove-listener '<temporary-listener-id>' <cdp>
+msw-dev-tool-browser ws-remove-endpoint 'websocket:endpoint:ws://localhost:8080/preview:0' <cdp>
 ```
 
-All commands print JSON. Changes are applied immediately: the CLI calls the same
-in-memory handler store used by the Dev Tool UI and persists the resulting state
-to `sessionStorage`. A refresh is only needed to confirm persisted state survives
-page reload, not to apply a CLI mutation.
+```json
+{"ok":true,"endpoint":{"endpointId":"websocket:endpoint:ws://localhost:8080/chat","enabled":false,"listeners":[]}}
+```
 
-`reset` immediately restores handlers from the code supplied to
-`setupDevToolWorker()`. If a target reports that no browser session is initialized,
-open the tab where that setup function has run.
+`ws-add-endpoint`, `ws-add-listener`, and `ws-set-listener-behavior` use `--json` input. Browser changes apply immediately to the in-memory store and persist to the selected tab's `sessionStorage`; refresh only to confirm persistence. Code-discovered WebSocket endpoints and listeners cannot be deleted, while temporary ones can.

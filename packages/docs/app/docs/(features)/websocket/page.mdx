@@ -1,0 +1,47 @@
+---
+description: "Explore WebSocket message and connection scenarios at runtime"
+---
+
+# WebSocket Mocking Scenarios
+
+Use WebSocket runtime controls to test real-time message behavior, connection recovery, and temporary endpoints without changing application code.
+
+## Connect existing WebSocket handlers
+
+Import `ws` from `@msw-dev-tool/core/msw` so MSW Dev Tool can discover the endpoint and its `message` listeners.
+
+```ts copy
+import { ws } from "@msw-dev-tool/core/msw";
+
+export const handlers = [
+  ws.link("ws://localhost:8080/chat").addEventListener("connection", ({ client }) => {
+    client.addEventListener("message", (event) => {
+      client.send(`received: ${event.data}`);
+    });
+  }),
+];
+```
+
+After the handler connects, the WebSocket panel lists its endpoint and discovered `message` listener.
+
+## Verify real-time message states
+
+Select a listener and choose the response behavior that fits the flow you are checking.
+
+- **Send** returns a chosen message for chat messages or notifications.
+- **Echo** returns the incoming message.
+- **Send null** returns `null` to verify nullable-message handling.
+- **No reply** leaves a sent message unanswered so you can verify waiting states.
+- **Send sequence** returns the configured sequence behavior to explore ordered real-time updates.
+
+Use these controls to verify chat messages, notifications, pending indicators, and UI that depends on incoming data.
+
+## Verify connection failures and recovery
+
+Use **Close** on a listener to close active connections and verify reconnect logic, offline UI, and connection-error recovery. Disable an endpoint or listener to stop its mock behavior while testing the corresponding recovery path.
+
+## Explore a temporary real-time flow
+
+Add a temporary endpoint and listener in the WebSocket panel when you need to explore a new real-time screen without changing code. Choose a response behavior when adding the listener, then remove the temporary endpoint or listener, or reset the Dev Tool, when finished.
+
+Endpoints and listeners discovered from code can be enabled, disabled, and given a different behavior, but they cannot be deleted. Only temporary endpoints and listeners can be deleted.

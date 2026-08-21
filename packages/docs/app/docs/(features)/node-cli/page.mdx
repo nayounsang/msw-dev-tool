@@ -1,27 +1,16 @@
 ---
-description: "Node CLI for AI agents to control msw-dev-tool programmatically"
+description: "Machine-readable Node CLI control for HTTP and WebSocket scenarios"
 ---
 
 import { Callout, Tabs } from "nextra/components";
 
 # Node CLI
 
-<Callout type="info">
-  **`@msw-dev-tool/node-cli` is built for AI agents.** It exposes machine-readable,
-  one-shot commands so an agent can programmatically control an msw-dev-tool Node
-  session. It is not a human interactive TUI.
-</Callout>
+`@msw-dev-tool/node-cli` gives AI agents and scripts machine-readable JSON control of a Node MSW Dev Tool session. Use it to select HTTP and WebSocket scenarios in a process that runs `setupDevToolServer()`.
 
-## Session lifecycle and reset
+## Configuration
 
-Each Node server process has its own Dev Tool session. The session starts from
-the handlers supplied to `setupDevToolServer()` and is discarded when that server
-process stops; restarting the server starts a new session from its current code
-handlers.
-
-The owner process polls the file every 200 ms and applies changes to MSW.
-
-## Install
+### Install
 
 <Tabs items={["pnpm", "npm", "yarn"]}>
   <Tabs.Tab>
@@ -36,12 +25,12 @@ The owner process polls the file every 200 ms and applies changes to MSW.
   </Tabs.Tab>
   <Tabs.Tab>
   ```bash copy
-  yarn add @msw-dev-tool/core @msw-dev-tool/node-cli msw --dev
+  yarn add -D @msw-dev-tool/core @msw-dev-tool/node-cli msw
   ```
   </Tabs.Tab>
 </Tabs>
 
-## App setup
+### Connect the runtime
 
 ```ts copy
 import { setupDevToolServer } from "@msw-dev-tool/core/node";
@@ -51,54 +40,56 @@ const server = await setupDevToolServer(...handlers);
 server.listen();
 ```
 
-On setup, a PID-named session snapshot file is created in the app's current
-working directory. Use the following selection flow:
-
-1. `.msw-dev-tool/sessions/<pid>.json` files in the current working directory
-2. Run `msw-dev-tool sessions` to list available PIDs
-3. When more than one session exists, pass `--pid <pid>` to every command
-
-Normal process shutdown removes its session snapshot. A crash can leave a stale
-PID-named file behind, so inspect the output of `msw-dev-tool sessions` and
-remove stale files from `.msw-dev-tool/sessions` before choosing a session or
-passing `--pid`.
-
-<Callout type="warning">
-  After you change handler code, run `msw-dev-tool reset` so the session
-  snapshot is re-seeded from the updated handlers.
-
-  Wait until `reset` prints `ok` before issuing other CLI commands. Writes that
-  arrive while reset is still applying can be discarded when the owner reseeds
-  from code handlers. The CLI waits ~300ms after the reset request so `ok`
-  usually means the owner has finished applying.
-</Callout>
-
-## CLI commands
-
-All commands print JSON to stdout.
+Each server process writes a PID-named session snapshot to `.msw-dev-tool/sessions/<pid>.json` in its current working directory. List sessions, then use `--pid` whenever more than one is available.
 
 ```bash copy
 msw-dev-tool sessions
 msw-dev-tool --pid 4182 session
-msw-dev-tool session
+```
+
+<Callout type="warning">
+After changing handler code, run `msw-dev-tool --pid 4182 reset` and wait for its JSON result before issuing another command. A normal process exit removes its session file; inspect and remove stale files after a crash before selecting a PID.
+</Callout>
+
+## Commands & API
+
+Every command prints machine-readable JSON to stdout. Handler IDs are JSON strings such as `{"path":"/api/items","method":"get"}`; use `list` to copy them safely.
+
+### HTTP scenarios
+
+```bash copy
 msw-dev-tool --pid 4182 list
-msw-dev-tool --pid 4182 get '<handler-id>'
-msw-dev-tool --pid 4182 set-behavior '<handler-id>' delay
-msw-dev-tool --pid 4182 add-temp --json '{"path":"/api/tmp","method":"get","contentType":"application/json","status":"200","response":"{\"ok\":true}"}'
-msw-dev-tool --pid 4182 remove-temp '<handler-id>'
+msw-dev-tool --pid 4182 get '{"path":"/api/items","method":"get"}'
+msw-dev-tool --pid 4182 set-behavior '{"path":"/api/items","method":"get"}' delay
+msw-dev-tool --pid 4182 set-custom-response '{"path":"/api/items","method":"get"}' --json '{"status":200,"body":"[]"}'
+msw-dev-tool --pid 4182 set-behavior '{"path":"/api/items","method":"get"}' 'custom response'
+msw-dev-tool --pid 4182 add-temp --json '{"path":"/api/preview","method":"get","contentType":"application/json","status":"200","response":"{\\"ok\\":true}"}'
+msw-dev-tool --pid 4182 remove-temp '{"path":"/api/preview","method":"get"}'
 msw-dev-tool --pid 4182 reset
 ```
 
-`--session` and `MSW_DEV_TOOL_SESSION` are no longer supported. Node session
-selection is cwd-scoped and PID-based. This is separate from the browser CLI,
-which continues to use `tabs` and `--target` for CDP target selection.
-
-## Handler id
-
-Handler ids are JSON strings of `{ path, method }`, for example:
-
-```text
-{"path":"/api/items","method":"get"}
+```json
+{"ok":true,"handlers":[{"id":"{\\"path\\":\\"/api/items\\",\\"method\\":\\"get\\"}","path":"/api/items","method":"get","behavior":"default"}]}
 ```
 
-Use `msw-dev-tool list` to copy ids safely.
+### WebSocket scenarios
+
+First discover endpoint and listener IDs, then pass the selected ID to a mutation command.
+
+```bash copy
+msw-dev-tool --pid 4182 ws-list
+msw-dev-tool --pid 4182 ws-get-endpoint 'websocket:endpoint:ws://localhost:8080/chat'
+msw-dev-tool --pid 4182 ws-add-endpoint --json '{"kind":"string","value":"ws://localhost:8080/preview"}'
+msw-dev-tool --pid 4182 ws-set-endpoint-enabled 'websocket:endpoint:ws://localhost:8080/chat' false
+msw-dev-tool --pid 4182 ws-add-listener 'websocket:endpoint:ws://localhost:8080/preview:0' --json '{"preset":"send","options":{"message":"hello"}}'
+msw-dev-tool --pid 4182 ws-set-listener-behavior '<listener-id>' --json '{"preset":"close","options":{"code":4001,"reason":"test"}}'
+msw-dev-tool --pid 4182 ws-set-listener-enabled '<listener-id>' false
+msw-dev-tool --pid 4182 ws-remove-listener '<temporary-listener-id>'
+msw-dev-tool --pid 4182 ws-remove-endpoint 'websocket:endpoint:ws://localhost:8080/preview:0'
+```
+
+```json
+{"ok":true,"endpoint":{"endpointId":"websocket:endpoint:ws://localhost:8080/chat","enabled":false,"listeners":[]}}
+```
+
+`ws-add-endpoint`, `ws-add-listener`, and `ws-set-listener-behavior` accept their matcher or behavior through `--json`. Supported listener presets are `default`, `send`, `echo`, `send-null`, `no-reply`, `send-sequence`, and `close`. Code-discovered endpoints and listeners cannot be removed; remove commands apply only to temporary items.

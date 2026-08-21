@@ -1,41 +1,24 @@
-# Install
+# @msw-dev-tool/react
 
-- npm:
+React UI for runtime HTTP and WebSocket mock scenario control.
 
-```bash
-npm i @msw-dev-tool/core @msw-dev-tool/react --save-dev
-```
-
-- yarn:
+## Install
 
 ```bash
-yarn add @msw-dev-tool/core @msw-dev-tool/react --dev
+pnpm add -D @msw-dev-tool/core @msw-dev-tool/react msw
 ```
 
-- pnpm:
+## Use
 
-```bash
-pnpm add @msw-dev-tool/core @msw-dev-tool/react --save-dev
+```tsx
+import { MSWDevTool } from "@msw-dev-tool/react";
+import "@msw-dev-tool/react/msw-dev-tool.css";
+
+export function App() {
+  return <MSWDevTool />;
+}
 ```
 
-# How to use?
+Configure the worker with `setupDevToolWorker(...handlers)` from `@msw-dev-tool/core/browser`. The UI lets you inspect HTTP scenarios and WebSocket endpoints/listeners, then change their enabled state or response behavior at runtime.
 
-view [docs](https://msw-dev-tool-docs.vercel.app/docs/get-started)
-
-# What features?
-
-## Handler Table
-
-**view [docs](https://msw-dev-tool-docs.vercel.app/docs/handler-table)**
-
-The handler table is a table that shows all the handlers in the project and control them.
-
-## Debugger
-
-**view [docs](https://msw-dev-tool-docs.vercel.app/docs/debugger)**
-
-The Debugger allows you to test your mock handlers interactively:
-
-1. Open the Debugger by clicking any row in the Handler Table
-2. Enter the request parameters in the input fields
-3. Send a test request to see the mocked response
+See [Getting Started](https://msw-dev-tool-docs.vercel.app/docs/get-started), [HTTP Mocking Scenarios](https://msw-dev-tool-docs.vercel.app/docs/http), and [WebSocket Mocking Scenarios](https://msw-dev-tool-docs.vercel.app/docs/websocket).

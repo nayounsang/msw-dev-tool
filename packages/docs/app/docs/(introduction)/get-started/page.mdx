@@ -17,9 +17,13 @@ export default function MdxLayout(props) {
 
 # Getting Started
 
-**msw-dev-tool** is a package that helps you control mock logic, modify responses, and monitor API calls with msw.
+MSW Dev Tool connects to your MSW handlers so you can control HTTP and WebSocket mock scenarios at runtime. Install the integration that matches your application, then continue to [How to Use](/docs/how-to-use) for scenario-based verification.
 
-## Installation
+## 1. Install MSW
+
+MSW Dev Tool extends an MSW setup. Start by installing and configuring MSW for your application with the [MSW Setup Guide](https://mswjs.io/docs/getting-started/install).
+
+## 2. Install MSW Dev Tool
 
 <Callout type="warning">
   The legacy `msw-dev-tool` package is no longer maintained and is scheduled for
@@ -101,9 +105,6 @@ agent or script needs to control that Node session.
   </Tabs.Tab>
 </Tabs>
 
-For detailed setup instructions:
-- [MSW Setup Guide](https://mswjs.io/docs/getting-started/install)
-
 ## Setup
 
 ### Browser UI
@@ -140,7 +141,7 @@ export default function App() {
 }
 ```
 
-Also, you can customize the trigger ui. See [Custom Trigger](/docs/custom-trigger) for more details.
+You can also customize the trigger UI. See [Custom UI](/docs/custom-ui) for details.
 
 ### Browser CLI
 
@@ -160,6 +161,12 @@ server.listen();
 ```
 
 AI agents can control the Node session with `@msw-dev-tool/node-cli`. See [Node CLI](/docs/node-cli).
+
+## Next steps
+
+- [How to Use](/docs/how-to-use): choose and verify a mock scenario.
+- [HTTP Mocking Scenarios](/docs/http): test loading, failures, alternative data, real APIs, and temporary endpoints.
+- [WebSocket Mocking Scenarios](/docs/websocket): test real-time messages and connection recovery.
 
 ## Questions & Support
 

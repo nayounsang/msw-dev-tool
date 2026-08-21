@@ -42,6 +42,17 @@ msw-dev-tool remove-temp '<id>'
 msw-dev-tool reset
 ```
 
+WebSocket commands use the same machine-readable JSON interface:
+
+```bash
+msw-dev-tool --pid 4182 ws-list
+msw-dev-tool --pid 4182 ws-add-endpoint --json '{"kind":"string","value":"ws://localhost:8080/preview"}'
+msw-dev-tool --pid 4182 ws-add-listener '<endpoint-id>' --json '{"preset":"send","options":{"message":"hello"}}'
+msw-dev-tool --pid 4182 ws-set-listener-behavior '<listener-id>' --json '{"preset":"close"}'
+```
+
+See the [Node CLI documentation](https://msw-dev-tool-docs.vercel.app/docs/node-cli) for every HTTP and WebSocket command, JSON input, and result shape.
+
 ## Example (app)
 
 ```ts

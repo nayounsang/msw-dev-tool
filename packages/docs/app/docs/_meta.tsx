@@ -9,6 +9,9 @@ const meta: MetaRecord = {
   "get-started": {
     title: "Getting Started",
   },
+  "how-to-use": {
+    title: "How to Use",
+  },
   roadmap: {
     title: "Roadmap",
   },
@@ -16,14 +19,20 @@ const meta: MetaRecord = {
     title: <Separator>FEATURES</Separator>,
     type: "separator",
   },
-  tools: {
-    title: "Tools",
+  http: {
+    title: "HTTP",
+  },
+  websocket: {
+    title: "WebSocket",
   },
   "handler-table": {
-    title: "Handler Table",
+    display: "hidden",
   },
   debugger: {
-    title: "Debugger",
+    display: "hidden",
+  },
+  tools: {
+    display: "hidden",
   },
   "node-cli": {
     title: "Node CLI",
@@ -35,8 +44,8 @@ const meta: MetaRecord = {
     title: <Separator>UI</Separator>,
     type: "separator",
   },
-  "custom-trigger": {
-    title: "Custom Trigger",
+  "custom-ui": {
+    title: "Custom UI",
   },
   examples: {
     title: <Separator>EXAMPLES</Separator>,

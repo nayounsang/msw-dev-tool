@@ -1,0 +1,29 @@
+---
+description: "Explore HTTP API states and verify the resulting UI"
+---
+
+# HTTP Mocking Scenarios
+
+Keep handlers in code as the source of truth for API contracts and normal scenarios. Use runtime controls to inspect their requests and responses, then check slow responses, failures, alternative data, and real backend integrations without rewriting the handler.
+
+## Explore API states and verify the resulting UI
+
+Select an existing handler in the HTTP panel, confirm the endpoint it represents, then change its response behavior for the scenario you want to test.
+
+1. **Loading.** Apply `delay` to keep the request pending and verify skeletons, spinners, disabled inputs, and waiting UX.
+2. **Failure.** Apply `network error` or an error status to verify error copy, retry paths, fallbacks, and how the UI handles existing data.
+3. **Alternative data.** Set a custom response body to return an empty list, long text, an unauthorized user, or unexpected fields. Confirm the API response and verify empty states, layout, permission UI, and defensive data handling.
+4. **Real backend.** Disable the mock at runtime to verify the real API integration without commenting out a handler or restarting the development server.
+5. **One-off flow.** Add a temporary handler for an endpoint or response that is not yet in code. Explore a new UI flow or edge case, then remove it or reset the Dev Tool.
+
+## Send a request with the debugger
+
+Open an HTTP handler to send a request directly. Provide path parameters, query parameters, and headers, then inspect the response. This is useful for checking a handler configuration before returning to the application flow.
+
+## Explore a one-off flow
+
+Use **Add Temp Handler** to create a temporary HTTP endpoint with a method, path, status, headers, delay, and response body. This lets you create a mock API for an exploratory scenario without adding a handler to application code. Temporary handlers are stored with the active browser session and are removed by **Reset Dev Tool**.
+
+## Reset a scenario
+
+**Reset Dev Tool** restores HTTP behaviors to their defaults, re-enables mocks, and removes temporary HTTP handlers. Use it before moving to another scenario.
