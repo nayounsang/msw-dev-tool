@@ -1183,7 +1183,7 @@ __metadata:
     vitest: "npm:^4.1.10"
     ws: "npm:^8.18.0"
   peerDependencies:
-    "@msw-dev-tool/core": "workspace:^1.7.0"
+    "@msw-dev-tool/core": "workspace:^1.7.1"
   bin:
     msw-dev-tool-browser: ./bin/msw-dev-tool-browser.js
   languageName: unknown
@@ -1245,7 +1245,7 @@ __metadata:
     typescript: "npm:^5.8.3"
     vitest: "npm:^4.1.10"
   peerDependencies:
-    "@msw-dev-tool/core": "workspace:^1.7.0"
+    "@msw-dev-tool/core": "workspace:^1.7.1"
     msw: ^2.7.0
   bin:
     msw-dev-tool: ./bin/msw-dev-tool.js
@@ -1284,7 +1284,7 @@ __metadata:
     typescript-eslint: "npm:^8.30.1"
     zod: "npm:^3.24.2"
   peerDependencies:
-    "@msw-dev-tool/core": "workspace:^1.7.0"
+    "@msw-dev-tool/core": "workspace:^1.7.1"
     msw: ^2.7.0
     react: ^18 || ^19
     react-dom: ^18 || ^19

@@ -1,6 +1,6 @@
 {
   "name": "@msw-dev-tool/react",
-  "version": "5.0.0",
+  "version": "5.1.0",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/types/index.d.ts",
@@ -42,7 +42,7 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "@msw-dev-tool/core": "workspace:^1.7.0",
+    "@msw-dev-tool/core": "workspace:^1.7.1",
     "msw": "^2.7.0",
     "react": "^18 || ^19",
     "react-dom": "^18 || ^19"
