@@ -1,5 +1,12 @@
 # @msw-dev-tool/core
 
+## 1.7.1
+
+### Patch Changes
+
+- 8a4bb4d: Add WebSocket endpoint and message-listener controls to the React dev tool. Temporary WebSocket listeners now require a send or close default action.
+- 55eb906: Add configurable WebSocket response presets and listener controls.
+
 ## 1.7.0
 
 ### Minor Changes
