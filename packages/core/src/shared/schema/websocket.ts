@@ -17,6 +17,10 @@ export const webSocketBehaviorSchema = z.union([
   z.object({ preset: z.literal("default") }).strict(),
   z.object({ preset: z.literal("send"), options: webSocketSendOptionsSchema }).strict(),
   z.object({ preset: z.literal("close"), options: webSocketCloseOptionsSchema.optional() }).strict(),
+  z.object({ preset: z.literal("echo") }).strict(),
+  z.object({ preset: z.literal("send-null") }).strict(),
+  z.object({ preset: z.literal("no-reply") }).strict(),
+  z.object({ preset: z.literal("send-sequence") }).strict(),
 ]);
 export const serializableWebSocketMatcherSchema = z.union([
   z.object({ kind: z.literal("string"), value: z.string() }),

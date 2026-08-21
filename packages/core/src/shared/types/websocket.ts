@@ -29,10 +29,14 @@ export type DevToolHandlerInfo = {
   source: "code" | "temp";
 };
 
-export type WebSocketBehaviorSelection = {
-  preset: string;
-  options?: unknown;
-};
+export type WebSocketBehaviorSelection =
+  | { preset: "default" }
+  | { preset: "send"; options: { message: string } }
+  | { preset: "close"; options?: { code?: number; reason?: string } }
+  | { preset: "echo" }
+  | { preset: "send-null" }
+  | { preset: "no-reply" }
+  | { preset: "send-sequence" };
 
 export type WebSocketHandlerInfo = Omit<DevToolHandlerInfo, "kind"> & { kind: "websocket" };
 

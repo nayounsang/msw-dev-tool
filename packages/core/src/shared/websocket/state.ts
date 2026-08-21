@@ -95,7 +95,7 @@ export const addTemporaryWebSocketListener = (
   const endpoint = findEndpoint(endpoints, endpointId);
   const behavior = behaviorInput;
   if (behavior.preset === "default") {
-    throw new Error("Temporary WebSocket listeners require a send or close default action");
+    throw new Error("Temporary WebSocket listeners require a response behavior");
   }
   let index = endpoint.listeners.length;
   let listenerId = createTemporaryWebSocketListenerId(endpointId, index);
@@ -158,7 +158,7 @@ export const setWebSocketListenerBehavior = (
   const { listener: currentListener } = findListener(endpoints, listenerId);
   const behavior = behaviorInput;
   if (currentListener.info.source === "temp" && behavior.preset === "default") {
-    throw new Error("Temporary WebSocket listeners require a send or close default action");
+    throw new Error("Temporary WebSocket listeners require a response behavior");
   }
   const nextEndpoints = endpoints.map((endpoint) => ({
     ...endpoint,

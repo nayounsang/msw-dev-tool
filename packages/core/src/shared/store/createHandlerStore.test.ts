@@ -74,7 +74,7 @@ describe("createHandlerStore WebSocket coordination", () => {
     });
     const listenerId = store.getState().addTempWebSocketListener({
       endpointId,
-      behavior: { preset: "reply" },
+      behavior: { preset: "echo" },
     });
     expect(store.getState().getWebSocketListener(listenerId)).toMatchObject({
       endpointId,
@@ -82,7 +82,7 @@ describe("createHandlerStore WebSocket coordination", () => {
     store.getState().setWebSocketEndpointEnabled(endpointId, true);
     store.getState().setWebSocketEndpointEnabled(endpointId, false);
     store.getState().setWebSocketListenerEnabled(listenerId, false);
-    store.getState().setWebSocketListenerBehavior(listenerId, { preset: "drop" });
+    store.getState().setWebSocketListenerBehavior(listenerId, { preset: "no-reply" });
     store.getState().removeWebSocketListener(listenerId);
     store.getState().removeWebSocketEndpoint(endpointId);
     store.getState().resetMSWDevTool();

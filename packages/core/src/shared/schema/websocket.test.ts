@@ -82,4 +82,18 @@ describe("websocket schema", () => {
       options: { reason: "€".repeat(41) + "a" },
     })).toThrow("WebSocket close reason must not exceed 123 UTF-8 bytes");
   });
+
+  it("accepts the built-in response presets", () => {
+    for (const behavior of [
+      { preset: "echo" },
+      { preset: "send-null" },
+      { preset: "no-reply" },
+      { preset: "send-sequence" },
+    ]) {
+      expect(() => webSocketBehaviorSchema.parse(behavior)).not.toThrow();
+    }
+    for (const code of [1000, 4000, 4001, 4008]) {
+      expect(() => webSocketBehaviorSchema.parse({ preset: "close", options: { code } })).not.toThrow();
+    }
+  });
 });
