@@ -1,0 +1,46 @@
+---
+description: "Use runtime mock control to verify application scenarios"
+---
+
+# How to Use MSW Dev Tool
+
+Write MSW handlers around the API contract and the scenarios your application needs. MSW Dev Tool lets you inspect and change those handlers at runtime, so you can check a scenario or temporarily turn a mock off without editing handler code.
+
+When an application starts using a real backend API, mock handlers are often commented out. Trying a different state can also mean writing, wiring, and maintaining more mock code.
+
+## Start with the handlers your application uses
+
+```ts copy
+import { http, HttpResponse } from "msw";
+import { setupDevToolWorker } from "@msw-dev-tool/core/browser";
+
+const handlers = [
+  http.get("/api/projects", () => {
+    return HttpResponse.json([{ id: "project-1", name: "Website redesign" }]);
+  }),
+];
+
+export const worker = await setupDevToolWorker(...handlers);
+```
+
+The handler remains the source of truth for the API contract and its normal mock scenario. Connecting it to MSW Dev Tool makes it available in the UI; you do not need to recreate it in another format.
+
+## Work through an API scenario
+
+1. **Inspect the existing handler.** Open the handler in the Dev Tool and confirm the endpoint, method, and default response that the application uses.
+2. **Select a response behavior.** Delay the endpoint, return an error, disable the mock, or provide custom response data. This changes the response for the current runtime session, not the handler code.
+3. **Verify the API interaction.** Trigger the feature that calls the endpoint and check that the request reaches the expected handler and that the selected response is returned. The resulting application state lets you also check loading, empty, error, and data-dependent UI.
+4. **Create a temporary mock API when needed.** Add a temporary endpoint or response from the Dev Tool when the API scenario is not represented by a handler yet. Explore it without adding an exploratory handler to the codebase, then remove it or reset when you are done.
+5. **Exercise the real API.** Disable a mock at runtime when you are ready to exercise the real API instead of commenting out the handler.
+
+Go beyond the happy path by simulating loading states, failures, and custom response data to build more resilient and reliable software.
+
+## Optional: automate the same flow
+
+The browser UI is intended for people exploring and checking scenarios during development. When automation is useful, an AI agent can control the same mock scenarios through the CLI, inspect the browser, and verify the resulting application state end to end without first designing a separate E2E test environment.
+
+## Choose a guide
+
+- [HTTP Mocking Scenarios](/docs/http) covers runtime HTTP scenarios and request debugging.
+- [WebSocket Mocking Scenarios](/docs/websocket) covers real-time message and connection scenarios.
+- [Node CLI](/docs/node-cli) and [Browser CLI](/docs/browser-cli) document optional machine-readable control.

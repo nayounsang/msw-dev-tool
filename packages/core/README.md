@@ -1,6 +1,6 @@
 # @msw-dev-tool/core
 
-Core logic for msw-dev-tool: handler store, behavior control, and temp handlers.
+Core runtime integration for HTTP and WebSocket scenario control.
 
 ## Install
 
@@ -23,6 +23,22 @@ import { setupDevToolWorker } from "@msw-dev-tool/core/browser";
 
 export const worker = setupDevToolWorker(...handlers);
 ```
+
+### WebSocket handlers
+
+Import `ws` from `@msw-dev-tool/core/msw` to make code-defined WebSocket endpoints and `message` listeners available to MSW Dev Tool.
+
+```ts
+import { ws } from "@msw-dev-tool/core/msw";
+
+export const handlers = [
+  ws.link("ws://localhost:8080/chat").addEventListener("connection", ({ client }) => {
+    client.addEventListener("message", (event) => client.send(`received: ${event.data}`));
+  }),
+];
+```
+
+See [WebSocket Mocking Scenarios](https://msw-dev-tool-docs.vercel.app/docs/websocket) for runtime behaviors and temporary endpoints.
 
 ### Node
 

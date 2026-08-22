@@ -1,0 +1,61 @@
+---
+title: Custom UI
+description: Customize the trigger or compose your own Dev Tool UI
+---
+
+# Custom UI
+
+Use the default `MSWDevTool` component when you want the complete floating UI, or compose the exported UI components into a Dev Tool interface that matches your application.
+
+## Customize Trigger UI
+
+Pass a React element to the `trigger` prop to replace the default trigger.
+
+```ts
+{
+    trigger?: ReactNode;
+}
+```
+For example, using Tailwind CSS:
+
+```tsx
+<MSWDevTool trigger={<button className="bg-blue-500 text-white px-4 py-2 rounded-md">Open msw-dev-tool</button>} />
+```
+
+## Compose your own Dev Tool UI
+
+`@msw-dev-tool/react` currently exports these UI components:
+
+- `MSWDevTool`: the complete floating Dev Tool UI.
+- `HandlerTable`: the HTTP handler table and its runtime controls.
+- `AddTempHandlerForm`: a form for adding a temporary HTTP handler.
+
+Use `HandlerTable` and `AddTempHandlerForm` to create the Dev Tool layout and controls that your team needs while keeping the same runtime handler store.
+
+```tsx copy
+import { useState } from "react";
+import {
+  AddTempHandlerForm,
+  HandlerTable,
+} from "@msw-dev-tool/react";
+
+export function ProjectDevTool() {
+  const [showForm, setShowForm] = useState(false);
+
+  return (
+    <aside className="rounded border p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="font-semibold">Mock API controls</h2>
+        <button onClick={() => setShowForm((open) => !open)}>
+          Add temporary API
+        </button>
+      </div>
+
+      {showForm && <AddTempHandlerForm onClose={() => setShowForm(false)} />}
+      <HandlerTable />
+    </aside>
+  );
+}
+```
+
+The exported components use the MSW Dev Tool runtime configured by `setupDevToolWorker()`. Include the package stylesheet as usual, then provide your own layout, trigger, and surrounding application styling.
