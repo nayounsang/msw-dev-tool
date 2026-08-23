@@ -1,8 +1,4 @@
-import {
-  FlattenHandler,
-  HttpHandlerBehavior,
-  HttpMethod,
-} from "../types";
+import { FlattenHandler, HttpHandlerBehavior, HttpMethod } from "../types";
 import { httpMethodSchema, rowIdSchema } from "../schema";
 import { isHttpHandler } from "./validate";
 
@@ -16,8 +12,7 @@ export const getRowId = ({ path, method }: { path: string; method: string }) =>
     method,
   });
 
-export const getObjFromRowId = (rowId: string) =>
-  rowIdSchema.parse(JSON.parse(rowId));
+export const getObjFromRowId = (rowId: string) => rowIdSchema.parse(JSON.parse(rowId));
 
 const normalizeHttpMethod = (method: string): HttpMethod =>
   httpMethodSchema.parse(method.toLowerCase());
@@ -49,9 +44,7 @@ export const convertHandlers = (handlers: readonly unknown[]) => {
   return { flattenHandlers, unsupportedHandlers };
 };
 
-export const initMSWDevToolStore = <T extends ListHandlersRuntime>(
-  runtime: T
-) => {
+export const initMSWDevToolStore = <T extends ListHandlersRuntime>(runtime: T) => {
   const handlers = runtime.listHandlers();
   const { flattenHandlers, unsupportedHandlers } = convertHandlers(handlers);
 

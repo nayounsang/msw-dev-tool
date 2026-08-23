@@ -4,14 +4,37 @@ const socketState = vi.hoisted(() => {
   const sockets: Array<any> = [];
   class FakeSocket {
     private listeners = new Map<string, Array<(...args: any[]) => void>>();
-    public constructor(_: string) { sockets.push(this); queueMicrotask(() => this.emit("open")); }
-    public on(name: string, listener: (...args: any[]) => void) { this.add(name, listener); return this; }
-    public once(name: string, listener: (...args: any[]) => void) { this.add(name, listener); return this; }
-    public off(name: string, listener: (...args: any[]) => void) { this.listeners.set(name, (this.listeners.get(name) ?? []).filter((entry) => entry !== listener)); return this; }
-    public emit(name: string, ...args: any[]) { for (const listener of this.listeners.get(name) ?? []) listener(...args); }
-    private add(name: string, listener: (...args: any[]) => void) { this.listeners.set(name, [...(this.listeners.get(name) ?? []), listener]); }
-    public send(_: string, callback: (error?: Error) => void) { callback(state.sendError ? new Error("send failed") : undefined); }
-    public close() { this.emit("close"); }
+    public constructor(_: string) {
+      sockets.push(this);
+      queueMicrotask(() => this.emit("open"));
+    }
+    public on(name: string, listener: (...args: any[]) => void) {
+      this.add(name, listener);
+      return this;
+    }
+    public once(name: string, listener: (...args: any[]) => void) {
+      this.add(name, listener);
+      return this;
+    }
+    public off(name: string, listener: (...args: any[]) => void) {
+      this.listeners.set(
+        name,
+        (this.listeners.get(name) ?? []).filter((entry) => entry !== listener),
+      );
+      return this;
+    }
+    public emit(name: string, ...args: any[]) {
+      for (const listener of this.listeners.get(name) ?? []) listener(...args);
+    }
+    private add(name: string, listener: (...args: any[]) => void) {
+      this.listeners.set(name, [...(this.listeners.get(name) ?? []), listener]);
+    }
+    public send(_: string, callback: (error?: Error) => void) {
+      callback(state.sendError ? new Error("send failed") : undefined);
+    }
+    public close() {
+      this.emit("close");
+    }
     public terminate() {}
   }
   const state = { sendError: false };
@@ -39,7 +62,9 @@ describe("CdpClient protocol transport", () => {
     const protocol = expect(client.call("Runtime")).rejects.toThrow("CDP error: failed");
     socket.emit("message", JSON.stringify({ id: 1, error: { message: "failed" } }));
     await protocol;
-    const timeout = expect(client.call("Timeout", undefined, 5)).rejects.toThrow("Timed out waiting for CDP Timeout after 5ms");
+    const timeout = expect(client.call("Timeout", undefined, 5)).rejects.toThrow(
+      "Timed out waiting for CDP Timeout after 5ms",
+    );
     await vi.advanceTimersByTimeAsync(5);
     await timeout;
     const connection = expect(client.call("Close")).rejects.toThrow("boom");

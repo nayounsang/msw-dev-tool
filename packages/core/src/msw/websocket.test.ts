@@ -32,10 +32,14 @@ const openSocket = async (url: string): Promise<WebSocket> => {
 const nextMessage = (socket: WebSocket): Promise<string> =>
   new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error("WebSocket message timeout")), 2_000);
-    socket.addEventListener("message", (event) => {
-      clearTimeout(timer);
-      resolve(String(event.data));
-    }, { once: true });
+    socket.addEventListener(
+      "message",
+      (event) => {
+        clearTimeout(timer);
+        resolve(String(event.data));
+      },
+      { once: true },
+    );
   });
 
 const waitFor = async (predicate: () => boolean, timeout = 2_000) => {
@@ -53,13 +57,21 @@ describe("wrapped ws", () => {
     const reset = ws.link("ws://wrapper.test/reset");
     const handler = chat.addEventListener("connection", ({ client }) => {
       try {
-        client.addEventListener("message", { handleEvent() { return undefined; } });
+        client.addEventListener("message", {
+          handleEvent() {
+            return undefined;
+          },
+        });
       } catch {
         // MSW clients only accept function listeners; the proxy must skip managed registration first.
       }
-      client.addEventListener("message", (event) => {
-        client.send(`reply:${event.data}`);
-      }, { once: false });
+      client.addEventListener(
+        "message",
+        (event) => {
+          client.send(`reply:${event.data}`);
+        },
+        { once: false },
+      );
       client.addEventListener("close", () => undefined, { once: true });
     });
     const ignoredHandler = ignored.addEventListener("connection", () => undefined);
@@ -116,7 +128,11 @@ describe("wrapped ws", () => {
       options: { code: 4000, reason: "configured close" },
     });
     const closed = new Promise<{ code: number; reason: string }>((resolve) => {
-      first.addEventListener("close", (event) => resolve({ code: event.code, reason: event.reason }), { once: true });
+      first.addEventListener(
+        "close",
+        (event) => resolve({ code: event.code, reason: event.reason }),
+        { once: true },
+      );
     });
     first.send("close");
     await expect(closed).resolves.toEqual({ code: 4000, reason: "configured close" });
@@ -146,7 +162,9 @@ describe("wrapped ws", () => {
     second.send("invalid close options");
     await new Promise((resolve) => setTimeout(resolve, 0));
     store.getState().setWebSocketEndpointEnabled(handler.id, false);
-    await new Promise<void>((resolve) => second.addEventListener("close", () => resolve(), { once: true }));
+    await new Promise<void>((resolve) =>
+      second.addEventListener("close", () => resolve(), { once: true }),
+    );
 
     // Connect while disabled — exercises the passthrough (connectWebSocket) branch in websocket.ts.
     const passthrough = new WebSocket("ws://wrapper.test/chat");

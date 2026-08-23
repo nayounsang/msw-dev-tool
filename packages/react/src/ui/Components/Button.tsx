@@ -25,16 +25,8 @@ const getColorClass = (variant: ButtonVariant, color: ButtonColor = "primary"): 
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
-    {
-      variant = "default",
-      color,
-      className,
-      icon,
-      iconPosition = "left",
-      children,
-      ...props
-    },
-    ref
+    { variant = "default", color, className, icon, iconPosition = "left", children, ...props },
+    ref,
   ) => {
     return (
       <button
@@ -47,7 +39,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {iconPosition === "right" && icon}
       </button>
     );
-  }
+  },
 );
 
 Button.displayName = "Button";

@@ -46,7 +46,10 @@ export type HandlerStoreBaseState = {
   unregisterHandler: (id: string) => void;
   getHandlerInfo: (id: string) => DevToolHandlerInfo | undefined;
   listHandlerInfo: (kind?: "http" | "websocket") => DevToolHandlerInfo[];
-  addTempWebSocketEndpoint: (input: { matcher: WebSocketEndpointConfig["matcher"]; endpoint: string }) => string;
+  addTempWebSocketEndpoint: (input: {
+    matcher: WebSocketEndpointConfig["matcher"];
+    endpoint: string;
+  }) => string;
   addTempWebSocketListener: (input: AddWebSocketListenerInput) => string;
   removeWebSocketEndpoint: (endpointId: string) => void;
   removeWebSocketListener: (listenerId: string) => void;
@@ -55,10 +58,15 @@ export type HandlerStoreBaseState = {
   setWebSocketListenerBehavior: (listenerId: string, behavior: WebSocketBehaviorSelection) => void;
   setWebSocketListenerCustomResponse: (listenerId: string, response: WebSocketResponse) => void;
   setWebSocketListenerResponse: (listenerId: string, response: WebSocketResponse) => void;
-  setWebSocketListenerSchedule: (listenerId: string, input: { delay?: number; repeat?: WebSocketRepeat }) => void;
+  setWebSocketListenerSchedule: (
+    listenerId: string,
+    input: { delay?: number; repeat?: WebSocketRepeat },
+  ) => void;
   hydrateWebSocket: (endpoints: WebSocketEndpointConfig[]) => void;
   getWebSocketEndpoint: (endpointId: string) => WebSocketEndpointConfig | undefined;
-  getWebSocketListener: (listenerId: string) => WebSocketEndpointConfig["listeners"][number] | undefined;
+  getWebSocketListener: (
+    listenerId: string,
+  ) => WebSocketEndpointConfig["listeners"][number] | undefined;
 };
 
 export type HandlerStoreInternalState<TRuntime extends MswDevToolRuntime> =

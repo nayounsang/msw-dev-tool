@@ -16,7 +16,9 @@ describe("node-cli executable", () => {
     await import("./cli");
     await flush();
 
-    expect(stderr).toHaveBeenCalledWith(`${JSON.stringify({ ok: false, error: "broken session" })}\n`);
+    expect(stderr).toHaveBeenCalledWith(
+      `${JSON.stringify({ ok: false, error: "broken session" })}\n`,
+    );
     expect(exit).toHaveBeenCalledWith(1);
   });
 

@@ -106,19 +106,24 @@ describe("SessionController", () => {
       onResetWebSocket,
     });
 
-    await controller.start([createFlattenHandler()], [{
-      info: {
-        id: "endpoint:ws",
-        kind: "websocket",
-        endpoint: "ws://controller.test",
-        operation: "endpoint",
-        source: "temp",
-      },
-      endpointId: "endpoint:ws",
-      matcher: { kind: "string", value: "ws://controller.test" },
-      enabled: true,
-      listeners: [],
-    }]);
+    await controller.start(
+      [createFlattenHandler()],
+      [
+        {
+          info: {
+            id: "endpoint:ws",
+            kind: "websocket",
+            endpoint: "ws://controller.test",
+            operation: "endpoint",
+            source: "temp",
+          },
+          endpointId: "endpoint:ws",
+          matcher: { kind: "string", value: "ws://controller.test" },
+          enabled: true,
+          listeners: [],
+        },
+      ],
+    );
     const resetRequest = bumpSnapshot((await readSnapshot(sessionPath))!, {
       pendingReset: true,
     });
@@ -217,5 +222,4 @@ describe("SessionController", () => {
     expect(onSnapshot).toHaveBeenCalledOnce();
     await controller.dispose();
   });
-
 });

@@ -5,12 +5,7 @@ import { User } from "../type/api";
 import { UsersTable } from "./UsersTable";
 
 export const UserList = () => {
-  const {
-    data: users,
-    error,
-    fetchData: fetchUsers,
-    isFetching,
-  } = useFetch<User[]>(`/api/users`);
+  const { data: users, error, fetchData: fetchUsers, isFetching } = useFetch<User[]>(`/api/users`);
 
   return (
     <section
@@ -23,10 +18,7 @@ export const UserList = () => {
       }}
     >
       <h2>User List</h2>
-      <button
-        onClick={fetchUsers}
-        style={{ padding: "10px 20px", cursor: "pointer" }}
-      >
+      <button onClick={fetchUsers} style={{ padding: "10px 20px", cursor: "pointer" }}>
         Fetch
       </button>
       <div style={{ height: "180px", overflow: "scroll" }}>

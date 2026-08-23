@@ -24,8 +24,12 @@ import { CliSession } from "@msw-dev-tool/cli-core";
 import type { AddWebSocketListenerInput } from "@msw-dev-tool/core/shared";
 
 const POST_WRITE_SETTLE_MS = 300;
-const settleAfterWrite = () => new Promise<void>((resolve) => setTimeout(resolve, POST_WRITE_SETTLE_MS));
-const toInfo = (snapshot: { revision: number; state: { pendingReset?: boolean; flattenHandlers: unknown[] } }) => ({
+const settleAfterWrite = () =>
+  new Promise<void>((resolve) => setTimeout(resolve, POST_WRITE_SETTLE_MS));
+const toInfo = (snapshot: {
+  revision: number;
+  state: { pendingReset?: boolean; flattenHandlers: unknown[] };
+}) => ({
   revision: snapshot.revision,
   pendingReset: Boolean(snapshot.state.pendingReset),
   handlerCount: snapshot.state.flattenHandlers.length,
@@ -34,9 +38,15 @@ const toInfo = (snapshot: { revision: number; state: { pendingReset?: boolean; f
 /** File-backed adapter for Node snapshot envelopes. */
 export class FileSnapshotCliSession implements CliSession {
   public constructor(private readonly sessionPath: string) {}
-  public async describe() { return toInfo(await readSnapshotOrEmpty(this.sessionPath)); }
-  public async list() { return listSnapshotHandlers(this.sessionPath); }
-  public async get(id: string) { return getSnapshotHandler(this.sessionPath, id); }
+  public async describe() {
+    return toInfo(await readSnapshotOrEmpty(this.sessionPath));
+  }
+  public async list() {
+    return listSnapshotHandlers(this.sessionPath);
+  }
+  public async get(id: string) {
+    return getSnapshotHandler(this.sessionPath, id);
+  }
   public async setBehavior(id: string, behavior: Parameters<typeof setSnapshotBehavior>[2]) {
     const snapshot = await setSnapshotBehavior(this.sessionPath, id, behavior);
     await settleAfterWrite();
@@ -44,7 +54,10 @@ export class FileSnapshotCliSession implements CliSession {
     if (!handler) throw new Error(`Handler not found for id: ${id}`);
     return { ...toInfo(snapshot), handler };
   }
-  public async setCustomResponse(id: string, response: Parameters<typeof setSnapshotCustomResponse>[2]) {
+  public async setCustomResponse(
+    id: string,
+    response: Parameters<typeof setSnapshotCustomResponse>[2],
+  ) {
     const snapshot = await setSnapshotCustomResponse(this.sessionPath, id, response);
     await settleAfterWrite();
     const handler = snapshot.state.flattenHandlers.find((entry) => entry.id === id);
@@ -68,7 +81,9 @@ export class FileSnapshotCliSession implements CliSession {
     await settleAfterWrite();
     return toInfo(await readSnapshotOrEmpty(this.sessionPath));
   }
-  public listWebSocket() { return listSnapshotWebSocketEndpoints(this.sessionPath); }
+  public listWebSocket() {
+    return listSnapshotWebSocketEndpoints(this.sessionPath);
+  }
   public getWebSocketEndpoint(endpointId: string) {
     return getSnapshotWebSocketEndpoint(this.sessionPath, endpointId);
   }
@@ -82,20 +97,30 @@ export class FileSnapshotCliSession implements CliSession {
     await settleAfterWrite();
     return { endpoints: snapshot.state.webSocket ?? [] };
   }
-  public async setWebSocketEndpointEnabled(
-    endpointId: string,
-    enabled: boolean
-  ) {
-    const snapshot = await setSnapshotWebSocketEndpointEnabled(this.sessionPath, endpointId, enabled);
+  public async setWebSocketEndpointEnabled(endpointId: string, enabled: boolean) {
+    const snapshot = await setSnapshotWebSocketEndpointEnabled(
+      this.sessionPath,
+      endpointId,
+      enabled,
+    );
     await settleAfterWrite();
-    return { endpoint: snapshot.state.webSocket!.find((endpoint) => endpoint.endpointId === endpointId)! };
+    return {
+      endpoint: snapshot.state.webSocket!.find((endpoint) => endpoint.endpointId === endpointId)!,
+    };
   }
   public async addWebSocketListener(
     endpointOrInput: string | AddWebSocketListenerInput,
-    behavior?: Parameters<typeof addSnapshotWebSocketListener>[2]
+    behavior?: Parameters<typeof addSnapshotWebSocketListener>[2],
   ) {
-    const endpointId = typeof endpointOrInput === "string" ? endpointOrInput : endpointOrInput.endpointId;
-    const input = typeof endpointOrInput === "string" ? behavior! : (() => { const { endpointId: _endpointId, ...rest } = endpointOrInput; return rest; })();
+    const endpointId =
+      typeof endpointOrInput === "string" ? endpointOrInput : endpointOrInput.endpointId;
+    const input =
+      typeof endpointOrInput === "string"
+        ? behavior!
+        : (() => {
+            const { endpointId: _endpointId, ...rest } = endpointOrInput;
+            return rest;
+          })();
     const snapshot = await addSnapshotWebSocketListener(this.sessionPath, endpointId, input);
     await settleAfterWrite();
     const endpoint = snapshot.state.webSocket!.find((entry) => entry.endpointId === endpointId)!;
@@ -107,45 +132,90 @@ export class FileSnapshotCliSession implements CliSession {
     return { endpoints: snapshot.state.webSocket ?? [] };
   }
   public async setWebSocketListenerEnabled(listenerId: string, enabled: boolean) {
-    const snapshot = await setSnapshotWebSocketListenerEnabled(this.sessionPath, listenerId, enabled);
+    const snapshot = await setSnapshotWebSocketListenerEnabled(
+      this.sessionPath,
+      listenerId,
+      enabled,
+    );
     await settleAfterWrite();
     const endpoint = snapshot.state.webSocket!.find((entry) =>
-      entry.listeners.some((listener) => listener.info.id === listenerId)
+      entry.listeners.some((listener) => listener.info.id === listenerId),
     )!;
-    return { endpoint, listener: endpoint.listeners.find((listener) => listener.info.id === listenerId)! };
+    return {
+      endpoint,
+      listener: endpoint.listeners.find((listener) => listener.info.id === listenerId)!,
+    };
   }
   public async setWebSocketListenerBehavior(
     listenerId: string,
-    behavior: Parameters<typeof setSnapshotWebSocketListenerBehavior>[2]
+    behavior: Parameters<typeof setSnapshotWebSocketListenerBehavior>[2],
   ) {
-    const snapshot = await setSnapshotWebSocketListenerBehavior(this.sessionPath, listenerId, behavior);
+    const snapshot = await setSnapshotWebSocketListenerBehavior(
+      this.sessionPath,
+      listenerId,
+      behavior,
+    );
     await settleAfterWrite();
     const endpoint = snapshot.state.webSocket!.find((entry) =>
-      entry.listeners.some((listener) => listener.info.id === listenerId)
+      entry.listeners.some((listener) => listener.info.id === listenerId),
     )!;
-    return { endpoint, listener: endpoint.listeners.find((listener) => listener.info.id === listenerId)! };
+    return {
+      endpoint,
+      listener: endpoint.listeners.find((listener) => listener.info.id === listenerId)!,
+    };
   }
   public async setWebSocketListenerCustomResponse(
     listenerId: string,
     response: Parameters<typeof setSnapshotWebSocketListenerCustomResponse>[2],
   ) {
-    const snapshot = await setSnapshotWebSocketListenerCustomResponse(this.sessionPath, listenerId, response);
+    const snapshot = await setSnapshotWebSocketListenerCustomResponse(
+      this.sessionPath,
+      listenerId,
+      response,
+    );
     await settleAfterWrite();
     const endpoint = snapshot.state.webSocket!.find((entry) =>
-      entry.listeners.some((listener) => listener.info.id === listenerId)
+      entry.listeners.some((listener) => listener.info.id === listenerId),
     )!;
-    return { endpoint, listener: endpoint.listeners.find((listener) => listener.info.id === listenerId)! };
+    return {
+      endpoint,
+      listener: endpoint.listeners.find((listener) => listener.info.id === listenerId)!,
+    };
   }
-  public async setWebSocketListenerResponse(listenerId: string, response: Parameters<typeof setSnapshotWebSocketListenerResponse>[2]) {
-    const snapshot = await setSnapshotWebSocketListenerResponse(this.sessionPath, listenerId, response);
+  public async setWebSocketListenerResponse(
+    listenerId: string,
+    response: Parameters<typeof setSnapshotWebSocketListenerResponse>[2],
+  ) {
+    const snapshot = await setSnapshotWebSocketListenerResponse(
+      this.sessionPath,
+      listenerId,
+      response,
+    );
     await settleAfterWrite();
-    const endpoint = snapshot.state.webSocket!.find((entry) => entry.listeners.some((listener) => listener.info.id === listenerId))!;
-    return { endpoint, listener: endpoint.listeners.find((listener) => listener.info.id === listenerId)! };
+    const endpoint = snapshot.state.webSocket!.find((entry) =>
+      entry.listeners.some((listener) => listener.info.id === listenerId),
+    )!;
+    return {
+      endpoint,
+      listener: endpoint.listeners.find((listener) => listener.info.id === listenerId)!,
+    };
   }
-  public async setWebSocketListenerSchedule(listenerId: string, input: Parameters<typeof setSnapshotWebSocketListenerSchedule>[2]) {
-    const snapshot = await setSnapshotWebSocketListenerSchedule(this.sessionPath, listenerId, input);
+  public async setWebSocketListenerSchedule(
+    listenerId: string,
+    input: Parameters<typeof setSnapshotWebSocketListenerSchedule>[2],
+  ) {
+    const snapshot = await setSnapshotWebSocketListenerSchedule(
+      this.sessionPath,
+      listenerId,
+      input,
+    );
     await settleAfterWrite();
-    const endpoint = snapshot.state.webSocket!.find((entry) => entry.listeners.some((listener) => listener.info.id === listenerId))!;
-    return { endpoint, listener: endpoint.listeners.find((listener) => listener.info.id === listenerId)! };
+    const endpoint = snapshot.state.webSocket!.find((entry) =>
+      entry.listeners.some((listener) => listener.info.id === listenerId),
+    )!;
+    return {
+      endpoint,
+      listener: endpoint.listeners.find((listener) => listener.info.id === listenerId)!,
+    };
   }
 }

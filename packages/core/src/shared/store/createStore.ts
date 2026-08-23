@@ -1,6 +1,4 @@
-type SetState<T> = (
-  partial: Partial<T> | ((state: T) => Partial<T>)
-) => void;
+type SetState<T> = (partial: Partial<T> | ((state: T) => Partial<T>)) => void;
 type GetState<T> = () => T;
 type Subscribe = (listener: () => void) => () => void;
 
@@ -21,7 +19,7 @@ export type PersistOptions<T> = {
 
 export const createStore = <T>(
   createState: StateCreator<T>,
-  persistOptions?: PersistOptions<T>
+  persistOptions?: PersistOptions<T>,
 ): StoreApi<T> => {
   let state: T;
   const listeners = new Set<() => void>();
@@ -31,8 +29,8 @@ export const createStore = <T>(
   const setState: SetState<T> = (partial) => {
     const nextPartial =
       typeof partial === "function"
-        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-        ? (partial as (state: T) => Partial<T>)(state)
+        ? // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+          (partial as (state: T) => Partial<T>)(state)
         : partial;
     state = { ...state, ...nextPartial };
 

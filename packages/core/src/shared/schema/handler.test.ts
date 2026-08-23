@@ -1,14 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  HttpMethod,
-  MimeType,
-  StringHttpStatusCode,
-} from "../types";
-import {
-  customResponseSchema,
-  isValidHandlerPath,
-  tempHandlerSchema,
-} from "./handler";
+import { HttpMethod, MimeType, StringHttpStatusCode } from "../types";
+import { customResponseSchema, isValidHandlerPath, tempHandlerSchema } from "./handler";
 
 const validBase = {
   path: "/api/items",
@@ -23,7 +15,7 @@ describe("tempHandlerSchema", () => {
       tempHandlerSchema.safeParse({
         ...validBase,
         response: '{"ok":true}',
-      }).success
+      }).success,
     ).toBe(true);
   });
 
@@ -49,7 +41,7 @@ describe("customResponseSchema", () => {
         body: '{"ok":true}',
         headers: { "Content-Type": "application/json" },
         status: 599,
-      }).success
+      }).success,
     ).toBe(true);
   });
 
@@ -59,25 +51,20 @@ describe("customResponseSchema", () => {
     expect(customResponseSchema.safeParse({ status: 200.5 }).success).toBe(false);
   });
 
-  it.each([204, 205, 304])(
-    "rejects a body for HTTP %i",
-    (status) => {
-      expect(
-        customResponseSchema.safeParse({ status, body: "" }).success
-      ).toBe(false);
-    }
-  );
+  it.each([204, 205, 304])("rejects a body for HTTP %i", (status) => {
+    expect(customResponseSchema.safeParse({ status, body: "" }).success).toBe(false);
+  });
 
   it("rejects headers that HttpResponse cannot construct", () => {
     expect(
       customResponseSchema.safeParse({
         headers: { "invalid header": "value" },
-      }).success
+      }).success,
     ).toBe(false);
     expect(
       customResponseSchema.safeParse({
         headers: { "X-Test": "line\nbreak" },
-      }).success
+      }).success,
     ).toBe(false);
   });
 });

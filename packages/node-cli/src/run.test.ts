@@ -14,14 +14,24 @@ const createSessionFile = (pid = 4182) => {
   process.chdir(dir);
   const sessionPath = getSessionPathForPid(pid, dir);
   fs.mkdirSync(path.dirname(sessionPath), { recursive: true });
-  fs.writeFileSync(sessionPath, JSON.stringify({
-    revision: 0,
-    owner: { pid },
-    state: { flattenHandlers: [{
-      id: JSON.stringify({ path: "/api/items", method: "get" }),
-      path: "/api/items", method: "get", behavior: "default", type: "default",
-    }] },
-  }));
+  fs.writeFileSync(
+    sessionPath,
+    JSON.stringify({
+      revision: 0,
+      owner: { pid },
+      state: {
+        flattenHandlers: [
+          {
+            id: JSON.stringify({ path: "/api/items", method: "get" }),
+            path: "/api/items",
+            method: "get",
+            behavior: "default",
+            type: "default",
+          },
+        ],
+      },
+    }),
+  );
   return { pid, sessionPath };
 };
 
@@ -50,11 +60,16 @@ describe("node-cli", () => {
   it("prints help and rejects unknown commands", async () => {
     const output: string[] = [];
     const originalWrite = process.stdout.write.bind(process.stdout);
-    process.stdout.write = ((chunk: string | Uint8Array) => { output.push(String(chunk)); return true; }) as typeof process.stdout.write;
+    process.stdout.write = ((chunk: string | Uint8Array) => {
+      output.push(String(chunk));
+      return true;
+    }) as typeof process.stdout.write;
     try {
       await runCli([]);
       await runCli(["--help"]);
-    } finally { process.stdout.write = originalWrite; }
+    } finally {
+      process.stdout.write = originalWrite;
+    }
     expect(output.join("")).toContain("Session discovery");
     await expect(runCli(["unknown"])).rejects.toThrow("Unknown command");
   });
@@ -62,8 +77,14 @@ describe("node-cli", () => {
     createSessionFile(4182);
     const secondPath = getSessionPathForPid(4217);
     fs.mkdirSync(path.dirname(secondPath), { recursive: true });
-    fs.writeFileSync(secondPath, JSON.stringify({ revision: 0, owner: { pid: 4217 }, state: { flattenHandlers: [] } }));
-    await expect(runWithJsonOutput(["sessions"])).resolves.toEqual({ ok: true, sessions: [{ pid: 4182 }, { pid: 4217 }] });
+    fs.writeFileSync(
+      secondPath,
+      JSON.stringify({ revision: 0, owner: { pid: 4217 }, state: { flattenHandlers: [] } }),
+    );
+    await expect(runWithJsonOutput(["sessions"])).resolves.toEqual({
+      ok: true,
+      sessions: [{ pid: 4182 }, { pid: 4217 }],
+    });
   });
 
   it("automatically selects the only session and applies a mutation", async () => {
@@ -76,16 +97,27 @@ describe("node-cli", () => {
   it("requires --pid when multiple sessions exist and selects the requested PID", async () => {
     createSessionFile(4182);
     const secondPath = getSessionPathForPid(4217);
-    fs.writeFileSync(secondPath, JSON.stringify({ revision: 0, owner: { pid: 4217 }, state: { flattenHandlers: [] } }));
+    fs.writeFileSync(
+      secondPath,
+      JSON.stringify({ revision: 0, owner: { pid: 4217 }, state: { flattenHandlers: [] } }),
+    );
     await expect(runCli(["list"])).rejects.toThrow(/Multiple msw-dev-tool sessions/);
-    await expect(runWithJsonOutput(["--pid", "4217", "list"])).resolves.toMatchObject({ ok: true, pid: 4217, handlers: [] });
+    await expect(runWithJsonOutput(["--pid", "4217", "list"])).resolves.toMatchObject({
+      ok: true,
+      pid: 4217,
+      handlers: [],
+    });
   });
 
   it("rejects malformed commands before mutating a selected session", async () => {
     const { pid } = createSessionFile();
     await expect(runCli(["--pid", String(pid), "get"])).rejects.toThrow("Usage: get <id>");
-    await expect(runCli(["--pid", "not-a-pid", "list"])).rejects.toThrow("--pid must be a numeric process ID");
-    await expect(runCli(["--pid", "999999", "list"])).rejects.toThrow("No msw-dev-tool session found for PID 999999");
+    await expect(runCli(["--pid", "not-a-pid", "list"])).rejects.toThrow(
+      "--pid must be a numeric process ID",
+    );
+    await expect(runCli(["--pid", "999999", "list"])).rejects.toThrow(
+      "No msw-dev-tool session found for PID 999999",
+    );
   });
 
   it("reports that no session is available when discovery is empty", async () => {

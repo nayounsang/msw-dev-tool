@@ -1,11 +1,31 @@
 import { describe, expect, it, vi } from "vitest";
 import type { WebSocketEndpointConfig, WebSocketListenerConfig } from "@msw-dev-tool/core/shared";
-import { CliHandler, CliSession, commandUsage, commands, findCommand, parseArgs, printJson } from "./index";
+import {
+  CliHandler,
+  CliSession,
+  commandUsage,
+  commands,
+  findCommand,
+  parseArgs,
+  printJson,
+} from "./index";
 
-const handler: CliHandler = { id: "a", path: "/a", method: "get", behavior: "default", type: "default" };
+const handler: CliHandler = {
+  id: "a",
+  path: "/a",
+  method: "get",
+  behavior: "default",
+  type: "default",
+};
 
 const wsEndpoint: WebSocketEndpointConfig = {
-  info: { id: "ws:ep:1", kind: "websocket", endpoint: "ws://localhost/chat", operation: "endpoint", source: "temp" },
+  info: {
+    id: "ws:ep:1",
+    kind: "websocket",
+    endpoint: "ws://localhost/chat",
+    operation: "endpoint",
+    source: "temp",
+  },
   endpointId: "ws:ep:1",
   matcher: { kind: "string", value: "ws://localhost/chat" },
   enabled: true,
@@ -13,7 +33,13 @@ const wsEndpoint: WebSocketEndpointConfig = {
 };
 
 const wsListener: WebSocketListenerConfig = {
-  info: { id: "ws:ep:1:message:0", kind: "websocket", endpoint: "ws://localhost/chat", operation: "message", source: "temp" },
+  info: {
+    id: "ws:ep:1:message:0",
+    kind: "websocket",
+    endpoint: "ws://localhost/chat",
+    operation: "message",
+    source: "temp",
+  },
   endpointId: "ws:ep:1",
   event: "message",
   enabled: true,
@@ -27,28 +53,69 @@ const createSession = (): CliSession => {
   let revision = 0;
   const info = () => ({ revision, handlerCount: handlers.length });
   return {
-    describe: async () => info(), list: async () => handlers, get: async (id) => handlers.find((item) => item.id === id),
-    setBehavior: async (id, behavior) => { const item = handlers.find((entry) => entry.id === id); if (!item) throw new Error(`Handler not found for id: ${id}`); item.behavior = behavior; revision += 1; return { ...info(), handler: item }; },
-    setCustomResponse: async (id, customResponse) => { const item = handlers.find((entry) => entry.id === id); if (!item) throw new Error(`Handler not found for id: ${id}`); item.customResponse = customResponse; revision += 1; return { ...info(), handler: item }; },
-    addTemp: async () => { throw new Error("not used"); }, removeTemp: async () => { throw new Error("not used"); }, reset: async () => info(),
+    describe: async () => info(),
+    list: async () => handlers,
+    get: async (id) => handlers.find((item) => item.id === id),
+    setBehavior: async (id, behavior) => {
+      const item = handlers.find((entry) => entry.id === id);
+      if (!item) throw new Error(`Handler not found for id: ${id}`);
+      item.behavior = behavior;
+      revision += 1;
+      return { ...info(), handler: item };
+    },
+    setCustomResponse: async (id, customResponse) => {
+      const item = handlers.find((entry) => entry.id === id);
+      if (!item) throw new Error(`Handler not found for id: ${id}`);
+      item.customResponse = customResponse;
+      revision += 1;
+      return { ...info(), handler: item };
+    },
+    addTemp: async () => {
+      throw new Error("not used");
+    },
+    removeTemp: async () => {
+      throw new Error("not used");
+    },
+    reset: async () => info(),
     listWebSocket: async () => [wsEndpoint],
-    getWebSocketEndpoint: async (id) => id === wsEndpoint.endpointId ? wsEndpoint : undefined,
+    getWebSocketEndpoint: async (id) => (id === wsEndpoint.endpointId ? wsEndpoint : undefined),
     addWebSocketEndpoint: async () => ({ endpoint: wsEndpoint }),
     removeWebSocketEndpoint: async () => ({ endpoints: [] }),
     setWebSocketEndpointEnabled: async () => ({ endpoint: wsEndpoint }),
     addWebSocketListener: async () => ({ endpoint: wsEndpointWithListener, listener: wsListener }),
     removeWebSocketListener: async () => ({ endpoints: [wsEndpoint] }),
-    setWebSocketListenerEnabled: async () => ({ endpoint: wsEndpointWithListener, listener: wsListener }),
-    setWebSocketListenerBehavior: async () => ({ endpoint: wsEndpointWithListener, listener: wsListener }),
-    setWebSocketListenerCustomResponse: async () => ({ endpoint: wsEndpointWithListener, listener: { ...wsListener, customResponse: { type: "send", dataType: "string", value: "hello" } } }),
-    setWebSocketListenerResponse: async () => ({ endpoint: wsEndpointWithListener, listener: { ...wsListener, response: { type: "send", dataType: "string", value: "default" } } }),
-    setWebSocketListenerSchedule: async () => ({ endpoint: wsEndpointWithListener, listener: { ...wsListener, delay: 300, repeat: { interval: 500, repetitions: 3 } } }),
+    setWebSocketListenerEnabled: async () => ({
+      endpoint: wsEndpointWithListener,
+      listener: wsListener,
+    }),
+    setWebSocketListenerBehavior: async () => ({
+      endpoint: wsEndpointWithListener,
+      listener: wsListener,
+    }),
+    setWebSocketListenerCustomResponse: async () => ({
+      endpoint: wsEndpointWithListener,
+      listener: {
+        ...wsListener,
+        customResponse: { type: "send", dataType: "string", value: "hello" },
+      },
+    }),
+    setWebSocketListenerResponse: async () => ({
+      endpoint: wsEndpointWithListener,
+      listener: { ...wsListener, response: { type: "send", dataType: "string", value: "default" } },
+    }),
+    setWebSocketListenerSchedule: async () => ({
+      endpoint: wsEndpointWithListener,
+      listener: { ...wsListener, delay: 300, repeat: { interval: 500, repetitions: 3 } },
+    }),
   };
 };
 
 describe("shared CLI commands", () => {
   it("parses positional, value, and boolean flags and rejects missing values", () => {
-    expect(parseArgs(["list", "--pid", "12", "--help"])).toEqual({ positionals: ["list"], flags: { pid: "12", help: true } });
+    expect(parseArgs(["list", "--pid", "12", "--help"])).toEqual({
+      positionals: ["list"],
+      flags: { pid: "12", help: true },
+    });
     expect(() => parseArgs(["list", "--json"])).toThrow("Missing value");
     expect(() => parseArgs(["list", "--pid", "--help"])).toThrow("Missing value");
   });
@@ -64,15 +131,25 @@ describe("shared CLI commands", () => {
   });
   it("uses the session adapter and returns an updated handler", async () => {
     const command = commands.find((item) => item.name === "set-behavior")!;
-    await expect(command.execute({ session: createSession() }, { flags: {}, positionals: ["set-behavior", "a", "delay"] })).resolves.toMatchObject({ ok: true, revision: 1, handler: { id: "a", behavior: "delay" } });
+    await expect(
+      command.execute(
+        { session: createSession() },
+        { flags: {}, positionals: ["set-behavior", "a", "delay"] },
+      ),
+    ).resolves.toMatchObject({ ok: true, revision: 1, handler: { id: "a", behavior: "delay" } });
   });
 
   it("stores a validated custom response without changing behavior", async () => {
     const command = commands.find((item) => item.name === "set-custom-response")!;
-    await expect(command.execute(
-      { session: createSession() },
-      { flags: { json: '{"status":201,"body":"created","headers":{"X-Created":"yes"}}' }, positionals: ["set-custom-response", "a"] }
-    )).resolves.toMatchObject({
+    await expect(
+      command.execute(
+        { session: createSession() },
+        {
+          flags: { json: '{"status":201,"body":"created","headers":{"X-Created":"yes"}}' },
+          positionals: ["set-custom-response", "a"],
+        },
+      ),
+    ).resolves.toMatchObject({
       ok: true,
       revision: 1,
       handler: { behavior: "default", customResponse: { status: 201, body: "created" } },
@@ -81,15 +158,19 @@ describe("shared CLI commands", () => {
 
   it("rejects a missing command argument before reaching the adapter", async () => {
     const command = commands.find((item) => item.name === "remove-temp")!;
-    await expect(command.execute({ session: createSession() }, { flags: {}, positionals: ["remove-temp"] })).rejects.toThrow("Usage: remove-temp <id>");
+    await expect(
+      command.execute({ session: createSession() }, { flags: {}, positionals: ["remove-temp"] }),
+    ).rejects.toThrow("Usage: remove-temp <id>");
   });
 
   it("rejects invalid custom response input before reaching the adapter", async () => {
     const command = commands.find((item) => item.name === "set-custom-response")!;
-    await expect(command.execute(
-      { session: createSession() },
-      { flags: { json: "{" }, positionals: ["set-custom-response", "a"] }
-    )).rejects.toThrow("Custom response must be valid JSON");
+    await expect(
+      command.execute(
+        { session: createSession() },
+        { flags: { json: "{" }, positionals: ["set-custom-response", "a"] },
+      ),
+    ).rejects.toThrow("Custom response must be valid JSON");
   });
 
   it("executes read, temporary, removal, and reset commands with metadata", async () => {
@@ -101,45 +182,104 @@ describe("shared CLI commands", () => {
     session.removeTemp = vi.fn().mockResolvedValue({ revision: 5, handlerCount: 1 });
     session.reset = vi.fn().mockResolvedValue({ revision: 6, handlerCount: 1 });
     const context = { session, metadata: { pid: 42 } };
-    await expect(findCommand("session")!.execute(context, { flags: {}, positionals: ["session"] })).resolves.toMatchObject({ ok: true, pid: 42, revision: 3 });
-    await expect(findCommand("list")!.execute(context, { flags: {}, positionals: ["list"] })).resolves.toMatchObject({ handlers: [handler] });
-    await expect(findCommand("get")!.execute(context, { flags: {}, positionals: ["get", "a"] })).resolves.toMatchObject({ handler });
-    await expect(findCommand("add-temp")!.execute(context, { flags: { json: '{"path":"/tmp","method":"get","contentType":"text/plain","status":"200","response":"ok"}' }, positionals: ["add-temp"] })).resolves.toMatchObject({ revision: 4 });
-    await expect(findCommand("remove-temp")!.execute(context, { flags: {}, positionals: ["remove-temp", "a"] })).resolves.toMatchObject({ revision: 5 });
-    await expect(findCommand("reset")!.execute(context, { flags: {}, positionals: ["reset"] })).resolves.toMatchObject({ revision: 6 });
+    await expect(
+      findCommand("session")!.execute(context, { flags: {}, positionals: ["session"] }),
+    ).resolves.toMatchObject({ ok: true, pid: 42, revision: 3 });
+    await expect(
+      findCommand("list")!.execute(context, { flags: {}, positionals: ["list"] }),
+    ).resolves.toMatchObject({ handlers: [handler] });
+    await expect(
+      findCommand("get")!.execute(context, { flags: {}, positionals: ["get", "a"] }),
+    ).resolves.toMatchObject({ handler });
+    await expect(
+      findCommand("add-temp")!.execute(context, {
+        flags: {
+          json: '{"path":"/tmp","method":"get","contentType":"text/plain","status":"200","response":"ok"}',
+        },
+        positionals: ["add-temp"],
+      }),
+    ).resolves.toMatchObject({ revision: 4 });
+    await expect(
+      findCommand("remove-temp")!.execute(context, {
+        flags: {},
+        positionals: ["remove-temp", "a"],
+      }),
+    ).resolves.toMatchObject({ revision: 5 });
+    await expect(
+      findCommand("reset")!.execute(context, { flags: {}, positionals: ["reset"] }),
+    ).resolves.toMatchObject({ revision: 6 });
   });
 
   it("executes ws-list and ws-get-endpoint", async () => {
     const session = createSession();
     const context = { session };
-    await expect(findCommand("ws-list")!.execute(context, { flags: {}, positionals: ["ws-list"] })).resolves.toMatchObject({ ok: true, endpoints: [wsEndpoint] });
-    await expect(findCommand("ws-get-endpoint")!.execute(context, { flags: {}, positionals: ["ws-get-endpoint", wsEndpoint.endpointId] })).resolves.toMatchObject({ ok: true, endpoint: wsEndpoint });
+    await expect(
+      findCommand("ws-list")!.execute(context, { flags: {}, positionals: ["ws-list"] }),
+    ).resolves.toMatchObject({ ok: true, endpoints: [wsEndpoint] });
+    await expect(
+      findCommand("ws-get-endpoint")!.execute(context, {
+        flags: {},
+        positionals: ["ws-get-endpoint", wsEndpoint.endpointId],
+      }),
+    ).resolves.toMatchObject({ ok: true, endpoint: wsEndpoint });
   });
 
   it("executes ws-add-endpoint and ws-remove-endpoint", async () => {
     const session = createSession();
     const context = { session };
-    await expect(findCommand("ws-add-endpoint")!.execute(context, { flags: { json: '{"kind":"string","value":"ws://localhost/chat"}' }, positionals: ["ws-add-endpoint"] })).resolves.toMatchObject({ ok: true, endpoint: wsEndpoint });
-    await expect(findCommand("ws-remove-endpoint")!.execute(context, { flags: {}, positionals: ["ws-remove-endpoint", wsEndpoint.endpointId] })).resolves.toMatchObject({ ok: true, endpoints: [] });
+    await expect(
+      findCommand("ws-add-endpoint")!.execute(context, {
+        flags: { json: '{"kind":"string","value":"ws://localhost/chat"}' },
+        positionals: ["ws-add-endpoint"],
+      }),
+    ).resolves.toMatchObject({ ok: true, endpoint: wsEndpoint });
+    await expect(
+      findCommand("ws-remove-endpoint")!.execute(context, {
+        flags: {},
+        positionals: ["ws-remove-endpoint", wsEndpoint.endpointId],
+      }),
+    ).resolves.toMatchObject({ ok: true, endpoints: [] });
   });
 
   it("executes ws-set-endpoint-enabled", async () => {
     const session = createSession();
     const context = { session };
-    await expect(findCommand("ws-set-endpoint-enabled")!.execute(context, { flags: {}, positionals: ["ws-set-endpoint-enabled", wsEndpoint.endpointId, "false"] })).resolves.toMatchObject({ ok: true, endpoint: wsEndpoint });
-    await expect(findCommand("ws-set-endpoint-enabled")!.execute(context, { flags: {}, positionals: ["ws-set-endpoint-enabled", wsEndpoint.endpointId, "true"] })).resolves.toMatchObject({ ok: true });
+    await expect(
+      findCommand("ws-set-endpoint-enabled")!.execute(context, {
+        flags: {},
+        positionals: ["ws-set-endpoint-enabled", wsEndpoint.endpointId, "false"],
+      }),
+    ).resolves.toMatchObject({ ok: true, endpoint: wsEndpoint });
+    await expect(
+      findCommand("ws-set-endpoint-enabled")!.execute(context, {
+        flags: {},
+        positionals: ["ws-set-endpoint-enabled", wsEndpoint.endpointId, "true"],
+      }),
+    ).resolves.toMatchObject({ ok: true });
   });
 
   it("executes ws-add-listener and ws-remove-listener", async () => {
     const session = createSession();
     const context = { session };
-    await expect(findCommand("ws-add-listener")!.execute(context, { flags: { json: '{"preset":"send","options":{"message":"hello"}}' }, positionals: ["ws-add-listener", wsEndpoint.endpointId] })).resolves.toMatchObject({ ok: true, listener: wsListener });
-    await expect(findCommand("ws-remove-listener")!.execute(context, { flags: {}, positionals: ["ws-remove-listener", wsListener.info.id] })).resolves.toMatchObject({ ok: true, endpoints: [wsEndpoint] });
+    await expect(
+      findCommand("ws-add-listener")!.execute(context, {
+        flags: { json: '{"preset":"send","options":{"message":"hello"}}' },
+        positionals: ["ws-add-listener", wsEndpoint.endpointId],
+      }),
+    ).resolves.toMatchObject({ ok: true, listener: wsListener });
+    await expect(
+      findCommand("ws-remove-listener")!.execute(context, {
+        flags: {},
+        positionals: ["ws-remove-listener", wsListener.info.id],
+      }),
+    ).resolves.toMatchObject({ ok: true, endpoints: [wsEndpoint] });
   });
 
   it("passes the full temporary listener JSON contract to the session", async () => {
     const session = createSession();
-    session.addWebSocketListener = vi.fn().mockResolvedValue({ endpoint: wsEndpointWithListener, listener: wsListener });
+    session.addWebSocketListener = vi
+      .fn()
+      .mockResolvedValue({ endpoint: wsEndpointWithListener, listener: wsListener });
     const input = {
       endpointId: wsEndpoint.endpointId,
       behavior: { preset: "default" },
@@ -148,16 +288,22 @@ describe("shared CLI commands", () => {
       delay: 300,
       repeat: { interval: 500, repetitions: 3 },
     };
-    await findCommand("ws-add-listener")!.execute({ session }, {
-      flags: { json: JSON.stringify(input) },
-      positionals: ["ws-add-listener"],
-    });
+    await findCommand("ws-add-listener")!.execute(
+      { session },
+      {
+        flags: { json: JSON.stringify(input) },
+        positionals: ["ws-add-listener"],
+      },
+    );
     expect(session.addWebSocketListener).toHaveBeenCalledWith(input);
 
-    await findCommand("ws-add-listener")!.execute({ session }, {
-      flags: { json: "{}" },
-      positionals: ["ws-add-listener", wsEndpoint.endpointId],
-    });
+    await findCommand("ws-add-listener")!.execute(
+      { session },
+      {
+        flags: { json: "{}" },
+        positionals: ["ws-add-listener", wsEndpoint.endpointId],
+      },
+    );
     expect(session.addWebSocketListener).toHaveBeenCalledWith({
       endpointId: wsEndpoint.endpointId,
       behavior: undefined,
@@ -170,8 +316,12 @@ describe("shared CLI commands", () => {
 
   it("forwards listener response and schedule mutations", async () => {
     const session = createSession();
-    session.setWebSocketListenerResponse = vi.fn().mockResolvedValue({ endpoint: wsEndpointWithListener, listener: wsListener });
-    session.setWebSocketListenerSchedule = vi.fn().mockResolvedValue({ endpoint: wsEndpointWithListener, listener: wsListener });
+    session.setWebSocketListenerResponse = vi
+      .fn()
+      .mockResolvedValue({ endpoint: wsEndpointWithListener, listener: wsListener });
+    session.setWebSocketListenerSchedule = vi
+      .fn()
+      .mockResolvedValue({ endpoint: wsEndpointWithListener, listener: wsListener });
     const context = { session };
     await findCommand("ws-set-listener-response")!.execute(context, {
       flags: { json: '{"type":"send","dataType":"string","value":"default"}' },
@@ -186,81 +336,228 @@ describe("shared CLI commands", () => {
       positionals: ["ws-set-listener-schedule", wsListener.info.id],
     });
     await findCommand("ws-set-listener-schedule")!.execute(context, {
-      flags: { json: '{}' },
+      flags: { json: "{}" },
       positionals: ["ws-set-listener-schedule", wsListener.info.id],
     });
-    expect(session.setWebSocketListenerResponse).toHaveBeenCalledWith(wsListener.info.id, { type: "send", dataType: "string", value: "default" });
-    expect(session.setWebSocketListenerSchedule).toHaveBeenCalledWith(wsListener.info.id, { delay: 300, repeat: { interval: 500, repetitions: "Infinity" } });
-    expect(session.setWebSocketListenerSchedule).toHaveBeenCalledWith(wsListener.info.id, { repeat: undefined });
+    expect(session.setWebSocketListenerResponse).toHaveBeenCalledWith(wsListener.info.id, {
+      type: "send",
+      dataType: "string",
+      value: "default",
+    });
+    expect(session.setWebSocketListenerSchedule).toHaveBeenCalledWith(wsListener.info.id, {
+      delay: 300,
+      repeat: { interval: 500, repetitions: "Infinity" },
+    });
+    expect(session.setWebSocketListenerSchedule).toHaveBeenCalledWith(wsListener.info.id, {
+      repeat: undefined,
+    });
     expect(session.setWebSocketListenerSchedule).toHaveBeenCalledWith(wsListener.info.id, {});
   });
 
   it("executes ws-set-listener-enabled and ws-set-listener-behavior", async () => {
     const session = createSession();
     const context = { session };
-    await expect(findCommand("ws-set-listener-enabled")!.execute(context, { flags: {}, positionals: ["ws-set-listener-enabled", wsListener.info.id, "false"] })).resolves.toMatchObject({ ok: true, listener: wsListener });
-    await expect(findCommand("ws-set-listener-behavior")!.execute(context, { flags: { json: '{"preset":"close"}' }, positionals: ["ws-set-listener-behavior", wsListener.info.id] })).resolves.toMatchObject({ ok: true, listener: wsListener });
-    await expect(findCommand("ws-set-listener-custom-response")!.execute(context, { flags: { json: '{"type":"send","dataType":"string","value":"hello"}' }, positionals: ["ws-set-listener-custom-response", wsListener.info.id] })).resolves.toMatchObject({ ok: true, listener: { customResponse: { value: "hello" } } });
+    await expect(
+      findCommand("ws-set-listener-enabled")!.execute(context, {
+        flags: {},
+        positionals: ["ws-set-listener-enabled", wsListener.info.id, "false"],
+      }),
+    ).resolves.toMatchObject({ ok: true, listener: wsListener });
+    await expect(
+      findCommand("ws-set-listener-behavior")!.execute(context, {
+        flags: { json: '{"preset":"close"}' },
+        positionals: ["ws-set-listener-behavior", wsListener.info.id],
+      }),
+    ).resolves.toMatchObject({ ok: true, listener: wsListener });
+    await expect(
+      findCommand("ws-set-listener-custom-response")!.execute(context, {
+        flags: { json: '{"type":"send","dataType":"string","value":"hello"}' },
+        positionals: ["ws-set-listener-custom-response", wsListener.info.id],
+      }),
+    ).resolves.toMatchObject({ ok: true, listener: { customResponse: { value: "hello" } } });
   });
 
   it("rejects ws commands with missing arguments", async () => {
     const session = createSession();
     const context = { session };
-    await expect(findCommand("ws-get-endpoint")!.execute(context, { flags: {}, positionals: ["ws-get-endpoint"] })).rejects.toThrow("Usage: ws-get-endpoint");
-    await expect(findCommand("ws-add-endpoint")!.execute(context, { flags: {}, positionals: ["ws-add-endpoint"] })).rejects.toThrow("Usage: ws-add-endpoint");
-    await expect(findCommand("ws-remove-endpoint")!.execute(context, { flags: {}, positionals: ["ws-remove-endpoint"] })).rejects.toThrow("Usage: ws-remove-endpoint");
-    await expect(findCommand("ws-set-endpoint-enabled")!.execute(context, { flags: {}, positionals: ["ws-set-endpoint-enabled", wsEndpoint.endpointId] })).rejects.toThrow("Usage: ws-set-endpoint-enabled");
-    await expect(findCommand("ws-set-endpoint-enabled")!.execute(context, { flags: {}, positionals: ["ws-set-endpoint-enabled", wsEndpoint.endpointId, "maybe"] })).rejects.toThrow("enabled must be true or false");
-    await expect(findCommand("ws-add-listener")!.execute(context, { flags: {}, positionals: ["ws-add-listener", wsEndpoint.endpointId] })).rejects.toThrow("Usage: ws-add-listener");
-    await expect(findCommand("ws-add-listener")!.execute(context, { flags: { json: "{}" }, positionals: ["ws-add-listener"] })).rejects.toThrow("Usage: ws-add-listener");
-    await expect(findCommand("ws-remove-listener")!.execute(context, { flags: {}, positionals: ["ws-remove-listener"] })).rejects.toThrow("Usage: ws-remove-listener");
-    await expect(findCommand("ws-set-listener-enabled")!.execute(context, { flags: {}, positionals: ["ws-set-listener-enabled", wsListener.info.id] })).rejects.toThrow("Usage: ws-set-listener-enabled");
-    await expect(findCommand("ws-set-listener-enabled")!.execute(context, { flags: {}, positionals: ["ws-set-listener-enabled", wsListener.info.id, "maybe"] })).rejects.toThrow("enabled must be true or false");
-    await expect(findCommand("ws-set-listener-behavior")!.execute(context, { flags: {}, positionals: ["ws-set-listener-behavior", wsListener.info.id] })).rejects.toThrow("Usage: ws-set-listener-behavior");
-    await expect(findCommand("ws-set-listener-custom-response")!.execute(context, { flags: {}, positionals: ["ws-set-listener-custom-response", wsListener.info.id] })).rejects.toThrow("Usage: ws-set-listener-custom-response");
-    await expect(findCommand("ws-set-listener-response")!.execute(context, { flags: {}, positionals: ["ws-set-listener-response", wsListener.info.id] })).rejects.toThrow("Usage: ws-set-listener-response");
-    await expect(findCommand("ws-set-listener-schedule")!.execute(context, { flags: {}, positionals: ["ws-set-listener-schedule", wsListener.info.id] })).rejects.toThrow("Usage: ws-set-listener-schedule");
+    await expect(
+      findCommand("ws-get-endpoint")!.execute(context, {
+        flags: {},
+        positionals: ["ws-get-endpoint"],
+      }),
+    ).rejects.toThrow("Usage: ws-get-endpoint");
+    await expect(
+      findCommand("ws-add-endpoint")!.execute(context, {
+        flags: {},
+        positionals: ["ws-add-endpoint"],
+      }),
+    ).rejects.toThrow("Usage: ws-add-endpoint");
+    await expect(
+      findCommand("ws-remove-endpoint")!.execute(context, {
+        flags: {},
+        positionals: ["ws-remove-endpoint"],
+      }),
+    ).rejects.toThrow("Usage: ws-remove-endpoint");
+    await expect(
+      findCommand("ws-set-endpoint-enabled")!.execute(context, {
+        flags: {},
+        positionals: ["ws-set-endpoint-enabled", wsEndpoint.endpointId],
+      }),
+    ).rejects.toThrow("Usage: ws-set-endpoint-enabled");
+    await expect(
+      findCommand("ws-set-endpoint-enabled")!.execute(context, {
+        flags: {},
+        positionals: ["ws-set-endpoint-enabled", wsEndpoint.endpointId, "maybe"],
+      }),
+    ).rejects.toThrow("enabled must be true or false");
+    await expect(
+      findCommand("ws-add-listener")!.execute(context, {
+        flags: {},
+        positionals: ["ws-add-listener", wsEndpoint.endpointId],
+      }),
+    ).rejects.toThrow("Usage: ws-add-listener");
+    await expect(
+      findCommand("ws-add-listener")!.execute(context, {
+        flags: { json: "{}" },
+        positionals: ["ws-add-listener"],
+      }),
+    ).rejects.toThrow("Usage: ws-add-listener");
+    await expect(
+      findCommand("ws-remove-listener")!.execute(context, {
+        flags: {},
+        positionals: ["ws-remove-listener"],
+      }),
+    ).rejects.toThrow("Usage: ws-remove-listener");
+    await expect(
+      findCommand("ws-set-listener-enabled")!.execute(context, {
+        flags: {},
+        positionals: ["ws-set-listener-enabled", wsListener.info.id],
+      }),
+    ).rejects.toThrow("Usage: ws-set-listener-enabled");
+    await expect(
+      findCommand("ws-set-listener-enabled")!.execute(context, {
+        flags: {},
+        positionals: ["ws-set-listener-enabled", wsListener.info.id, "maybe"],
+      }),
+    ).rejects.toThrow("enabled must be true or false");
+    await expect(
+      findCommand("ws-set-listener-behavior")!.execute(context, {
+        flags: {},
+        positionals: ["ws-set-listener-behavior", wsListener.info.id],
+      }),
+    ).rejects.toThrow("Usage: ws-set-listener-behavior");
+    await expect(
+      findCommand("ws-set-listener-custom-response")!.execute(context, {
+        flags: {},
+        positionals: ["ws-set-listener-custom-response", wsListener.info.id],
+      }),
+    ).rejects.toThrow("Usage: ws-set-listener-custom-response");
+    await expect(
+      findCommand("ws-set-listener-response")!.execute(context, {
+        flags: {},
+        positionals: ["ws-set-listener-response", wsListener.info.id],
+      }),
+    ).rejects.toThrow("Usage: ws-set-listener-response");
+    await expect(
+      findCommand("ws-set-listener-schedule")!.execute(context, {
+        flags: {},
+        positionals: ["ws-set-listener-schedule", wsListener.info.id],
+      }),
+    ).rejects.toThrow("Usage: ws-set-listener-schedule");
   });
 
   it("rejects ws-get-endpoint when endpoint is not found", async () => {
     const session = createSession();
     session.getWebSocketEndpoint = vi.fn().mockResolvedValue(undefined);
-    await expect(findCommand("ws-get-endpoint")!.execute({ session }, { flags: {}, positionals: ["ws-get-endpoint", "nonexistent"] })).rejects.toThrow("WebSocket endpoint not found");
+    await expect(
+      findCommand("ws-get-endpoint")!.execute(
+        { session },
+        { flags: {}, positionals: ["ws-get-endpoint", "nonexistent"] },
+      ),
+    ).rejects.toThrow("WebSocket endpoint not found");
   });
 
   it("rejects ws commands with invalid JSON", async () => {
     const session = createSession();
     const context = { session };
-    await expect(findCommand("ws-add-endpoint")!.execute(context, { flags: { json: "{bad}" }, positionals: ["ws-add-endpoint"] })).rejects.toThrow();
-    await expect(findCommand("ws-add-listener")!.execute(context, { flags: { json: "{bad}" }, positionals: ["ws-add-listener", wsEndpoint.endpointId] })).rejects.toThrow();
-    await expect(findCommand("ws-set-listener-behavior")!.execute(context, { flags: { json: "{bad}" }, positionals: ["ws-set-listener-behavior", wsListener.info.id] })).rejects.toThrow();
-    await expect(findCommand("ws-set-listener-custom-response")!.execute(context, { flags: { json: "{bad}" }, positionals: ["ws-set-listener-custom-response", wsListener.info.id] })).rejects.toThrow();
-    await expect(findCommand("ws-set-listener-response")!.execute(context, { flags: { json: "{bad}" }, positionals: ["ws-set-listener-response", wsListener.info.id] })).rejects.toThrow();
-    await expect(findCommand("ws-set-listener-schedule")!.execute(context, { flags: { json: "{bad}" }, positionals: ["ws-set-listener-schedule", wsListener.info.id] })).rejects.toThrow();
+    await expect(
+      findCommand("ws-add-endpoint")!.execute(context, {
+        flags: { json: "{bad}" },
+        positionals: ["ws-add-endpoint"],
+      }),
+    ).rejects.toThrow();
+    await expect(
+      findCommand("ws-add-listener")!.execute(context, {
+        flags: { json: "{bad}" },
+        positionals: ["ws-add-listener", wsEndpoint.endpointId],
+      }),
+    ).rejects.toThrow();
+    await expect(
+      findCommand("ws-set-listener-behavior")!.execute(context, {
+        flags: { json: "{bad}" },
+        positionals: ["ws-set-listener-behavior", wsListener.info.id],
+      }),
+    ).rejects.toThrow();
+    await expect(
+      findCommand("ws-set-listener-custom-response")!.execute(context, {
+        flags: { json: "{bad}" },
+        positionals: ["ws-set-listener-custom-response", wsListener.info.id],
+      }),
+    ).rejects.toThrow();
+    await expect(
+      findCommand("ws-set-listener-response")!.execute(context, {
+        flags: { json: "{bad}" },
+        positionals: ["ws-set-listener-response", wsListener.info.id],
+      }),
+    ).rejects.toThrow();
+    await expect(
+      findCommand("ws-set-listener-schedule")!.execute(context, {
+        flags: { json: "{bad}" },
+        positionals: ["ws-set-listener-schedule", wsListener.info.id],
+      }),
+    ).rejects.toThrow();
   });
 
   it("reports missing handlers and invalid command inputs", async () => {
     const session = createSession();
     session.get = vi.fn().mockResolvedValue(undefined);
     const context = { session };
-    await expect(findCommand("get")!.execute(context, { flags: {}, positionals: ["get", "none"] })).rejects.toThrow("Handler not found");
-    await expect(findCommand("set-behavior")!.execute(context, { flags: {}, positionals: ["set-behavior", "a", "bad"] })).rejects.toThrow("Unknown behavior");
-    await expect(findCommand("add-temp")!.execute(context, { flags: {}, positionals: ["add-temp"] })).rejects.toThrow("Usage");
+    await expect(
+      findCommand("get")!.execute(context, { flags: {}, positionals: ["get", "none"] }),
+    ).rejects.toThrow("Handler not found");
+    await expect(
+      findCommand("set-behavior")!.execute(context, {
+        flags: {},
+        positionals: ["set-behavior", "a", "bad"],
+      }),
+    ).rejects.toThrow("Unknown behavior");
+    await expect(
+      findCommand("add-temp")!.execute(context, { flags: {}, positionals: ["add-temp"] }),
+    ).rejects.toThrow("Usage");
   });
 
   it("rejects invalid custom response JSON and schema before session mutation", async () => {
     const session = createSession();
     session.setCustomResponse = vi.fn();
     const context = { session };
-    await expect(findCommand("set-custom-response")!.execute(context, {
-      flags: { json: "{bad}" }, positionals: ["set-custom-response", "handler-a"],
-    })).rejects.toThrow("Custom response must be valid JSON");
-    await expect(findCommand("set-custom-response")!.execute(context, {
-      flags: { json: "{\"status\":\"wrong\"}" }, positionals: ["set-custom-response", "handler-a"],
-    })).rejects.toThrow();
-    await expect(findCommand("set-custom-response")!.execute(context, {
-      flags: {}, positionals: ["set-custom-response", "handler-a"],
-    })).rejects.toThrow("Usage: set-custom-response");
+    await expect(
+      findCommand("set-custom-response")!.execute(context, {
+        flags: { json: "{bad}" },
+        positionals: ["set-custom-response", "handler-a"],
+      }),
+    ).rejects.toThrow("Custom response must be valid JSON");
+    await expect(
+      findCommand("set-custom-response")!.execute(context, {
+        flags: { json: '{"status":"wrong"}' },
+        positionals: ["set-custom-response", "handler-a"],
+      }),
+    ).rejects.toThrow();
+    await expect(
+      findCommand("set-custom-response")!.execute(context, {
+        flags: {},
+        positionals: ["set-custom-response", "handler-a"],
+      }),
+    ).rejects.toThrow("Usage: set-custom-response");
     expect(session.setCustomResponse).not.toHaveBeenCalled();
   });
 });

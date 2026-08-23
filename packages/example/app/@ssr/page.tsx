@@ -38,29 +38,18 @@ const fetchJson = async <T,>(url: string): Promise<FetchResult<T>> => {
 
 const getRequestOrigin = async (): Promise<string> => {
   const requestHeaders = await headers();
-  const host =
-    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
   if (!host) throw new Error("Unable to determine the request host for SSR fetch");
 
   const protocol = requestHeaders.get("x-forwarded-proto") ?? "http";
   return `${protocol}://${host}`;
 };
 
-const SsrUsersSection = ({
-  title,
-  result,
-}: {
-  title: string;
-  result: FetchResult<User[]>;
-}) => (
+const SsrUsersSection = ({ title, result }: { title: string; result: FetchResult<User[]> }) => (
   <section style={sectionStyle}>
     <h2>{title}</h2>
     <div style={{ height: "220px", overflow: "auto" }}>
-      <UsersTable
-        users={result.data}
-        isFetching={false}
-        errorMessage={result.error}
-      />
+      <UsersTable users={result.data} isFetching={false} errorMessage={result.error} />
     </div>
   </section>
 );

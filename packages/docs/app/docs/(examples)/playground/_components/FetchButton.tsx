@@ -33,9 +33,7 @@ export const FetchButton = () => {
         }
       `}
     >
-      <DownloadCloud
-        className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
-      />
+      <DownloadCloud className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
       <span>Fetch Data</span>
     </Button>
   );

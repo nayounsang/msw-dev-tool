@@ -1,9 +1,4 @@
-import {
-  HttpErrorStatusCode,
-  HttpMethod,
-  MimeType,
-  StringHttpStatusCode,
-} from "./http";
+import { HttpErrorStatusCode, HttpMethod, MimeType, StringHttpStatusCode } from "./http";
 import { HttpHandler } from "./msw";
 import { ValueUnion } from "./utils";
 import type { WebSocketEndpointConfig } from "./websocket";

@@ -1,10 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { STORAGE_KEY } from "../shared/const";
-import {
-  CustomBehavior,
-  HttpHandlerBehavior,
-  HttpMethod,
-} from "../shared/types";
+import { CustomBehavior, HttpHandlerBehavior, HttpMethod } from "../shared/types";
 import { getRowId } from "../shared/utils";
 import { getBrowserStorageSnapshot, getStorageData, mergeStorageData } from "./storage";
 import { createFlattenHandler } from "../shared/testing/createHttpHandler";
@@ -36,7 +32,7 @@ describe("getStorageData", () => {
             },
           ],
         },
-      })
+      }),
     );
 
     expect(getStorageData().flattenHandlers).toEqual([
@@ -54,7 +50,7 @@ describe("getStorageData", () => {
   it("reads the revision from the extended browser payload", () => {
     sessionStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ revision: 7, state: { flattenHandlers: [] } })
+      JSON.stringify({ revision: 7, state: { flattenHandlers: [] } }),
     );
     expect(getBrowserStorageSnapshot()).toEqual({
       revision: 7,
@@ -85,7 +81,7 @@ describe("getStorageData", () => {
             },
           ],
         },
-      })
+      }),
     );
 
     expect(getBrowserStorageSnapshot()).toEqual({
@@ -105,11 +101,11 @@ describe("getStorageData", () => {
   it("reports a Zod validation error for an invalid persisted payload", () => {
     sessionStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ revision: "invalid", state: { flattenHandlers: [] } })
+      JSON.stringify({ revision: "invalid", state: { flattenHandlers: [] } }),
     );
 
     expect(() => getBrowserStorageSnapshot()).toThrow(
-      `Invalid msw-dev-tool sessionStorage payload for key "${STORAGE_KEY}": Expected number, received string`
+      `Invalid msw-dev-tool sessionStorage payload for key "${STORAGE_KEY}": Expected number, received string`,
     );
   });
 
@@ -144,7 +140,7 @@ describe("mergeStorageData", () => {
             },
           ],
         },
-      })
+      }),
     );
 
     const incoming = createFlattenHandler({
@@ -155,9 +151,8 @@ describe("mergeStorageData", () => {
       type: "default",
     });
 
-    expect(
-      mergeStorageData({ flattenHandlers: [incoming] }).flattenHandlers[0]
-        .behavior
-    ).toBe(CustomBehavior.NETWORK_ERROR);
+    expect(mergeStorageData({ flattenHandlers: [incoming] }).flattenHandlers[0].behavior).toBe(
+      CustomBehavior.NETWORK_ERROR,
+    );
   });
 });

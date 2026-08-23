@@ -15,10 +15,7 @@ export const HandlerTable = () => {
       <Heading as="h2" size="5">
         Handlers
       </Heading>
-      <Table.Root
-        onDragStart={(e) => e.stopPropagation()}
-        style={{ userSelect: "text" }}
-      >
+      <Table.Root onDragStart={(e) => e.stopPropagation()} style={{ userSelect: "text" }}>
         <Table.Header>
           {table.getHeaderGroups().map((headerGroup) => (
             <Table.Row key={headerGroup.id}>
@@ -26,10 +23,7 @@ export const HandlerTable = () => {
                 <Table.ColumnHeaderCell key={header.id}>
                   {header.isPlaceholder
                     ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
+                    : flexRender(header.column.columnDef.header, header.getContext())}
                 </Table.ColumnHeaderCell>
               ))}
             </Table.Row>

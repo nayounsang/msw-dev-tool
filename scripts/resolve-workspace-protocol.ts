@@ -1,5 +1,5 @@
-import fs from 'node:fs/promises';
-import path from 'path';
+import fs from "node:fs/promises";
+import path from "path";
 
 interface PackageJson {
   name: string;
@@ -9,30 +9,36 @@ interface PackageJson {
   peerDependencies?: Record<string, string>;
 }
 
-const PACKAGES_DIR = path.join(process.cwd(), 'packages');
+const PACKAGES_DIR = path.join(process.cwd(), "packages");
 
 async function readPackageJson(packagePath: string): Promise<PackageJson | null> {
-  const packageJsonPath = path.join(packagePath, 'package.json');
+  const packageJsonPath = path.join(packagePath, "package.json");
   try {
-    return JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'));
+    return JSON.parse(await fs.readFile(packageJsonPath, "utf-8"));
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
     throw error;
   }
 }
 
-function updateDependencies(packageJson: PackageJson, workspacePackages: Map<string, string>): PackageJson {
+function updateDependencies(
+  packageJson: PackageJson,
+  workspacePackages: Map<string, string>,
+): PackageJson {
   const updateDeps = (deps: Record<string, string> | undefined) => {
     if (!deps) return deps;
-    
-    return Object.entries(deps).reduce((acc, [name, version]) => {
-      if (version === 'workspace:*' && workspacePackages.has(name)) {
-        acc[name] = workspacePackages.get(name)!;
-      } else {
-        acc[name] = version;
-      }
-      return acc;
-    }, {} as Record<string, string>);
+
+    return Object.entries(deps).reduce(
+      (acc, [name, version]) => {
+        if (version === "workspace:*" && workspacePackages.has(name)) {
+          acc[name] = workspacePackages.get(name)!;
+        } else {
+          acc[name] = version;
+        }
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
   };
 
   return {
@@ -61,8 +67,8 @@ async function main() {
     if (packageJson) {
       const updatedPackageJson = updateDependencies(packageJson, workspacePackages);
       await fs.writeFile(
-        path.join(packagePath, 'package.json'),
-        JSON.stringify(updatedPackageJson, null, 2) + '\n'
+        path.join(packagePath, "package.json"),
+        JSON.stringify(updatedPackageJson, null, 2) + "\n",
       );
     }
   }

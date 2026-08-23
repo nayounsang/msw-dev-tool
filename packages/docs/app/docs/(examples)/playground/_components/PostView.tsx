@@ -24,10 +24,7 @@ export const PostView = () => {
   }, [allPosts]);
 
   const posts = useMemo(() => {
-    return allPosts?.slice(
-      (currentPage - 1) * POSTS_PER_PAGE,
-      currentPage * POSTS_PER_PAGE
-    );
+    return allPosts?.slice((currentPage - 1) * POSTS_PER_PAGE, currentPage * POSTS_PER_PAGE);
   }, [allPosts, currentPage]);
 
   const paginationState = useMemo(() => {
@@ -57,11 +54,7 @@ export const PostView = () => {
     <div className="py-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 grid-container">
         {posts?.map((post: Post) => (
-          <PostPreview
-            key={post.id}
-            post={post}
-            setSelectedPostId={setSelectedPostId}
-          />
+          <PostPreview key={post.id} post={post} setSelectedPostId={setSelectedPostId} />
         ))}
       </div>
 

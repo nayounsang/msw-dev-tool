@@ -1,8 +1,5 @@
 import { z } from "zod";
-import {
-  HttpHandlerBehavior,
-  HttpMethod,
-} from "../../shared/types";
+import { HttpHandlerBehavior, HttpMethod } from "../../shared/types";
 import { webSocketEndpointsSchema } from "../../shared/schema/websocket";
 import { customResponseSchema, tempHandlerSchema } from "../../shared/schema";
 
@@ -28,9 +25,7 @@ export const sessionSnapshotSchema = z.object({
   owner: z.object({ pid: z.number().int().nonnegative() }),
 });
 
-export type SerializableFlattenHandler = z.infer<
-  typeof serializableFlattenHandlerSchema
->;
+export type SerializableFlattenHandler = z.infer<typeof serializableFlattenHandlerSchema>;
 export type SessionSnapshot = z.infer<typeof sessionSnapshotSchema>;
 
 export const SESSION_DIR = ".msw-dev-tool";

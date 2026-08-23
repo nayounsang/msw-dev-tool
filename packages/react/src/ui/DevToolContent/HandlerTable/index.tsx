@@ -5,27 +5,18 @@ import { Flex } from "../../Components/Flex";
 
 export const HandlerTable = () => {
   const table = useFlattenHandlersTable();
-  
+
   return (
     <Flex className="overflow-y-auto" direction="column" gap={4}>
-      <table
-        onDragStart={(e) => e.stopPropagation()}
-        className="msw-dt-table"
-      >
+      <table onDragStart={(e) => e.stopPropagation()} className="msw-dt-table">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <th
-                  key={header.id}
-                  style={{ textAlign: "left", padding: "0.5rem" }}
-                >
+                <th key={header.id} style={{ textAlign: "left", padding: "0.5rem" }}>
                   {header.isPlaceholder
                     ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
+                    : flexRender(header.column.columnDef.header, header.getContext())}
                 </th>
               ))}
             </tr>
@@ -33,9 +24,7 @@ export const HandlerTable = () => {
         </thead>
         <tbody>
           {table.getRowModel().rows.map((row) => (
-            <tr
-              key={row.id}
-            >
+            <tr key={row.id}>
               {row.getVisibleCells().map((cell) => (
                 <td key={cell.id} style={{ padding: "0.5rem" }}>
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}

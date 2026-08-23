@@ -19,15 +19,9 @@ export const FormFieldBase = ({
     <Flex gap={2} direction="column">
       <label htmlFor={id} className="msw-dt-label msw-dt-w-fit">
         {label}
-        {required && (
-          <span className="msw-dt-label-required">*</span>
-        )}
+        {required && <span className="msw-dt-label-required">*</span>}
       </label>
-      {error && (
-        <p className="msw-dt-error-text">
-          {error}
-        </p>
-      )}
+      {error && <p className="msw-dt-error-text">{error}</p>}
       {children}
     </Flex>
   );

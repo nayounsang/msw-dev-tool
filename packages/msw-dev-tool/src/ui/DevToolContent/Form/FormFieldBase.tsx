@@ -18,11 +18,9 @@ export const FormFieldBase = ({
 }: PropsWithChildren<FormFieldBaseProps>) => {
   return (
     <Flex gap="2" direction="column">
-      <Label htmlFor={id} style={{width:"fit-content"}}>
+      <Label htmlFor={id} style={{ width: "fit-content" }}>
         {label}
-        {required && (
-          <span style={{ color: "red", marginLeft: "0.2rem" }}>*</span>
-        )}
+        {required && <span style={{ color: "red", marginLeft: "0.2rem" }}>*</span>}
       </Label>
       {error && (
         <Text size="1" color="red" weight="medium">

@@ -3,10 +3,7 @@ import {
   rehydrateTempHandlers,
 } from "../../shared/domain";
 import { FlattenHandler } from "../../shared/types";
-import {
-  MswDevToolRuntime,
-  registerTempHandlers,
-} from "../../shared/store";
+import { MswDevToolRuntime, registerTempHandlers } from "../../shared/store";
 import { SerializableFlattenHandler, SessionSnapshot } from "./types";
 
 export type FlattenHandlerSeed = Omit<FlattenHandler, "handler"> & {
@@ -62,11 +59,8 @@ export const applySnapshotToRuntime = (args: {
   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   const seedAsHandlers = seed as FlattenHandler[];
 
-  const next = rehydrateTempHandlers(
-    seedAsHandlers,
-    lookupBehavior,
-    lookupCustomResponse
-  ).map((h) => {
+  const next = rehydrateTempHandlers(seedAsHandlers, lookupBehavior, lookupCustomResponse).map(
+    (h) => {
       const fromSnap = snapshot.state.flattenHandlers.find((s) => s.id === h.id);
       return fromSnap
         ? {
@@ -75,7 +69,8 @@ export const applySnapshotToRuntime = (args: {
             customResponse: fromSnap.customResponse,
           }
         : h;
-    });
+    },
+  );
 
   const tempsChanged =
     tempIdsSignature(current) !== tempIdsSignature(snapshot.state.flattenHandlers);
@@ -88,9 +83,7 @@ export const applySnapshotToRuntime = (args: {
   return next;
 };
 
-const serializableTempToSeed = (
-  entry: SerializableFlattenHandler
-): FlattenHandlerSeed => ({
+const serializableTempToSeed = (entry: SerializableFlattenHandler): FlattenHandlerSeed => ({
   id: entry.id,
   path: entry.path,
   method: entry.method,

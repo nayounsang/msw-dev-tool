@@ -16,10 +16,7 @@ export const isValidJson = (input: string) => {
   }
 };
 
-export const isValidMarkup = (
-  input: string,
-  mimeType: DOMParserSupportedType
-) => {
+export const isValidMarkup = (input: string, mimeType: DOMParserSupportedType) => {
   try {
     new DOMParser().parseFromString(input, mimeType);
     return true;

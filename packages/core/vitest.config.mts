@@ -13,11 +13,7 @@ export default defineConfig({
       {
         test: {
           name: "shared-node",
-          include: [
-            "src/shared/**/*.test.ts",
-            "src/node/**/*.test.ts",
-            "src/msw/**/*.test.ts",
-          ],
+          include: ["src/shared/**/*.test.ts", "src/node/**/*.test.ts", "src/msw/**/*.test.ts"],
           environment: "node",
         },
       },

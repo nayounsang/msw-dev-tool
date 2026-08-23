@@ -57,7 +57,7 @@ describe("wrapHandlersWithBehavior", () => {
     wrapHandlersWithBehavior(
       [handler],
       () => CustomBehavior.CUSTOM_RESPONSE,
-      () => ({ body: "custom", headers: { "X-Handler": "yes" }, status: 203 })
+      () => ({ body: "custom", headers: { "X-Handler": "yes" }, status: 203 }),
     );
 
     const result = await handler.resolver({
@@ -75,11 +75,7 @@ describe("wrapHandlersWithBehavior", () => {
 
   it("preserves network-error behavior from the original resolver", async () => {
     const networkError = HttpResponse.error();
-    const handler = createHttpHandler(
-      HttpMethod.GET,
-      "/x",
-      async () => networkError
-    );
+    const handler = createHttpHandler(HttpMethod.GET, "/x", async () => networkError);
 
     wrapHandlersWithBehavior([handler], () => CustomBehavior.DEFAULT);
     const result = await handler.resolver({
@@ -99,9 +95,18 @@ describe("wrapHandlersWithBehavior", () => {
 
   it("normalizes empty and native Response resolver results", async () => {
     const empty = createHttpHandler(HttpMethod.GET, "/empty", async () => undefined);
-    const native = createHttpHandler(HttpMethod.GET, "/native", async () => new Response("native", { status: 201 }));
+    const native = createHttpHandler(
+      HttpMethod.GET,
+      "/native",
+      async () => new Response("native", { status: 201 }),
+    );
     wrapHandlersWithBehavior([empty, native], () => CustomBehavior.DEFAULT);
-    const args = { request: new Request("http://localhost/x"), requestId: "1", params: {}, cookies: {} };
+    const args = {
+      request: new Request("http://localhost/x"),
+      requestId: "1",
+      params: {},
+      cookies: {},
+    };
     const emptyResult = await empty.resolver(args);
     const nativeResult = await native.resolver(args);
     expect(emptyResult).toBeUndefined();

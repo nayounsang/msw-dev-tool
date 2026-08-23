@@ -21,7 +21,12 @@ describe("WebSocket custom response payloads", () => {
   });
 
   it("returns a Blob payload with metadata", async () => {
-    const blob = toWebSocketSendData({ type: "send", dataType: "Blob", value: "68 69", metadata: { type: "text/plain" } });
+    const blob = toWebSocketSendData({
+      type: "send",
+      dataType: "Blob",
+      value: "68 69",
+      metadata: { type: "text/plain" },
+    });
     expect(blob).toBeInstanceOf(Blob);
     expect((blob as Blob).type).toBe("text/plain");
     await expect((blob as Blob).text()).resolves.toBe("hi");

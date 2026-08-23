@@ -2,9 +2,7 @@ import { useRef, useSyncExternalStore } from "react";
 import { handlerStore } from "./handlerStore";
 import type { HandlerStoreState } from "./handlerStore";
 
-export const useHandlerStore = <T>(
-  selector: (state: HandlerStoreState) => T
-): T => {
+export const useHandlerStore = <T>(selector: (state: HandlerStoreState) => T): T => {
   const stateRef = useRef(handlerStore.getState());
   const selectorRef = useRef(selector);
   const sliceRef = useRef<T>(selector(handlerStore.getState()));
@@ -21,9 +19,5 @@ export const useHandlerStore = <T>(
     return sliceRef.current;
   };
 
-  return useSyncExternalStore(
-    handlerStore.subscribe,
-    getSnapshot,
-    getSnapshot
-  );
+  return useSyncExternalStore(handlerStore.subscribe, getSnapshot, getSnapshot);
 };

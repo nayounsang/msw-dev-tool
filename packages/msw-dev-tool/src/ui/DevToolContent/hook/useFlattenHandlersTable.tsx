@@ -10,9 +10,7 @@ import React, { useMemo } from "react";
 import { BehaviorSelect } from "../HandlerTable/BehaviorSelect";
 
 export const useFlattenHandlersTable = () => {
-  const {
-    flattenHandlers,
-  } = useHandlerStore();
+  const { flattenHandlers } = useHandlerStore();
 
   const columnHelper = createColumnHelper<FlattenHandler>();
   const columns: ColumnDef<FlattenHandler, any>[] = useMemo(() => {

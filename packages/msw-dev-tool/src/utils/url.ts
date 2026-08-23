@@ -3,10 +3,7 @@ import { PathParams } from "msw";
 /**
  * Replace path parameters with path object and formatted path
  */
-export const getPathWithParams = (
-  url: URL,
-  paramValues?: PathParams<string>
-): string => {
+export const getPathWithParams = (url: URL, paramValues?: PathParams<string>): string => {
   if (!paramValues) return url.pathname;
 
   return url.pathname
@@ -21,9 +18,7 @@ export const getPathWithParams = (
     .join("/");
 };
 
-export const getSearchParams = (
-  searchParams?: Record<string, string>
-): string => {
+export const getSearchParams = (searchParams?: Record<string, string>): string => {
   if (!searchParams || Object.keys(searchParams).length === 0) return "";
 
   const urlSearchParams = new URLSearchParams();
@@ -36,11 +31,7 @@ export const getSearchParams = (
 /**
  * Create full URL string
  */
-export const getTotalUrl = (
-  origin: string,
-  path: string,
-  searchParams: string
-): string => {
+export const getTotalUrl = (origin: string, path: string, searchParams: string): string => {
   const url = new URL(`${origin}${path}`);
   if (searchParams) {
     url.search = searchParams;

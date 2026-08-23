@@ -44,7 +44,7 @@ describe("setupDevToolServer", () => {
   it("initializes server, writes snapshot, and applies external behavior changes", async () => {
     const sessionPath = makeSession();
     const server = await setupDevToolServer(
-      http.get("/api/items", () => HttpResponse.json({ ok: true }))
+      http.get("/api/items", () => HttpResponse.json({ ok: true })),
     );
 
     expect(server).toBeTruthy();
@@ -59,54 +59,40 @@ describe("setupDevToolServer", () => {
 
     await syncNodeSession();
 
-    expect(nodeHandlerStore.getState().getHandlerBehavior(id)).toBe(
-      HttpHandlerBehavior.DELAY
-    );
+    expect(nodeHandlerStore.getState().getHandlerBehavior(id)).toBe(HttpHandlerBehavior.DELAY);
   });
 
   it("rejects a second active Node session in the same process", async () => {
     makeSession();
-    await setupDevToolServer(
-      http.get("/api/first", () => HttpResponse.json({ ok: true }))
-    );
+    await setupDevToolServer(http.get("/api/first", () => HttpResponse.json({ ok: true })));
 
     await expect(
-      setupDevToolServer(
-        http.get("/api/second", () => HttpResponse.json({ ok: true }))
-      )
+      setupDevToolServer(http.get("/api/second", () => HttpResponse.json({ ok: true }))),
     ).rejects.toThrow(/already initialized/);
   });
 
   it("seeds snapshot on setup and does not persist later in-process edits", async () => {
     const sessionPath = makeSession();
 
-    await setupDevToolServer(
-      http.get("/api/items", () => HttpResponse.json({ ok: true }))
-    );
+    await setupDevToolServer(http.get("/api/items", () => HttpResponse.json({ ok: true })));
 
     const seeded = await readSnapshot(sessionPath);
     expect(seeded?.state.flattenHandlers).toHaveLength(1);
-    expect(seeded?.state.flattenHandlers[0]?.behavior).toBe(
-      HttpHandlerBehavior.DEFAULT
-    );
+    expect(seeded?.state.flattenHandlers[0]?.behavior).toBe(HttpHandlerBehavior.DEFAULT);
 
     const id = nodeHandlerStore.getState().flattenHandlers[0]!.id;
     nodeHandlerStore.getState().setHandlerBehavior(id, HttpHandlerBehavior.DISABLE);
 
-    expect(nodeHandlerStore.getState().getHandlerBehavior(id)).toBe(
-      HttpHandlerBehavior.DISABLE
-    );
+    expect(nodeHandlerStore.getState().getHandlerBehavior(id)).toBe(HttpHandlerBehavior.DISABLE);
     expect((await readSnapshot(sessionPath))?.state.flattenHandlers[0]?.behavior).toBe(
-      HttpHandlerBehavior.DEFAULT
+      HttpHandlerBehavior.DEFAULT,
     );
   });
 
   it("applies external temp handlers and reset via syncNodeSession", async () => {
     const sessionPath = makeSession();
 
-    await setupDevToolServer(
-      http.get("/api/items", () => HttpResponse.json({ ok: true }))
-    );
+    await setupDevToolServer(http.get("/api/items", () => HttpResponse.json({ ok: true })));
 
     await addSnapshotTempHandler(sessionPath, {
       path: "/api/tmp",
@@ -117,25 +103,21 @@ describe("setupDevToolServer", () => {
     });
 
     await syncNodeSession();
-    expect(
-      nodeHandlerStore.getState().flattenHandlers.some((h) => h.type === "temp")
-    ).toBe(true);
+    expect(nodeHandlerStore.getState().flattenHandlers.some((h) => h.type === "temp")).toBe(true);
 
     await requestSnapshotReset(sessionPath);
     await syncNodeSession();
 
-    expect(
-      nodeHandlerStore.getState().flattenHandlers.every((h) => h.type === "default")
-    ).toBe(true);
+    expect(nodeHandlerStore.getState().flattenHandlers.every((h) => h.type === "default")).toBe(
+      true,
+    );
     expect((await readSnapshot(sessionPath))?.state.pendingReset).toBeUndefined();
   });
 
   it("registers wrapped WebSocket endpoints in the Node Core store", async () => {
     makeSession();
     const chat = ws.link("ws://node.test/chat");
-    const server = await setupDevToolServer(
-      chat.addEventListener("connection", () => undefined)
-    );
+    const server = await setupDevToolServer(chat.addEventListener("connection", () => undefined));
 
     expect(nodeHandlerStore.getState().webSocketEndpoints).toEqual([
       expect.objectContaining({
@@ -145,5 +127,4 @@ describe("setupDevToolServer", () => {
     ]);
     server.close();
   });
-
 });

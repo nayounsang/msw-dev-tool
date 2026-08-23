@@ -19,7 +19,7 @@ export const RequestForm = () => {
 
     const status = response.status;
     const statusText = response.statusText;
-    const headers = JSON.stringify(Object.fromEntries(response.headers),null,2);
+    const headers = JSON.stringify(Object.fromEntries(response.headers), null, 2);
     const data = await response.text();
 
     mutate({ isLoading: false, result: { status, statusText, headers, data } });
@@ -74,9 +74,7 @@ export const RequestForm = () => {
             md:mt-0
           `}
         >
-          <DownloadCloud
-            className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
-          />
+          <DownloadCloud className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
           <span>Fetch Data</span>
         </button>
       </div>

@@ -21,7 +21,7 @@ export const navbar = (
             "font-bold",
             "hover:transition-all hover:duration-1000 motion-reduce:hover:transition-none",
             "[mask-image:linear-gradient(60deg,#000_25%,rgba(0,0,0,.2)_50%,#000_75%)] [mask-position:0] [mask-size:400%]",
-            "hover:[mask-position:100%]"
+            "hover:[mask-position:100%]",
           )}
         >
           <span className="text-orange-500">MSW</span> DEV TOOL
@@ -44,8 +44,6 @@ export const footer = (
     >
       Powered by nextra
     </a>
-    <p className="mt-6 text-xs">
-      © {new Date().getFullYear()} The msw dev tool Project.
-    </p>
+    <p className="mt-6 text-xs">© {new Date().getFullYear()} The msw dev tool Project.</p>
   </Footer>
 );

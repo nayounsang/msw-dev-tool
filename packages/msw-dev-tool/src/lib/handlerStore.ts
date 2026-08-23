@@ -64,23 +64,18 @@ export const useHandlerStore = create<HandlerStoreState>()(
             });
             const behavior = get().getHandlerBehavior(id);
 
-            return await getHandlerResponseByBehavior(behavior, () =>
-              originalResolver(args)
-            );
+            return await getHandlerResponseByBehavior(behavior, () => originalResolver(args));
           };
           return handler;
         });
 
         const setupWorker = await _setupWorker;
         if (!setupWorker) {
-          throw new Error(
-            "Fail to import 'msw/browser'. Is environment is not browser?"
-          );
+          throw new Error("Fail to import 'msw/browser'. Is environment is not browser?");
         }
         const worker = setupWorker(..._handlers);
 
-        const { flattenHandlers, unsupportedHandlers } =
-          initMSWDevToolStore(worker);
+        const { flattenHandlers, unsupportedHandlers } = initMSWDevToolStore(worker);
 
         const { flattenHandlers: mergedHandlers } = mergeStorageData({
           flattenHandlers,
@@ -98,8 +93,7 @@ export const useHandlerStore = create<HandlerStoreState>()(
         const _worker = get().getWorker();
         _worker.resetHandlers();
 
-        const { worker, flattenHandlers, unsupportedHandlers } =
-          initMSWDevToolStore(_worker);
+        const { worker, flattenHandlers, unsupportedHandlers } = initMSWDevToolStore(_worker);
 
         set({
           worker,
@@ -121,9 +115,7 @@ export const useHandlerStore = create<HandlerStoreState>()(
         } = data;
 
         const contentLength = {
-          [MimeType.APPLICATION_JSON]: response
-            ? new Blob([response]).size.toString()
-            : "0",
+          [MimeType.APPLICATION_JSON]: response ? new Blob([response]).size.toString() : "0",
         } as Record<MimeType, string>;
 
         const id = getRowId({
@@ -133,9 +125,7 @@ export const useHandlerStore = create<HandlerStoreState>()(
 
         const headers = {
           "Content-Type": contentType,
-          ...(contentLength?.[contentType]
-            ? { "Content-Length": contentLength[contentType] }
-            : {}),
+          ...(contentLength?.[contentType] ? { "Content-Length": contentLength[contentType] } : {}),
           ...(header ? JSON.parse(header) : {}),
         };
 
@@ -204,14 +194,12 @@ export const useHandlerStore = create<HandlerStoreState>()(
       partialize: (state) => ({
         flattenHandlers: state.flattenHandlers,
       }),
-    }
-  )
+    },
+  ),
 );
 
 export const setupDevToolWorker = useHandlerStore.getState().setupDevToolWorker;
 
 export const isDuplicateHandler = (id: string) => {
-  return useHandlerStore
-    .getState()
-    .flattenHandlers.some((handler) => handler.id === id);
+  return useHandlerStore.getState().flattenHandlers.some((handler) => handler.id === id);
 };

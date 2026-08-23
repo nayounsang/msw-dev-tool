@@ -7,9 +7,7 @@ const nextConfig: NextConfig = {
     config.resolve = config.resolve ?? {};
     const prev = config.resolve.alias;
     const aliases =
-      typeof prev === "object" && prev !== null && !Array.isArray(prev)
-        ? { ...prev }
-        : {};
+      typeof prev === "object" && prev !== null && !Array.isArray(prev) ? { ...prev } : {};
 
     if (isServer) {
       aliases["msw/browser"] = false;

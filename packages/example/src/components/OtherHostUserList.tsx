@@ -23,10 +23,7 @@ export const OtherHostUserList = () => {
       }}
     >
       <h2>Other Host User List</h2>
-      <button
-        onClick={fetchUsers}
-        style={{ padding: "10px 20px", cursor: "pointer" }}
-      >
+      <button onClick={fetchUsers} style={{ padding: "10px 20px", cursor: "pointer" }}>
         Fetch
       </button>
       <div style={{ height: "180px", overflow: "scroll" }}>

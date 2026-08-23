@@ -43,7 +43,10 @@ export class SessionController {
     return this.repository?.sessionPath ?? null;
   }
 
-  public async start(flattenHandlers: FlattenHandler[], webSocket: WebSocketEndpointConfig[] = []): Promise<void> {
+  public async start(
+    flattenHandlers: FlattenHandler[],
+    webSocket: WebSocketEndpointConfig[] = [],
+  ): Promise<void> {
     const sessionPath = await ensureSessionPath();
     this.repository = new SnapshotRepository(sessionPath);
     this.cleanedUp = false;
@@ -52,9 +55,9 @@ export class SessionController {
 
     const seeded = await this.repository.mutate(() =>
       bumpSnapshot(createEmptySnapshot(), {
-      flattenHandlers: toSerializableFlattenHandlers(flattenHandlers),
-      webSocket: webSocketEndpointsSchema.parse(webSocket),
-      })
+        flattenHandlers: toSerializableFlattenHandlers(flattenHandlers),
+        webSocket: webSocketEndpointsSchema.parse(webSocket),
+      }),
     );
     this.lastWrittenRevision = seeded.revision;
     this.lastAppliedRevision = seeded.revision;
@@ -150,7 +153,7 @@ export class SessionController {
 
     this.pollTimer = setInterval(
       () => void this.sync(),
-      this.options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS
+      this.options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS,
     );
     this.pollTimer.unref?.();
   }

@@ -7,14 +7,8 @@ export type TextAreaProps = ComponentProps<"textarea"> & {
 
 export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
   ({ className, ...props }, ref) => {
-    return (
-      <textarea
-        ref={ref}
-        className={clsx("msw-dt-textarea", className)}
-        {...props}
-      />
-    );
-  }
+    return <textarea ref={ref} className={clsx("msw-dt-textarea", className)} {...props} />;
+  },
 );
 
 TextArea.displayName = "TextArea";

@@ -1,10 +1,6 @@
 import { PathParams } from "msw";
 import React, { useState } from "react";
-import {
-  getPathWithParams,
-  getSearchParams,
-  getTotalUrl,
-} from "../../../utils/url";
+import { getPathWithParams, getSearchParams, getTotalUrl } from "../../../utils/url";
 import { Box, Button, Heading } from "@radix-ui/themes";
 import { PlayIcon } from "@radix-ui/react-icons";
 

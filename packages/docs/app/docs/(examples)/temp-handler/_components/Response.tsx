@@ -33,7 +33,7 @@ const Skeleton = ({ mode, className = "" }: SkeletonProps) => {
           "h-4 w-1/4": mode === "title",
           "h-32 w-full": mode === "content",
         },
-        className
+        className,
       )}
     />
   );
@@ -65,9 +65,7 @@ export const Response = () => {
         {result.status} {result.statusText}
       </ResponseSection>
       <ResponseSection title="Data">{result.data}</ResponseSection>
-      <ResponseSection title="Headers">
-        {result.headers}
-      </ResponseSection>
+      <ResponseSection title="Headers">{result.headers}</ResponseSection>
     </div>
   );
 };

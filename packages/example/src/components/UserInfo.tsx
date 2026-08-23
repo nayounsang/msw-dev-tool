@@ -39,11 +39,7 @@ export const UserInfo = () => {
         Fetch User by ID
       </button>
       <div style={{ height: "180px", overflow: "scroll" }}>
-        <UserInfoTable
-          user={user}
-          errorMessage={error}
-          isFetching={isFetching}
-        />
+        <UserInfoTable user={user} errorMessage={error} isFetching={isFetching} />
       </div>
     </section>
   );

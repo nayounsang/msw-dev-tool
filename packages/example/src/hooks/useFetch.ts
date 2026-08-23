@@ -1,9 +1,6 @@
 import { useState } from "react";
 
-export const useFetch = <T>(
-  input: string | URL | globalThis.Request,
-  init?: RequestInit
-) => {
+export const useFetch = <T>(input: string | URL | globalThis.Request, init?: RequestInit) => {
   const [isFetching, setIsFetching] = useState(false);
   const [data, setData] = useState<T | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);

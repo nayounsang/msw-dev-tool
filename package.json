@@ -15,6 +15,8 @@
     "dev:example": "turbo run dev --filter=example...",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "turbo run test",
     "test:coverage": "turbo run test:coverage",
     "version-packages": "yarn changeset version && yarn install --mode=update-lockfile",
@@ -25,6 +27,7 @@
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.10",
+    "prettier": "^3.9.6",
     "ts-node": "^10.9.2",
     "turbo": "^2.5.4",
     "typescript": "^5.8.3",

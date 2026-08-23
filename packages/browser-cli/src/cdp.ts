@@ -1,11 +1,17 @@
 import WebSocket from "ws";
 
-export type CdpTarget = { id: string; type: string; title: string; url: string; webSocketDebuggerUrl?: string };
+export type CdpTarget = {
+  id: string;
+  type: string;
+  title: string;
+  url: string;
+  webSocketDebuggerUrl?: string;
+};
 export const DEFAULT_CDP_TIMEOUT_MS = 10_000;
 
 export const listTargets = async (
   cdpUrl: string,
-  timeoutMs = DEFAULT_CDP_TIMEOUT_MS
+  timeoutMs = DEFAULT_CDP_TIMEOUT_MS,
 ): Promise<CdpTarget[]> => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -20,17 +26,21 @@ export const listTargets = async (
   } finally {
     clearTimeout(timeout);
   }
-  if (!response.ok) throw new Error(`Failed to list Chrome targets: ${response.status} ${response.statusText}`);
-  return await response.json() as CdpTarget[];
+  if (!response.ok)
+    throw new Error(`Failed to list Chrome targets: ${response.status} ${response.statusText}`);
+  return (await response.json()) as CdpTarget[];
 };
 
 export class CdpClient {
   private nextId = 1;
-  private readonly pending = new Map<number, {
-    resolve: (value: unknown) => void;
-    reject: (reason: Error) => void;
-    timeout: ReturnType<typeof setTimeout>;
-  }>();
+  private readonly pending = new Map<
+    number,
+    {
+      resolve: (value: unknown) => void;
+      reject: (reason: Error) => void;
+      timeout: ReturnType<typeof setTimeout>;
+    }
+  >();
   private constructor(private readonly socket: WebSocket) {
     socket.on("message", (raw) => {
       let message: { id?: number; result?: unknown; error?: { message: string } };
@@ -53,7 +63,13 @@ export class CdpClient {
   public static async connect(url: string, timeoutMs = DEFAULT_CDP_TIMEOUT_MS): Promise<CdpClient> {
     const socket = new WebSocket(url);
     await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => finish(() => reject(new Error(`Timed out while connecting to Chrome after ${timeoutMs}ms`))), timeoutMs);
+      const timeout = setTimeout(
+        () =>
+          finish(() =>
+            reject(new Error(`Timed out while connecting to Chrome after ${timeoutMs}ms`)),
+          ),
+        timeoutMs,
+      );
       const finish = (callback: () => void) => {
         clearTimeout(timeout);
         socket.off("open", onOpen);
@@ -73,7 +89,7 @@ export class CdpClient {
   public call(
     method: string,
     params?: Record<string, unknown>,
-    timeoutMs = DEFAULT_CDP_TIMEOUT_MS
+    timeoutMs = DEFAULT_CDP_TIMEOUT_MS,
   ): Promise<unknown> {
     const id = this.nextId++;
     return new Promise((resolve, reject) => {
@@ -98,7 +114,9 @@ export class CdpClient {
       }
     });
   }
-  public close() { this.socket.close(); }
+  public close() {
+    this.socket.close();
+  }
   private rejectAll(error: Error) {
     for (const pending of this.pending.values()) {
       clearTimeout(pending.timeout);

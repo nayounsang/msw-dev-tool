@@ -11,12 +11,9 @@ import { getRowId } from "../lib/utils";
 
 export const handlerSchema = z
   .object({
-    path: z
-      .string()
-      .min(1, { message: "Path is required" })
-      .refine(isValidUrl, {
-        message: "Invalid URL format",
-      }),
+    path: z.string().min(1, { message: "Path is required" }).refine(isValidUrl, {
+      message: "Invalid URL format",
+    }),
     delay: z.number().min(0, { message: "Invalid delay time" }).optional(),
     contentType: z.nativeEnum(MimeType),
     status: z.nativeEnum(StringHttpStatusCode),
@@ -68,6 +65,6 @@ export const handlerSchema = z
     {
       message: "Duplicate handler. Change method or path.",
       path: ["path"],
-    }
+    },
   );
 export type HandlerSchema = z.infer<typeof handlerSchema>;

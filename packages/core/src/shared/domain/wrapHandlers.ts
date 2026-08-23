@@ -5,9 +5,7 @@ import { getHandlerResponseByBehavior } from "../utils/handler";
 import { getRowId } from "../utils/store";
 import { isHttpHandler } from "../utils/validate";
 
-const toStrictResolverResult = async (
-  result: unknown
-): Promise<BehaviorResolverResult> => {
+const toStrictResolverResult = async (result: unknown): Promise<BehaviorResolverResult> => {
   const value = result instanceof Promise ? await result : result;
 
   if (value === undefined || value === null) {
@@ -36,7 +34,7 @@ const toStrictResolverResult = async (
 export const wrapHandlersWithBehavior = <T>(
   handlers: T[],
   getBehavior: (id: string) => HttpHandlerBehavior | undefined,
-  getCustomResponse: (id: string) => CustomResponse | undefined = () => undefined
+  getCustomResponse: (id: string) => CustomResponse | undefined = () => undefined,
 ): T[] => {
   return handlers.map((handler) => {
     if (!isHttpHandler(handler)) {
@@ -54,7 +52,7 @@ export const wrapHandlersWithBehavior = <T>(
       return await getHandlerResponseByBehavior(
         behavior,
         () => toStrictResolverResult(originalResolver(args)),
-        getCustomResponse(id)
+        getCustomResponse(id),
       );
     };
     return handler;

@@ -1,9 +1,4 @@
-import {
-  readSnapshot,
-  readSnapshotOrEmpty,
-  withLockedMutation,
-  writeSnapshot,
-} from "./file";
+import { readSnapshot, readSnapshotOrEmpty, withLockedMutation, writeSnapshot } from "./file";
 import { SessionSnapshot } from "./types";
 
 /**
@@ -27,9 +22,7 @@ export class SnapshotRepository {
     return writeSnapshot(this.sessionPath, snapshot);
   }
 
-  public mutate(
-    mutate: (previous: SessionSnapshot) => SessionSnapshot
-  ): Promise<SessionSnapshot> {
+  public mutate(mutate: (previous: SessionSnapshot) => SessionSnapshot): Promise<SessionSnapshot> {
     return withLockedMutation(this.sessionPath, mutate);
   }
 }

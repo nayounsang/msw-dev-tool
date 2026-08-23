@@ -16,9 +16,7 @@ describe("mergeStorageData", () => {
     const id = getRowId({ path: "/a", method: "get" });
     const merged = mergeStorageData(
       {
-        flattenHandlers: [
-          makeFlatten({ id, path: "/a", method: HttpMethod.GET }),
-        ],
+        flattenHandlers: [makeFlatten({ id, path: "/a", method: HttpMethod.GET })],
       },
       {
         flattenHandlers: [
@@ -30,13 +28,11 @@ describe("mergeStorageData", () => {
             type: "default",
           }),
         ],
-      }
+      },
     );
 
     expect(merged.flattenHandlers).toHaveLength(1);
-    expect(merged.flattenHandlers[0].behavior).toBe(
-      CustomBehavior.NETWORK_ERROR
-    );
+    expect(merged.flattenHandlers[0].behavior).toBe(CustomBehavior.NETWORK_ERROR);
   });
 
   it("overlays a saved custom response onto a matching handler", () => {
@@ -58,7 +54,7 @@ describe("mergeStorageData", () => {
             customResponse,
           }),
         ],
-      }
+      },
     );
 
     expect(merged.flattenHandlers[0]).toMatchObject({
@@ -76,10 +72,7 @@ describe("mergeStorageData", () => {
       behavior: HttpHandlerBehavior.DEFAULT,
     });
 
-    const merged = mergeStorageData(
-      { flattenHandlers: [incoming] },
-      { flattenHandlers: [] }
-    );
+    const merged = mergeStorageData({ flattenHandlers: [incoming] }, { flattenHandlers: [] });
 
     expect(merged.flattenHandlers[0]).toEqual(incoming);
   });
@@ -115,13 +108,10 @@ describe("mergeStorageData", () => {
             },
           }),
         ],
-      }
+      },
     );
 
-    expect(merged.flattenHandlers.map((h) => h.id)).toEqual([
-      defaultId,
-      tempId,
-    ]);
+    expect(merged.flattenHandlers.map((h) => h.id)).toEqual([defaultId, tempId]);
     expect(merged.flattenHandlers[1].type).toBe("temp");
   });
 
@@ -148,7 +138,7 @@ describe("mergeStorageData", () => {
             type: "temp",
           }),
         ],
-      }
+      },
     );
 
     expect(merged.flattenHandlers).toHaveLength(1);
@@ -178,7 +168,7 @@ describe("mergeStorageData", () => {
             type: "default",
           }),
         ],
-      }
+      },
     );
 
     expect(merged.flattenHandlers).toHaveLength(1);

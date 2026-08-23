@@ -1,9 +1,4 @@
-import {
-  delay,
-  HttpHandler as MswHttpHandler,
-  HttpMethods,
-  HttpResponse,
-} from "msw";
+import { delay, HttpHandler as MswHttpHandler, HttpMethods, HttpResponse } from "msw";
 import {
   FlattenHandler,
   CustomResponse,
@@ -21,9 +16,8 @@ import { isHttpHandler } from "../utils/validate";
 
 export type { TempHandlerInput };
 
-const isRuntimeFlattenHandler = (
-  handler: HydratableFlattenHandler
-): handler is FlattenHandler => "handler" in handler;
+const isRuntimeFlattenHandler = (handler: HydratableFlattenHandler): handler is FlattenHandler =>
+  "handler" in handler;
 
 const toMswMethod = (method: HttpMethod): HttpMethods => {
   switch (method) {
@@ -47,7 +41,7 @@ const toMswMethod = (method: HttpMethod): HttpMethods => {
 export const buildTempHandler = (
   data: TempHandlerInput,
   getBehavior: (id: string) => HttpHandlerBehavior | undefined,
-  getCustomResponse: (id: string) => CustomResponse | undefined = () => undefined
+  getCustomResponse: (id: string) => CustomResponse | undefined = () => undefined,
 ): { handler: HttpHandler; flattenHandler: FlattenHandler } => {
   const {
     path,
@@ -61,22 +55,16 @@ export const buildTempHandler = (
   } = data;
 
   const contentLength: Partial<Record<MimeType, string>> = {
-    [MimeType.APPLICATION_JSON]: response
-      ? new Blob([response]).size.toString()
-      : "0",
+    [MimeType.APPLICATION_JSON]: response ? new Blob([response]).size.toString() : "0",
   };
 
   const id = getRowId({ path, method });
 
-  const parsedHeader = header
-    ? headerRecordSchema.parse(JSON.parse(header))
-    : undefined;
+  const parsedHeader = header ? headerRecordSchema.parse(JSON.parse(header)) : undefined;
 
   const headers = {
     "Content-Type": contentType,
-    ...(contentLength[contentType]
-      ? { "Content-Length": contentLength[contentType] }
-      : {}),
+    ...(contentLength[contentType] ? { "Content-Length": contentLength[contentType] } : {}),
     ...parsedHeader,
   };
 
@@ -93,7 +81,7 @@ export const buildTempHandler = (
           headers,
         });
       },
-      getCustomResponse(id)
+      getCustomResponse(id),
     );
   });
 
@@ -121,7 +109,7 @@ export const buildTempHandler = (
 export const rehydrateTempHandlers = (
   handlers: HydratableFlattenHandler[],
   getBehavior: (id: string) => HttpHandlerBehavior | undefined,
-  getCustomResponse: (id: string) => CustomResponse | undefined = () => undefined
+  getCustomResponse: (id: string) => CustomResponse | undefined = () => undefined,
 ): FlattenHandler[] => {
   return handlers.flatMap((entry) => {
     if (entry.type !== "temp") {
@@ -130,11 +118,7 @@ export const rehydrateTempHandlers = (
     if (!entry.tempInput) {
       return [];
     }
-    const { flattenHandler } = buildTempHandler(
-      entry.tempInput,
-      getBehavior,
-      getCustomResponse
-    );
+    const { flattenHandler } = buildTempHandler(entry.tempInput, getBehavior, getCustomResponse);
     return [{ ...flattenHandler, behavior: entry.behavior, customResponse: entry.customResponse }];
   });
 };
