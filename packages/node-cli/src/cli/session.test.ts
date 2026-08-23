@@ -6,6 +6,7 @@ const api = vi.hoisted(() => ({
   addSnapshotWebSocketEndpoint: vi.fn(), addSnapshotWebSocketListener: vi.fn(), getSnapshotWebSocketEndpoint: vi.fn(), listSnapshotWebSocketEndpoints: vi.fn(),
   removeSnapshotWebSocketEndpoint: vi.fn(), removeSnapshotWebSocketListener: vi.fn(), setSnapshotWebSocketEndpointEnabled: vi.fn(),
   setSnapshotWebSocketListenerBehavior: vi.fn(), setSnapshotWebSocketListenerCustomResponse: vi.fn(), setSnapshotWebSocketListenerEnabled: vi.fn(),
+  setSnapshotWebSocketListenerResponse: vi.fn(), setSnapshotWebSocketListenerSchedule: vi.fn(),
 }));
 vi.mock("@msw-dev-tool/core/node/internal", () => api);
 import { FileSnapshotCliSession } from "./session";
@@ -58,6 +59,8 @@ describe("FileSnapshotCliSession", () => {
     api.setSnapshotWebSocketListenerEnabled.mockReturnValue(wsSnapshot(endpointWithListener));
     api.setSnapshotWebSocketListenerBehavior.mockReturnValue(wsSnapshot(endpointWithListener));
     api.setSnapshotWebSocketListenerCustomResponse.mockReturnValue(wsSnapshot({ ...endpointWithListener, listeners: [{ ...wsListener, customResponse: { type: "send", dataType: "string", value: "hello" } }] }));
+    api.setSnapshotWebSocketListenerResponse.mockReturnValue(wsSnapshot({ ...endpointWithListener, listeners: [{ ...wsListener, response: { type: "send", dataType: "string", value: "default" } }] }));
+    api.setSnapshotWebSocketListenerSchedule.mockReturnValue(wsSnapshot({ ...endpointWithListener, listeners: [{ ...wsListener, delay: 300, repeat: { interval: 500, repetitions: 3 } }] }));
     const session = new FileSnapshotCliSession("/tmp/session.json");
     await expect(session.listWebSocket()).resolves.toEqual([wsEndpoint]);
     await expect(session.getWebSocketEndpoint("ws-1")).resolves.toEqual(wsEndpoint);
@@ -70,11 +73,17 @@ describe("FileSnapshotCliSession", () => {
       session.setWebSocketListenerEnabled(wsListener.info.id, false),
       session.setWebSocketListenerBehavior(wsListener.info.id, { preset: "close" }),
       session.setWebSocketListenerCustomResponse(wsListener.info.id, { type: "send", dataType: "string", value: "hello" }),
+      session.addWebSocketListener({ endpointId: "ws-1", behavior: { preset: "default" }, response: { type: "send", dataType: "string", value: "default" }, customResponse: { type: "send", dataType: "string", value: "custom" }, delay: 300, repeat: { interval: 500, repetitions: 3 } }),
+      session.setWebSocketListenerResponse(wsListener.info.id, { type: "send", dataType: "string", value: "default" }),
+      session.setWebSocketListenerSchedule(wsListener.info.id, { delay: 300, repeat: { interval: 500, repetitions: "Infinity" } }),
     ];
     await vi.advanceTimersByTimeAsync(300);
-    await expect(Promise.all(calls)).resolves.toHaveLength(8);
+    await expect(Promise.all(calls)).resolves.toHaveLength(11);
     expect(api.addSnapshotWebSocketEndpoint).toHaveBeenCalledWith("/tmp/session.json", wsEndpoint.matcher);
     expect(api.setSnapshotWebSocketListenerBehavior).toHaveBeenCalledWith("/tmp/session.json", wsListener.info.id, { preset: "close" });
+    expect(api.addSnapshotWebSocketListener).toHaveBeenCalledWith("/tmp/session.json", "ws-1", { behavior: { preset: "default" }, response: { type: "send", dataType: "string", value: "default" }, customResponse: { type: "send", dataType: "string", value: "custom" }, delay: 300, repeat: { interval: 500, repetitions: 3 } });
+    expect(api.setSnapshotWebSocketListenerResponse).toHaveBeenCalledWith("/tmp/session.json", wsListener.info.id, { type: "send", dataType: "string", value: "default" });
+    expect(api.setSnapshotWebSocketListenerSchedule).toHaveBeenCalledWith("/tmp/session.json", wsListener.info.id, { delay: 300, repeat: { interval: 500, repetitions: "Infinity" } });
     vi.useRealTimers();
   });
 

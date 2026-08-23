@@ -136,15 +136,18 @@ describe("CdpBrowserCliSession", () => {
     const removeWebSocketListener = vi.fn(() => ({ endpoints: [] }));
     const setWebSocketListenerEnabled = vi.fn(() => ({ endpoint: { endpointId: "endpoint-a" }, listener: { info: { id: "listener-a" } } }));
     const setWebSocketListenerBehavior = vi.fn(() => ({ endpoint: { endpointId: "endpoint-a" }, listener: { info: { id: "listener-a" } } }));
+    const setWebSocketListenerResponse = vi.fn(() => ({ endpoint: { endpointId: "endpoint-a" }, listener: { info: { id: "listener-a" } } }));
+    const setWebSocketListenerSchedule = vi.fn(() => ({ endpoint: { endpointId: "endpoint-a" }, listener: { info: { id: "listener-a" } } }));
     const { client, call } = createEvaluatingClient({
       methods: {
         listWebSocket: 1, getWebSocketEndpoint: 1, addWebSocketEndpoint: 1,
         removeWebSocketEndpoint: 1, setWebSocketEndpointEnabled: 1, addWebSocketListener: 1,
         removeWebSocketListener: 1, setWebSocketListenerEnabled: 1, setWebSocketListenerBehavior: 1,
+        setWebSocketListenerResponse: 1, setWebSocketListenerSchedule: 1,
       },
       listWebSocket, getWebSocketEndpoint, addWebSocketEndpoint, removeWebSocketEndpoint,
       setWebSocketEndpointEnabled, addWebSocketListener, removeWebSocketListener,
-      setWebSocketListenerEnabled, setWebSocketListenerBehavior,
+      setWebSocketListenerEnabled, setWebSocketListenerBehavior, setWebSocketListenerResponse, setWebSocketListenerSchedule,
     });
     const session = new CdpBrowserCliSession(client);
     const matcher = { kind: "regexp" as const, source: "browser\\.example", flags: "i" };
@@ -159,10 +162,16 @@ describe("CdpBrowserCliSession", () => {
     await session.removeWebSocketListener("listener-a");
     await session.setWebSocketListenerEnabled("listener-a", false);
     await session.setWebSocketListenerBehavior("listener-a", { preset: "close", options: { code: 4001, reason: "done" } });
+    await session.addWebSocketListener({ endpointId: "endpoint-a", behavior: { preset: "default" }, response: { type: "send", dataType: "string", value: "default" }, customResponse: { type: "send", dataType: "string", value: "custom" }, delay: 300, repeat: { interval: 500, repetitions: 3 } });
+    await session.setWebSocketListenerResponse("listener-a", { type: "send", dataType: "string", value: "default" });
+    await session.setWebSocketListenerSchedule("listener-a", { delay: 300, repeat: { interval: 500, repetitions: "Infinity" } });
 
     expect(addWebSocketEndpoint).toHaveBeenCalledWith(matcher);
     expect(addWebSocketListener).toHaveBeenCalledWith("endpoint-a", behavior);
-    expect(call).toHaveBeenCalledTimes(9);
+    expect(addWebSocketListener).toHaveBeenLastCalledWith({ endpointId: "endpoint-a", behavior: { preset: "default" }, response: { type: "send", dataType: "string", value: "default" }, customResponse: { type: "send", dataType: "string", value: "custom" }, delay: 300, repeat: { interval: 500, repetitions: 3 } });
+    expect(setWebSocketListenerResponse).toHaveBeenCalledWith("listener-a", { type: "send", dataType: "string", value: "default" });
+    expect(setWebSocketListenerSchedule).toHaveBeenCalledWith("listener-a", { delay: 300, repeat: { interval: 500, repetitions: "Infinity" } });
+    expect(call).toHaveBeenCalledTimes(12);
     expect(call.mock.calls[2]?.[1].expression).toContain('"source":"browser\\\\.example"');
     expect(call.mock.calls[4]?.[1].expression).toContain("false");
   });

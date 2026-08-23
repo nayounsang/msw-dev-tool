@@ -163,16 +163,34 @@ describe("closeWebSocketConnections", () => {
     return { adapter, endpointId, listenerId, client, store };
   };
 
-  it("uses a temporary default response with delay, repetitions, and interval", async () => {
+  it("delays the first temporary default response", async () => {
     vi.useFakeTimers();
     try {
-      const { adapter, endpointId, listenerId, client, store } = await setupCustomResponseHarness("scheduled-default");
+      const { adapter, endpointId, listenerId, client, store } = await setupCustomResponseHarness("scheduled-default-delay");
       store.getState().setWebSocketListenerBehavior(listenerId, { preset: "default" });
       store.getState().setWebSocketListenerResponse(listenerId, { type: "send", dataType: "string", value: "default" });
-      store.getState().setWebSocketListenerSchedule(listenerId, { delay: 100, repeat: { interval: 50, repetitions: 3 } });
+      store.getState().setWebSocketListenerSchedule(listenerId, { delay: 100 });
       adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
       expect(client.send).not.toHaveBeenCalled();
-      await vi.advanceTimersByTimeAsync(100);
+      await vi.advanceTimersByTimeAsync(49);
+      expect(client.send).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(1);
+      expect(client.send).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(50);
+      expect(client.send).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("repeats the response at the configured interval and includes the first response in repetitions", async () => {
+    vi.useFakeTimers();
+    try {
+      const { adapter, endpointId, listenerId, client, store } = await setupCustomResponseHarness("scheduled-default-repeat");
+      store.getState().setWebSocketListenerBehavior(listenerId, { preset: "default" });
+      store.getState().setWebSocketListenerResponse(listenerId, { type: "send", dataType: "string", value: "default" });
+      store.getState().setWebSocketListenerSchedule(listenerId, { repeat: { interval: 50, repetitions: 3 } });
+      adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
       expect(client.send).toHaveBeenCalledTimes(1);
       await vi.advanceTimersByTimeAsync(49);
       expect(client.send).toHaveBeenCalledTimes(1);

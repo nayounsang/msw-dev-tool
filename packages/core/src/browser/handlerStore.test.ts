@@ -152,6 +152,24 @@ describe("browser control bridge", () => {
     ]);
     expect(sessionStorage.getItem(STORAGE_KEY)).not.toBe(persistedBeforeInvalidBehavior);
     expect(bridge.removeWebSocketListener(listener.listener.info.id).endpoints[0]?.listeners).toEqual([]);
+    const configured = bridge.addWebSocketListener({
+      endpointId: added.endpoint.endpointId,
+      behavior: { preset: "default" },
+      response: { type: "send", dataType: "string", value: "default" },
+      customResponse: { type: "send", dataType: "string", value: "custom" },
+      delay: 300,
+      repeat: { interval: 500, repetitions: "Infinity" },
+    });
+    expect(configured.listener).toMatchObject({
+      behavior: { preset: "default" },
+      response: { value: "default" },
+      customResponse: { value: "custom" },
+      delay: 300,
+      repeat: { interval: 500, repetitions: "Infinity" },
+    });
+    expect(bridge.setWebSocketListenerResponse(configured.listener.info.id, { type: "send", dataType: "string", value: "updated" }).listener.response).toMatchObject({ value: "updated" });
+    expect(bridge.setWebSocketListenerSchedule(configured.listener.info.id, { delay: 100, repeat: { interval: 50, repetitions: 3 } }).listener).toMatchObject({ delay: 100, repeat: { interval: 50, repetitions: 3 } });
+    bridge.removeWebSocketListener(configured.listener.info.id);
     expect(bridge.removeWebSocketEndpoint(added.endpoint.endpointId).endpoints).toEqual([]);
     const matcher = { kind: "string" as const, value: "ws://browser.test/load" };
     const results = await Promise.all(
