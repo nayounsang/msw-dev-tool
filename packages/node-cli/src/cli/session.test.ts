@@ -5,7 +5,7 @@ const api = vi.hoisted(() => ({
   removeSnapshotTempHandler: vi.fn(), requestSnapshotReset: vi.fn(), setSnapshotBehavior: vi.fn(), setSnapshotCustomResponse: vi.fn(),
   addSnapshotWebSocketEndpoint: vi.fn(), addSnapshotWebSocketListener: vi.fn(), getSnapshotWebSocketEndpoint: vi.fn(), listSnapshotWebSocketEndpoints: vi.fn(),
   removeSnapshotWebSocketEndpoint: vi.fn(), removeSnapshotWebSocketListener: vi.fn(), setSnapshotWebSocketEndpointEnabled: vi.fn(),
-  setSnapshotWebSocketListenerBehavior: vi.fn(), setSnapshotWebSocketListenerEnabled: vi.fn(),
+  setSnapshotWebSocketListenerBehavior: vi.fn(), setSnapshotWebSocketListenerCustomResponse: vi.fn(), setSnapshotWebSocketListenerEnabled: vi.fn(),
 }));
 vi.mock("@msw-dev-tool/core/node/internal", () => api);
 import { FileSnapshotCliSession } from "./session";
@@ -57,6 +57,7 @@ describe("FileSnapshotCliSession", () => {
     api.removeSnapshotWebSocketListener.mockReturnValue(wsSnapshot());
     api.setSnapshotWebSocketListenerEnabled.mockReturnValue(wsSnapshot(endpointWithListener));
     api.setSnapshotWebSocketListenerBehavior.mockReturnValue(wsSnapshot(endpointWithListener));
+    api.setSnapshotWebSocketListenerCustomResponse.mockReturnValue(wsSnapshot({ ...endpointWithListener, listeners: [{ ...wsListener, customResponse: { type: "send", dataType: "string", value: "hello" } }] }));
     const session = new FileSnapshotCliSession("/tmp/session.json");
     await expect(session.listWebSocket()).resolves.toEqual([wsEndpoint]);
     await expect(session.getWebSocketEndpoint("ws-1")).resolves.toEqual(wsEndpoint);
@@ -68,9 +69,10 @@ describe("FileSnapshotCliSession", () => {
       session.removeWebSocketListener(wsListener.info.id),
       session.setWebSocketListenerEnabled(wsListener.info.id, false),
       session.setWebSocketListenerBehavior(wsListener.info.id, { preset: "close" }),
+      session.setWebSocketListenerCustomResponse(wsListener.info.id, { type: "send", dataType: "string", value: "hello" }),
     ];
     await vi.advanceTimersByTimeAsync(300);
-    await expect(Promise.all(calls)).resolves.toHaveLength(7);
+    await expect(Promise.all(calls)).resolves.toHaveLength(8);
     expect(api.addSnapshotWebSocketEndpoint).toHaveBeenCalledWith("/tmp/session.json", wsEndpoint.matcher);
     expect(api.setSnapshotWebSocketListenerBehavior).toHaveBeenCalledWith("/tmp/session.json", wsListener.info.id, { preset: "close" });
     vi.useRealTimers();

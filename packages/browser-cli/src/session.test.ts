@@ -55,6 +55,18 @@ describe("CdpBrowserCliSession", () => {
     }));
   });
 
+  it("sends WebSocket custom response configuration through the page control bridge", async () => {
+    const call = vi.fn().mockResolvedValue({ result: { value: { endpoint: {}, listener: {} } } });
+    const session = new CdpBrowserCliSession({ call } as unknown as CdpClient);
+
+    await expect(session.setWebSocketListenerCustomResponse("listener-a", {
+      type: "send", dataType: "Blob", value: "68 69", metadata: { type: "text/plain" },
+    })).resolves.toEqual({ endpoint: {}, listener: {} });
+    expect(call).toHaveBeenCalledWith("Runtime.evaluate", expect.objectContaining({
+      expression: expect.stringContaining('"setWebSocketListenerCustomResponse"'),
+    }));
+  });
+
   it("surfaces a bridge error from Chrome", async () => {
     const client = { call: vi.fn().mockResolvedValue({ exceptionDetails: { exception: { description: "Error: bridge unavailable\n    at internal webpack frame" } } }) } as unknown as CdpClient;
     await expect(new CdpBrowserCliSession(client).list()).rejects.toThrow("Error: bridge unavailable");
