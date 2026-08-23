@@ -334,9 +334,12 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  width: min(42rem, calc(100vw - 2rem));
   max-height: 85vh;
-  max-width: 70vw;
-  overflow: hidden;
+  max-width: calc(100vw - 2rem);
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
   border-radius: 0.5rem;
   padding: 1rem 2rem;
   background-color: #fff;
@@ -412,7 +415,22 @@
 .msw-dt-ws-listener-toolbar { display: flex; justify-content: flex-start; margin-bottom: 0.5rem; }
 .msw-dt-ws-listener-table th, .msw-dt-ws-listener-table td { padding: 0.5rem; text-align: left; }
 .msw-dt-ws-behavior-control { display: flex; align-items: center; gap: 0.25rem; }
-.msw-dt-ws-form { display: flex; flex-direction: column; gap: 0.5rem; min-width: min(26rem, 60vw); margin-top: 1rem; }
+.msw-dt-ws-form { display: flex; flex-direction: column; width: min(38rem, calc(100vw - 3rem)); min-width: 0; gap: 0.875rem; margin-top: 1rem; }
+.msw-dt-ws-form > .msw-dt-ws-section { border: 1px solid #d1d5db; border-radius: 0.5rem; padding: 0.875rem; background: #f9fafb; }
+.msw-dt-ws-section h3 { margin: 0 0 0.75rem; font-size: 0.875rem; font-weight: 700; color: #111827; }
+.msw-dt-ws-response-fields { display: grid; gap: 0.75rem; }
+.msw-dt-ws-response-fields fieldset { display: flex; flex-wrap: wrap; gap: 0.5rem 0.875rem; margin: 0; padding: 0; border: 0; }
+.msw-dt-ws-response-fields legend { width: 100%; margin-bottom: 0.125rem; }
+.msw-dt-ws-response-fields > fieldset:last-child { display: grid; gap: 0.375rem; }
+.msw-dt-ws-response-fields textarea, .msw-dt-ws-response-fields input:not([type="radio"]) { width: 100%; box-sizing: border-box; }
+.msw-dt-ws-response-delay { margin-top: 0.75rem; }
+.msw-dt-ws-schedule-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; align-items: end; }
+.msw-dt-ws-field { display: flex; flex-direction: column; gap: 0.375rem; font-size: 0.8125rem; font-weight: 600; color: #374151; }
+.msw-dt-ws-repeat-row { grid-column: 1 / -1; border-top: 1px solid #e5e7eb; padding-top: 0.75rem; }
+.msw-dt-ws-checkbox { display: flex; align-items: center; gap: 0.5rem; min-height: 2.25rem; font-weight: 600; }
+.msw-dt-ws-dialog-header { position: sticky; top: -1rem; z-index: 1; padding: 0.25rem 0 0.75rem; background: #fff; }
+.msw-dt-ws-dialog-header + .msw-dt-ws-form { margin-top: 0.25rem; }
+@media (max-width: 42rem) { .msw-dt-ws-schedule-grid { grid-template-columns: 1fr; } }
 .msw-dt-ws-toggle { cursor: pointer; display: inline-flex; }
 .msw-dt-ws-toggle input { position: absolute; opacity: 0; }
 .msw-dt-ws-toggle span { width: 2rem; height: 1.125rem; background: #9ca3af; border-radius: 999px; position: relative; }
