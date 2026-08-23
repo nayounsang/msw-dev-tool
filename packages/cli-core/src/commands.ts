@@ -3,6 +3,7 @@ import {
   HttpHandlerBehavior,
   tempHandlerSchema,
   webSocketBehaviorSchema,
+  webSocketCustomResponseSchema,
   serializableWebSocketMatcherSchema,
 } from "@msw-dev-tool/core/shared";
 import type { CliCommand, CliCommandContext, JsonResult } from "./types";
@@ -202,6 +203,18 @@ export const commands: CliCommand[] = [
       }
       const behavior = webSocketBehaviorSchema.parse(JSON.parse(flags.json) as unknown);
       return withMetadata({ ok: true, ...(await context.session.setWebSocketListenerBehavior(id, behavior)) }, context);
+    },
+  },
+  {
+    name: "ws-set-listener-custom-response",
+    usage: "ws-set-listener-custom-response <listenerId> --json '<customResponseJson>'",
+    async execute(context, { flags, positionals }) {
+      const id = positionals[1];
+      if (!id || typeof flags.json !== "string") {
+        throw new Error("Usage: ws-set-listener-custom-response <listenerId> --json '<customResponseJson>'");
+      }
+      const response = webSocketCustomResponseSchema.parse(JSON.parse(flags.json) as unknown);
+      return withMetadata({ ok: true, ...(await context.session.setWebSocketListenerCustomResponse(id, response)) }, context);
     },
   },
 ];

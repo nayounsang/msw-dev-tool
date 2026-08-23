@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   serializableWebSocketMatcherSchema,
   webSocketBehaviorSchema,
+  webSocketCustomResponseSchema,
   webSocketEndpointsSchema,
 } from "./websocket";
 
@@ -95,5 +96,14 @@ describe("websocket schema", () => {
     for (const code of [1000, 4000, 4001, 4008]) {
       expect(() => webSocketBehaviorSchema.parse({ preset: "close", options: { code } })).not.toThrow();
     }
+  });
+
+  it("validates custom WebSocket responses", () => {
+    expect(() => webSocketBehaviorSchema.parse({ preset: "custom response" })).not.toThrow();
+    expect(() => webSocketCustomResponseSchema.parse({ type: "send", dataType: "string", value: "hello" })).not.toThrow();
+    expect(() => webSocketCustomResponseSchema.parse({ type: "send", dataType: "Blob", value: "68 69", metadata: { type: "text/plain" } })).not.toThrow();
+    expect(() => webSocketCustomResponseSchema.parse({ type: "send", dataType: "ArrayBuffer", value: "68 69" })).not.toThrow();
+    expect(() => webSocketCustomResponseSchema.parse({ type: "close", code: 4001, reason: "Unauthorized" })).not.toThrow();
+    expect(() => webSocketCustomResponseSchema.parse({ type: "send", dataType: "Blob", value: "6g" })).toThrow();
   });
 });

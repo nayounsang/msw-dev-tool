@@ -14,7 +14,7 @@ import {
   BrowserControlBridge,
 } from "../shared/controlProtocol";
 import { HandlerSchema } from "./schema";
-import { tempHandlerSchema, webSocketBehaviorSchema } from "../shared/schema";
+import { tempHandlerSchema, webSocketBehaviorSchema, webSocketCustomResponseSchema } from "../shared/schema";
 import { webSocketEndpointFromMatcher } from "../shared/websocket/state";
 import { getBrowserStorageSnapshot, mergeStorageData } from "./storage";
 
@@ -71,6 +71,7 @@ const mapState = (
   setWebSocketEndpointEnabled: base.setWebSocketEndpointEnabled,
   setWebSocketListenerEnabled: base.setWebSocketListenerEnabled,
   setWebSocketListenerBehavior: base.setWebSocketListenerBehavior,
+  setWebSocketListenerCustomResponse: base.setWebSocketListenerCustomResponse,
   hydrateWebSocket: base.hydrateWebSocket,
   getWebSocketEndpoint: base.getWebSocketEndpoint,
   getWebSocketListener: base.getWebSocketListener,
@@ -258,6 +259,14 @@ const registerBrowserControlBridge = () => {
       handlerStore.getState().setWebSocketListenerBehavior(
         listenerId,
         webSocketBehaviorSchema.parse(behavior)
+      );
+      const listener = requireWebSocketListener(listenerId);
+      return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener };
+    },
+    setWebSocketListenerCustomResponse: (listenerId, response) => {
+      handlerStore.getState().setWebSocketListenerCustomResponse(
+        listenerId,
+        webSocketCustomResponseSchema.parse(response),
       );
       const listener = requireWebSocketListener(listenerId);
       return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener };

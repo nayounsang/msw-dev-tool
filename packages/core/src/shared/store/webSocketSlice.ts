@@ -6,6 +6,7 @@ import type {
   WebSocketEndpointConfig,
   WebSocketListenerConfig,
   WebSocketHandlerInfo,
+  WebSocketCustomResponse,
 } from "../types";
 import {
   addTemporaryWebSocketEndpoint,
@@ -15,6 +16,7 @@ import {
   resetWebSocketEndpoints,
   setWebSocketEndpointEnabled,
   setWebSocketListenerBehavior,
+  setWebSocketListenerCustomResponse,
   setWebSocketListenerEnabled,
 } from "../websocket/state";
 
@@ -95,6 +97,10 @@ export const createWebSocketSlice = (runtime?: WebSocketRuntimeAdapter) => {
     },
     setListenerBehavior: (listenerId: string, behavior: WebSocketBehaviorSelection) => {
       const next = setWebSocketListenerBehavior(state.endpoints, listenerId, behavior);
+      set({ endpoints: next.endpoints, listeners: state.listeners.map((entry) => entry.info.id === listenerId ? next.listener : entry) });
+    },
+    setListenerCustomResponse: (listenerId: string, customResponse: WebSocketCustomResponse) => {
+      const next = setWebSocketListenerCustomResponse(state.endpoints, listenerId, customResponse);
       set({ endpoints: next.endpoints, listeners: state.listeners.map((entry) => entry.info.id === listenerId ? next.listener : entry) });
     },
     replace: (next: WebSocketEndpointConfig[]) => {

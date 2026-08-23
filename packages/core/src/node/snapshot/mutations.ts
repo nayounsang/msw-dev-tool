@@ -1,7 +1,7 @@
 import { getRowId } from "../../shared/utils/store";
 import {
   CustomResponse,
-  HttpHandlerBehavior, TempHandlerInput, WebSocketEndpointConfig,
+  HttpHandlerBehavior, TempHandlerInput, WebSocketCustomResponse, WebSocketEndpointConfig,
 } from "../../shared/types";
 import {
   addTemporaryWebSocketEndpoint,
@@ -10,6 +10,7 @@ import {
   removeTemporaryWebSocketListener,
   setWebSocketEndpointEnabled,
   setWebSocketListenerBehavior,
+  setWebSocketListenerCustomResponse,
   setWebSocketListenerEnabled,
 } from "../../shared/websocket/state";
 import {
@@ -120,6 +121,19 @@ export const setSnapshotWebSocketListenerBehavior = (
     snapshotWebSocketEndpoints(prev),
     listenerId,
     webSocketBehaviorSchema.parse(behavior)
+  );
+  return bumpSnapshot(prev, { webSocket: webSocketEndpointsSchema.parse(next.endpoints) });
+});
+
+export const setSnapshotWebSocketListenerCustomResponse = (
+  sessionPath: string,
+  listenerId: string,
+  customResponse: WebSocketCustomResponse,
+): Promise<SessionSnapshot> => withLockedMutation(sessionPath, (prev) => {
+  const next = setWebSocketListenerCustomResponse(
+    snapshotWebSocketEndpoints(prev),
+    listenerId,
+    customResponse,
   );
   return bumpSnapshot(prev, { webSocket: webSocketEndpointsSchema.parse(next.endpoints) });
 });

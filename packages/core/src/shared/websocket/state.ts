@@ -1,11 +1,13 @@
 import {
   webSocketEndpointSchema,
+  webSocketCustomResponseSchema,
 } from "../schema/websocket";
 import type {
   SerializableWebSocketMatcher,
   WebSocketBehaviorSelection,
   WebSocketEndpointConfig,
   WebSocketListenerConfig,
+  WebSocketCustomResponse,
 } from "../types";
 
 export const canonicalWebSocketMatcher = (matcher: SerializableWebSocketMatcher): string =>
@@ -164,6 +166,22 @@ export const setWebSocketListenerBehavior = (
     ...endpoint,
     listeners: endpoint.listeners.map((entry) =>
       entry.info.id === listenerId ? { ...entry, behavior } : entry
+    ),
+  }));
+  const { endpoint, listener } = findListener(nextEndpoints, listenerId);
+  return { endpoints: nextEndpoints, endpoint, listener };
+};
+
+export const setWebSocketListenerCustomResponse = (
+  endpoints: WebSocketEndpointConfig[],
+  listenerId: string,
+  customResponse: WebSocketCustomResponse,
+) => {
+  const response = webSocketCustomResponseSchema.parse(customResponse);
+  const nextEndpoints = endpoints.map((endpoint) => ({
+    ...endpoint,
+    listeners: endpoint.listeners.map((entry) =>
+      entry.info.id === listenerId ? { ...entry, customResponse: response } : entry
     ),
   }));
   const { endpoint, listener } = findListener(nextEndpoints, listenerId);

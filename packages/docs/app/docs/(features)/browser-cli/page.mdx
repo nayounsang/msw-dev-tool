@@ -79,6 +79,8 @@ msw-dev-tool-browser ws-add-endpoint --json '{"kind":"string","value":"ws://loca
 msw-dev-tool-browser ws-set-endpoint-enabled 'websocket:endpoint:ws://localhost:8080/chat' false <cdp>
 msw-dev-tool-browser ws-add-listener 'websocket:endpoint:ws://localhost:8080/preview:0' --json '{"preset":"send","options":{"message":"hello"}}' <cdp>
 msw-dev-tool-browser ws-set-listener-behavior '<listener-id>' --json '{"preset":"close"}' <cdp>
+msw-dev-tool-browser ws-set-listener-custom-response '<listener-id>' --json '{"type":"send","dataType":"Blob","value":"68 69","metadata":{"type":"text/plain"}}' <cdp>
+msw-dev-tool-browser ws-set-listener-behavior '<listener-id>' --json '{"preset":"custom response"}' <cdp>
 msw-dev-tool-browser ws-set-listener-enabled '<listener-id>' false <cdp>
 msw-dev-tool-browser ws-remove-listener '<temporary-listener-id>' <cdp>
 msw-dev-tool-browser ws-remove-endpoint 'websocket:endpoint:ws://localhost:8080/preview:0' <cdp>
@@ -88,4 +90,4 @@ msw-dev-tool-browser ws-remove-endpoint 'websocket:endpoint:ws://localhost:8080/
 {"ok":true,"endpoint":{"endpointId":"websocket:endpoint:ws://localhost:8080/chat","enabled":false,"listeners":[]}}
 ```
 
-`ws-add-endpoint`, `ws-add-listener`, and `ws-set-listener-behavior` use `--json` input. Browser changes apply immediately to the in-memory store and persist to the selected tab's `sessionStorage`; refresh only to confirm persistence. Code-discovered WebSocket endpoints and listeners cannot be deleted, while temporary ones can.
+`ws-add-endpoint`, `ws-add-listener`, and `ws-set-listener-behavior` use `--json` input. Use `ws-set-listener-custom-response` to save a response, then select `{ "preset": "custom response" }` with `ws-set-listener-behavior`. Send responses use `dataType: "string"`, `"Blob"`, or `"ArrayBuffer"`; binary values are space-separated hexadecimal bytes. Close responses accept optional `code` and `reason`. Browser changes apply immediately to the in-memory store and persist to the selected tab's `sessionStorage`; refresh only to confirm persistence. Code-discovered WebSocket endpoints and listeners cannot be deleted, while temporary ones can.

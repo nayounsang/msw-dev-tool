@@ -15,6 +15,7 @@ import { Flex } from "../../Components/Flex";
 import { Select } from "../../Components/Select";
 import { FormFieldBase } from "../Form/FormFieldBase";
 import { TextAreaFormField } from "../Form/TextAreaFormField";
+import { CUSTOM_RESPONSE_DESCRIPTION } from "../constants";
 
 type CustomResponseFormValues = {
   status: string;
@@ -127,7 +128,7 @@ export const CustomResponseDialog = ({ handler }: { handler: FlattenHandler }) =
               <Dialog.Close render={<CloseButton />} />
             </Flex>
             <Dialog.Description className="msw-dt-dialog-description">
-              Saving configures the response only. Select <span className="msw-dt-font-bold">custom response</span> in Behavior to apply it.
+              {CUSTOM_RESPONSE_DESCRIPTION}
             </Dialog.Description>
             <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.25rem", overflow: "auto" }}>
               <Flex direction="column" gap={5}>

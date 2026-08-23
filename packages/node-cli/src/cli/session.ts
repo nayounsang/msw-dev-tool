@@ -15,6 +15,7 @@ import {
   setSnapshotCustomResponse,
   setSnapshotWebSocketEndpointEnabled,
   setSnapshotWebSocketListenerBehavior,
+  setSnapshotWebSocketListenerCustomResponse,
   setSnapshotWebSocketListenerEnabled,
 } from "@msw-dev-tool/core/node/internal";
 import { CliSession } from "@msw-dev-tool/cli-core";
@@ -113,6 +114,17 @@ export class FileSnapshotCliSession implements CliSession {
     behavior: Parameters<typeof setSnapshotWebSocketListenerBehavior>[2]
   ) {
     const snapshot = await setSnapshotWebSocketListenerBehavior(this.sessionPath, listenerId, behavior);
+    await settleAfterWrite();
+    const endpoint = snapshot.state.webSocket!.find((entry) =>
+      entry.listeners.some((listener) => listener.info.id === listenerId)
+    )!;
+    return { endpoint, listener: endpoint.listeners.find((listener) => listener.info.id === listenerId)! };
+  }
+  public async setWebSocketListenerCustomResponse(
+    listenerId: string,
+    response: Parameters<typeof setSnapshotWebSocketListenerCustomResponse>[2],
+  ) {
+    const snapshot = await setSnapshotWebSocketListenerCustomResponse(this.sessionPath, listenerId, response);
     await settleAfterWrite();
     const endpoint = snapshot.state.webSocket!.find((entry) =>
       entry.listeners.some((listener) => listener.info.id === listenerId)
