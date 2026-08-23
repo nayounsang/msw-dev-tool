@@ -13,11 +13,21 @@ import { Callout, Tabs } from "nextra/components";
 ### Install
 
 <Tabs items={["pnpm", "npm", "yarn"]}>
-  <Tabs.Tab>```bash copy pnpm add -D @msw-dev-tool/core @msw-dev-tool/node-cli msw ```</Tabs.Tab>
   <Tabs.Tab>
-    ```bash copy npm i @msw-dev-tool/core @msw-dev-tool/node-cli msw --save-dev ```
+  ```bash copy
+  pnpm add -D @msw-dev-tool/core @msw-dev-tool/node-cli msw
+  ```
   </Tabs.Tab>
-  <Tabs.Tab>```bash copy yarn add -D @msw-dev-tool/core @msw-dev-tool/node-cli msw ```</Tabs.Tab>
+  <Tabs.Tab>
+  ```bash copy
+  npm i @msw-dev-tool/core @msw-dev-tool/node-cli msw --save-dev
+  ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+  ```bash copy
+  yarn add -D @msw-dev-tool/core @msw-dev-tool/node-cli msw
+  ```
+  </Tabs.Tab>
 </Tabs>
 
 ### Connect the runtime
@@ -38,9 +48,7 @@ msw-dev-tool --pid 4182 session
 ```
 
 <Callout type="warning">
-  After changing handler code, run `msw-dev-tool --pid 4182 reset` and wait for its JSON result
-  before issuing another command. A normal process exit removes its session file; inspect and remove
-  stale files after a crash before selecting a PID.
+After changing handler code, run `msw-dev-tool --pid 4182 reset` and wait for its JSON result before issuing another command. A normal process exit removes its session file; inspect and remove stale files after a crash before selecting a PID.
 </Callout>
 
 ## Commands & API
@@ -85,14 +93,7 @@ msw-dev-tool --pid 4182 ws-remove-endpoint 'websocket:endpoint:ws://localhost:80
 ```
 
 ```json
-{
-  "ok": true,
-  "endpoint": {
-    "endpointId": "websocket:endpoint:ws://localhost:8080/chat",
-    "enabled": false,
-    "listeners": []
-  }
-}
+{"ok":true,"endpoint":{"endpointId":"websocket:endpoint:ws://localhost:8080/chat","enabled":false,"listeners":[]}}
 ```
 
 `ws-add-endpoint`, `ws-add-listener`, and `ws-set-listener-behavior` accept JSON input. A temporary listener defaults to `{ "preset": "default" }`; its `response` and `customResponse` fields are independent. Default uses `response`, while `{ "preset": "custom response" }` uses `customResponse`. Delay defaults to `0`, and `repeat.repetitions` includes the first response. Use the JSON string `"Infinity"` for unbounded repetition with an interval greater than zero. Pass `{ "repeat": null }` to `ws-set-listener-schedule` to clear repetition. Save custom response data with `ws-set-listener-custom-response`, or update the temporary response with `ws-set-listener-response`; use `ws-set-listener-schedule` for partial schedule changes. Send supports String, Blob, and ArrayBuffer values; Blob and ArrayBuffer values are space-separated hexadecimal bytes. Close accepts optional `code` and `reason`. Code-discovered endpoints and listeners cannot be removed; remove commands apply only to temporary items.

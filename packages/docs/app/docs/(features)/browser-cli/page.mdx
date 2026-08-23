@@ -20,17 +20,19 @@ The target tab must run `setupDevToolWorker(...handlers)`. Start a separate Chro
 
 <Tabs items={["macOS", "Windows", "Linux"]}>
   <Tabs.Tab>
-    ```bash copy open -na "Google Chrome" --args --remote-debugging-address=127.0.0.1
-    --remote-debugging-port=9222 --user-data-dir=/private/tmp/chrome-debug-9222 ```
+  ```bash copy
+  open -na "Google Chrome" --args --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 --user-data-dir=/private/tmp/chrome-debug-9222
+  ```
   </Tabs.Tab>
   <Tabs.Tab>
-    ```powershell copy & "C:\Program Files\Google\Chrome\Application\chrome.exe"
-    --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222
-    --user-data-dir="$env:TEMP\chrome-debug-9222" ```
+  ```powershell copy
+  & "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 --user-data-dir="$env:TEMP\chrome-debug-9222"
+  ```
   </Tabs.Tab>
   <Tabs.Tab>
-    ```bash copy google-chrome --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222
-    --user-data-dir=/tmp/chrome-debug-9222 ```
+  ```bash copy
+  google-chrome --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-debug-9222
+  ```
   </Tabs.Tab>
 </Tabs>
 
@@ -44,8 +46,7 @@ msw-dev-tool-browser session --cdp-url http://127.0.0.1:9222 --target <target-id
 ```
 
 <Callout type="warning">
-  The remote-debugging endpoint gives local processes browser-debugging access. Keep the separate
-  Chrome profile running and do not use a regular browsing profile.
+The remote-debugging endpoint gives local processes browser-debugging access. Keep the separate Chrome profile running and do not use a regular browsing profile.
 </Callout>
 
 ## Commands & API
@@ -88,14 +89,7 @@ msw-dev-tool-browser ws-remove-endpoint 'websocket:endpoint:ws://localhost:8080/
 ```
 
 ```json
-{
-  "ok": true,
-  "endpoint": {
-    "endpointId": "websocket:endpoint:ws://localhost:8080/chat",
-    "enabled": false,
-    "listeners": []
-  }
-}
+{"ok":true,"endpoint":{"endpointId":"websocket:endpoint:ws://localhost:8080/chat","enabled":false,"listeners":[]}}
 ```
 
 `ws-add-endpoint`, `ws-add-listener`, and `ws-set-listener-behavior` use JSON input. Temporary listeners default to `{ "preset": "default" }`. `response` and `customResponse` are independent: default uses `response`, and custom response uses `customResponse`. Delay defaults to `0`; repeat interval is in milliseconds and repetitions include the first response. Use the string `"Infinity"` for unbounded repetition with an interval greater than zero. Pass `{ "repeat": null }` to `ws-set-listener-schedule` to clear repetition. Use `ws-set-listener-response` and `ws-set-listener-custom-response` to update the two response fields independently, and `ws-set-listener-schedule` for delay/repeat changes. Send responses use `dataType: "string"`, `"Blob"`, or `"ArrayBuffer"`; binary values are space-separated hexadecimal bytes. Close responses accept optional `code` and `reason`. Browser changes apply immediately to the in-memory store and persist to the selected tab's `sessionStorage`; refresh only to confirm persistence. Code-discovered WebSocket endpoints and listeners cannot be deleted, while temporary ones can.

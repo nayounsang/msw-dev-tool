@@ -7,4 +7,6 @@ dist-ssr
 node_modules
 packages/docs/public/_pagefind
 **/public/mockServiceWorker.js
+# Prettier can break Nextra component and code-fence nesting.
+**/*.mdx
 yarn.lock

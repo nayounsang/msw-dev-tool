@@ -16,15 +16,10 @@ Pass a React element to the `trigger` prop to replace the default trigger.
     trigger?: ReactNode;
 }
 ```
-
 For example, using Tailwind CSS:
 
 ```tsx
-<MSWDevTool
-  trigger={
-    <button className="bg-blue-500 text-white px-4 py-2 rounded-md">Open msw-dev-tool</button>
-  }
-/>
+<MSWDevTool trigger={<button className="bg-blue-500 text-white px-4 py-2 rounded-md">Open msw-dev-tool</button>} />
 ```
 
 ## Compose your own Dev Tool UI
@@ -39,7 +34,10 @@ Use `HandlerTable` and `AddTempHandlerForm` to create the Dev Tool layout and co
 
 ```tsx copy
 import { useState } from "react";
-import { AddTempHandlerForm, HandlerTable } from "@msw-dev-tool/react";
+import {
+  AddTempHandlerForm,
+  HandlerTable,
+} from "@msw-dev-tool/react";
 
 export function ProjectDevTool() {
   const [showForm, setShowForm] = useState(false);
@@ -48,7 +46,9 @@ export function ProjectDevTool() {
     <aside className="rounded border p-4">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="font-semibold">Mock API controls</h2>
-        <button onClick={() => setShowForm((open) => !open)}>Add temporary API</button>
+        <button onClick={() => setShowForm((open) => !open)}>
+          Add temporary API
+        </button>
       </div>
 
       {showForm && <AddTempHandlerForm onClose={() => setShowForm(false)} />}
