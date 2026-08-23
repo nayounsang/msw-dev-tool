@@ -15,6 +15,7 @@ import { CloseButton } from "../../Components/CloseButton";
 import { Input } from "../../Components/Input";
 import { Select } from "../../Components/Select";
 import { TextArea } from "../../Components/TextArea";
+import { CUSTOM_RESPONSE_DESCRIPTION } from "../constants";
 
 type EndpointFormValues = { matcherType: "string" | "regexp"; value: string; flags: string };
 type FormErrors = Record<string, string | undefined>;
@@ -207,6 +208,7 @@ const CustomResponseDialog = ({ listener }: { listener: WebSocketListenerConfig 
         <Dialog.Popup className="msw-dt-dialog-popup-viewport">
           <div className="msw-dt-dialog-inner-center">
             <div className="msw-dt-ws-dialog-header"><Dialog.Title className="msw-dt-dialog-title-sm">Custom WebSocket Response</Dialog.Title><Dialog.Close render={<CloseButton />} /></div>
+            <Dialog.Description className="msw-dt-dialog-description">{CUSTOM_RESPONSE_DESCRIPTION}</Dialog.Description>
             <form onSubmit={submit} className="msw-dt-ws-form">
               <fieldset>
                 <legend className="msw-dt-label">Response type</legend>
@@ -218,15 +220,14 @@ const CustomResponseDialog = ({ listener }: { listener: WebSocketListenerConfig 
                   <legend className="msw-dt-label">Data type</legend>
                   {(["string", "Blob", "ArrayBuffer"] as const).map((dataType) => <label key={dataType}><input type="radio" name={`ws-data-type-${listener.info.id}`} checked={values.dataType === dataType} onChange={() => update("dataType", dataType)} /> {dataType}</label>)}
                 </fieldset>
-                <label className="msw-dt-label" htmlFor={`ws-response-value-${listener.info.id}`}>Value</label>
-                <TextArea id={`ws-response-value-${listener.info.id}`} value={values.value} onChange={(event) => update("value", event.target.value)} required />
-                <label className="msw-dt-label" htmlFor={`ws-response-metadata-${listener.info.id}`}>Metadata type (optional)</label>
+                <label className="msw-dt-label" htmlFor={`ws-response-value-${listener.info.id}`}>Value *</label>
+                <TextArea id={`ws-response-value-${listener.info.id}`} value={values.value} placeholder={values.dataType === "string" ? undefined : "Enter bytes as space-separated hexadecimal values."} onChange={(event) => update("value", event.target.value)} required />
+                <label className="msw-dt-label" htmlFor={`ws-response-metadata-${listener.info.id}`}>Metadata type</label>
                 <Input id={`ws-response-metadata-${listener.info.id}`} value={values.metadataType} onChange={(event) => update("metadataType", event.target.value)} />
-                {values.dataType !== "string" && <p className="msw-dt-dialog-description">Enter bytes as space-separated hexadecimal values.</p>}
               </> : <>
-                <label className="msw-dt-label" htmlFor={`ws-close-code-${listener.info.id}`}>Close code (optional)</label>
+                <label className="msw-dt-label" htmlFor={`ws-close-code-${listener.info.id}`}>Close code</label>
                 <Input id={`ws-close-code-${listener.info.id}`} inputMode="numeric" value={values.code} onChange={(event) => update("code", event.target.value)} />
-                <label className="msw-dt-label" htmlFor={`ws-close-reason-${listener.info.id}`}>Reason (optional)</label>
+                <label className="msw-dt-label" htmlFor={`ws-close-reason-${listener.info.id}`}>Reason</label>
                 <Input id={`ws-close-reason-${listener.info.id}`} value={values.reason} onChange={(event) => update("reason", event.target.value)} />
               </>}
               {error && <p className="msw-dt-error-text">{error}</p>}
