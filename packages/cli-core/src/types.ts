@@ -6,6 +6,7 @@ import type {
   WebSocketEndpointConfig,
   WebSocketListenerConfig,
   WebSocketBehaviorSelection,
+  WebSocketCustomResponse,
   SerializableWebSocketMatcher,
 } from "@msw-dev-tool/core/shared";
 
@@ -50,6 +51,7 @@ export type CliSession = {
   removeWebSocketListener(listenerId: string): Promise<CliWebSocketInfo>;
   setWebSocketListenerEnabled(listenerId: string, enabled: boolean): Promise<CliWebSocketListenerResult>;
   setWebSocketListenerBehavior(listenerId: string, behavior: WebSocketBehaviorSelection): Promise<CliWebSocketListenerResult>;
+  setWebSocketListenerCustomResponse(listenerId: string, response: WebSocketCustomResponse): Promise<CliWebSocketListenerResult>;
 };
 
 export type ParsedArgs = {

@@ -14,6 +14,7 @@ import {
   SerializableWebSocketMatcher,
   TempHandlerInput,
   WebSocketBehaviorSelection,
+  WebSocketCustomResponse,
   WebSocketEndpointConfig,
 } from "@msw-dev-tool/core/shared";
 import { CdpClient } from "./cdp";
@@ -38,6 +39,7 @@ const REQUIRED_BROWSER_CONTROL_METHOD_VERSIONS = {
   removeWebSocketListener: 1,
   setWebSocketListenerEnabled: 1,
   setWebSocketListenerBehavior: 1,
+  setWebSocketListenerCustomResponse: 1,
 } as const;
 
 type BrowserControlMethod = keyof typeof REQUIRED_BROWSER_CONTROL_METHOD_VERSIONS;
@@ -89,5 +91,8 @@ export class CdpBrowserCliSession implements CliSession {
   }
   public setWebSocketListenerBehavior(listenerId: string, behavior: WebSocketBehaviorSelection): Promise<CliWebSocketListenerResult> {
     return this.invoke("setWebSocketListenerBehavior", [listenerId, behavior]);
+  }
+  public setWebSocketListenerCustomResponse(listenerId: string, response: WebSocketCustomResponse): Promise<CliWebSocketListenerResult> {
+    return this.invoke("setWebSocketListenerCustomResponse", [listenerId, response]);
   }
 }

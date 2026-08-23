@@ -4,6 +4,7 @@ import type {
   SerializableWebSocketMatcher,
   TempHandlerInput,
   WebSocketBehaviorSelection,
+  WebSocketCustomResponse,
   WebSocketEndpointConfig,
   WebSocketListenerConfig,
 } from "./types";
@@ -32,6 +33,7 @@ export const BROWSER_CONTROL_METHOD_VERSIONS = {
   removeWebSocketListener: 1,
   setWebSocketListenerEnabled: 1,
   setWebSocketListenerBehavior: 1,
+  setWebSocketListenerCustomResponse: 1,
 } as const;
 
 export type BrowserControlMethod = keyof typeof BROWSER_CONTROL_METHOD_VERSIONS;
@@ -74,4 +76,5 @@ export type BrowserControlBridge = {
   removeWebSocketListener: (listenerId: string) => BrowserControlWebSocketInfo;
   setWebSocketListenerEnabled: (listenerId: string, enabled: boolean) => BrowserControlWebSocketListenerResult;
   setWebSocketListenerBehavior: (listenerId: string, behavior: WebSocketBehaviorSelection) => BrowserControlWebSocketListenerResult;
+  setWebSocketListenerCustomResponse: (listenerId: string, response: WebSocketCustomResponse) => BrowserControlWebSocketListenerResult;
 };
