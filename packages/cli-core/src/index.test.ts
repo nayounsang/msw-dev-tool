@@ -153,6 +153,19 @@ describe("shared CLI commands", () => {
       positionals: ["ws-add-listener"],
     });
     expect(session.addWebSocketListener).toHaveBeenCalledWith(input);
+
+    await findCommand("ws-add-listener")!.execute({ session }, {
+      flags: { json: "{}" },
+      positionals: ["ws-add-listener", wsEndpoint.endpointId],
+    });
+    expect(session.addWebSocketListener).toHaveBeenCalledWith({
+      endpointId: wsEndpoint.endpointId,
+      behavior: undefined,
+      response: undefined,
+      customResponse: undefined,
+      delay: undefined,
+      repeat: undefined,
+    });
   });
 
   it("forwards listener response and schedule mutations", async () => {
@@ -168,8 +181,18 @@ describe("shared CLI commands", () => {
       flags: { json: '{"delay":300,"repeat":{"interval":500,"repetitions":"Infinity"}}' },
       positionals: ["ws-set-listener-schedule", wsListener.info.id],
     });
+    await findCommand("ws-set-listener-schedule")!.execute(context, {
+      flags: { json: '{"repeat":null}' },
+      positionals: ["ws-set-listener-schedule", wsListener.info.id],
+    });
+    await findCommand("ws-set-listener-schedule")!.execute(context, {
+      flags: { json: '{}' },
+      positionals: ["ws-set-listener-schedule", wsListener.info.id],
+    });
     expect(session.setWebSocketListenerResponse).toHaveBeenCalledWith(wsListener.info.id, { type: "send", dataType: "string", value: "default" });
     expect(session.setWebSocketListenerSchedule).toHaveBeenCalledWith(wsListener.info.id, { delay: 300, repeat: { interval: 500, repetitions: "Infinity" } });
+    expect(session.setWebSocketListenerSchedule).toHaveBeenCalledWith(wsListener.info.id, { repeat: undefined });
+    expect(session.setWebSocketListenerSchedule).toHaveBeenCalledWith(wsListener.info.id, {});
   });
 
   it("executes ws-set-listener-enabled and ws-set-listener-behavior", async () => {
@@ -189,6 +212,7 @@ describe("shared CLI commands", () => {
     await expect(findCommand("ws-set-endpoint-enabled")!.execute(context, { flags: {}, positionals: ["ws-set-endpoint-enabled", wsEndpoint.endpointId] })).rejects.toThrow("Usage: ws-set-endpoint-enabled");
     await expect(findCommand("ws-set-endpoint-enabled")!.execute(context, { flags: {}, positionals: ["ws-set-endpoint-enabled", wsEndpoint.endpointId, "maybe"] })).rejects.toThrow("enabled must be true or false");
     await expect(findCommand("ws-add-listener")!.execute(context, { flags: {}, positionals: ["ws-add-listener", wsEndpoint.endpointId] })).rejects.toThrow("Usage: ws-add-listener");
+    await expect(findCommand("ws-add-listener")!.execute(context, { flags: { json: "{}" }, positionals: ["ws-add-listener"] })).rejects.toThrow("Usage: ws-add-listener");
     await expect(findCommand("ws-remove-listener")!.execute(context, { flags: {}, positionals: ["ws-remove-listener"] })).rejects.toThrow("Usage: ws-remove-listener");
     await expect(findCommand("ws-set-listener-enabled")!.execute(context, { flags: {}, positionals: ["ws-set-listener-enabled", wsListener.info.id] })).rejects.toThrow("Usage: ws-set-listener-enabled");
     await expect(findCommand("ws-set-listener-enabled")!.execute(context, { flags: {}, positionals: ["ws-set-listener-enabled", wsListener.info.id, "maybe"] })).rejects.toThrow("enabled must be true or false");

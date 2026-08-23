@@ -116,6 +116,9 @@ describe("websocket schema", () => {
 
   it("validates listener scheduling and defaults old listeners", () => {
     expect(webSocketRepeatSchema.parse({ interval: 500, repetitions: "Infinity" })).toEqual({ interval: 500, repetitions: "Infinity" });
+    expect(webSocketRepeatSchema.parse({ interval: 0, repetitions: 3 })).toEqual({ interval: 0, repetitions: 3 });
+    expect(() => webSocketRepeatSchema.parse({ interval: 0, repetitions: "Infinity" }))
+      .toThrow("Infinite WebSocket repetition requires a positive interval");
     expect(() => webSocketRepeatSchema.parse({ interval: -1, repetitions: 1 })).toThrow();
     expect(() => webSocketRepeatSchema.parse({ interval: 1, repetitions: 0 })).toThrow();
     const listener = webSocketListenerSchema.parse({

@@ -222,6 +222,144 @@ describe("closeWebSocketConnections", () => {
     }
   });
 
+  it("cancels all scheduled responses when the client disconnects", async () => {
+    vi.useFakeTimers();
+    try {
+      const { adapter, endpointId, listenerId, client, store } = await setupCustomResponseHarness("disconnect-scheduled");
+      store.getState().setWebSocketListenerBehavior(listenerId, { preset: "default" });
+      store.getState().setWebSocketListenerResponse(listenerId, { type: "send", dataType: "string", value: "late" });
+      store.getState().setWebSocketListenerSchedule(listenerId, { delay: 100 });
+      adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
+
+      adapter.unregisterWebSocketConnection(endpointId, client);
+      await vi.advanceTimersByTimeAsync(100);
+
+      expect(client.send).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("ignores a delayed callback that fires after its schedule was cancelled", async () => {
+    const { adapter, endpointId, listenerId, client, store } = await setupCustomResponseHarness("cancelled-callback");
+    store.getState().setWebSocketListenerBehavior(listenerId, { preset: "default" });
+    store.getState().setWebSocketListenerResponse(listenerId, { type: "send", dataType: "string", value: "old" });
+    store.getState().setWebSocketListenerSchedule(listenerId, { delay: 100 });
+    let delayedCallback: (() => void) | undefined;
+    const timeout = vi.spyOn(globalThis, "setTimeout").mockImplementationOnce((callback) => {
+      delayedCallback = callback as () => void;
+      return 1 as unknown as ReturnType<typeof setTimeout>;
+    });
+    try {
+      adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
+      store.getState().setWebSocketListenerResponse(listenerId, { type: "send", dataType: "string", value: "new" });
+
+      delayedCallback?.();
+
+      expect(client.send).not.toHaveBeenCalled();
+    } finally {
+      timeout.mockRestore();
+    }
+  });
+
+  it("tracks concurrent delayed responses independently", async () => {
+    vi.useFakeTimers();
+    try {
+      const { adapter, endpointId, listenerId, client, store } = await setupCustomResponseHarness("concurrent-scheduled");
+      store.getState().setWebSocketListenerBehavior(listenerId, { preset: "default" });
+      store.getState().setWebSocketListenerResponse(listenerId, { type: "send", dataType: "string", value: "delayed" });
+      store.getState().setWebSocketListenerSchedule(listenerId, { delay: 100 });
+
+      adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
+      adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
+      await vi.advanceTimersByTimeAsync(100);
+
+      expect(client.send).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("stops an infinite response schedule when its schedule changes", async () => {
+    vi.useFakeTimers();
+    try {
+      const { adapter, endpointId, listenerId, client, store } = await setupCustomResponseHarness("infinite-scheduled");
+      store.getState().setWebSocketListenerBehavior(listenerId, { preset: "default" });
+      store.getState().setWebSocketListenerResponse(listenerId, { type: "send", dataType: "string", value: "repeat" });
+      store.getState().setWebSocketListenerSchedule(listenerId, {
+        repeat: { interval: 50, repetitions: "Infinity" },
+      });
+      adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
+      await vi.advanceTimersByTimeAsync(50);
+      expect(client.send).toHaveBeenCalledTimes(2);
+
+      store.getState().setWebSocketListenerSchedule(listenerId, { repeat: undefined });
+      await vi.advanceTimersByTimeAsync(100);
+
+      expect(client.send).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not queue another repetition when the listener changes during send", async () => {
+    vi.useFakeTimers();
+    try {
+      const { adapter, endpointId, listenerId, client, store } = await setupCustomResponseHarness("change-during-send");
+      store.getState().setWebSocketListenerBehavior(listenerId, { preset: "default" });
+      store.getState().setWebSocketListenerResponse(listenerId, { type: "send", dataType: "string", value: "once" });
+      store.getState().setWebSocketListenerSchedule(listenerId, {
+        repeat: { interval: 0, repetitions: 3 },
+      });
+      client.send.mockImplementationOnce(() => {
+        store.getState().setWebSocketListenerBehavior(listenerId, { preset: "no-reply" });
+      });
+
+      adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
+      await vi.runAllTimersAsync();
+
+      expect(client.send).toHaveBeenCalledOnce();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("falls back to the original listener when a default response is not configured", async () => {
+    const { adapter, endpointId, listenerId, client, store } = await setupCustomResponseHarness("default-fallback");
+    store.getState().setWebSocketListenerBehavior(listenerId, { preset: "default" });
+    const original = vi.fn();
+
+    adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId, original);
+
+    expect(original).toHaveBeenCalledOnce();
+    expect(client.send).not.toHaveBeenCalled();
+  });
+
+  it("delays a close response and closes only once", async () => {
+    vi.useFakeTimers();
+    try {
+      const { adapter, endpointId, listenerId, client, store } = await setupCustomResponseHarness("delayed-close");
+      store.getState().setWebSocketListenerCustomResponse(listenerId, {
+        type: "close",
+        code: 4001,
+        reason: "Unauthorized",
+      });
+      store.getState().setWebSocketListenerSchedule(listenerId, {
+        delay: 50,
+        repeat: { interval: 50, repetitions: 3 },
+      });
+
+      adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
+      expect(client.close).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(50);
+      expect(client.close).toHaveBeenCalledOnce();
+      await vi.advanceTimersByTimeAsync(100);
+      expect(client.close).toHaveBeenCalledOnce();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("dispatches a configured custom string response", async () => {
     const { adapter, endpointId, listenerId, client, store } = await setupCustomResponseHarness("custom-string");
     store.getState().setWebSocketListenerCustomResponse(listenerId, { type: "send", dataType: "string", value: "hello" });

@@ -169,6 +169,13 @@ describe("browser control bridge", () => {
     });
     expect(bridge.setWebSocketListenerResponse(configured.listener.info.id, { type: "send", dataType: "string", value: "updated" }).listener.response).toMatchObject({ value: "updated" });
     expect(bridge.setWebSocketListenerSchedule(configured.listener.info.id, { delay: 100, repeat: { interval: 50, repetitions: 3 } }).listener).toMatchObject({ delay: 100, repeat: { interval: 50, repetitions: 3 } });
+    expect(bridge.setWebSocketListenerSchedule(configured.listener.info.id, { repeat: undefined }).listener.repeat).toBeUndefined();
+    const defaults = bridge.addWebSocketListener({ endpointId: added.endpoint.endpointId });
+    expect(defaults.listener).toMatchObject({ behavior: { preset: "default" }, delay: 0 });
+    expect(defaults.listener.response).toBeUndefined();
+    expect(defaults.listener.customResponse).toBeUndefined();
+    expect(defaults.listener.repeat).toBeUndefined();
+    bridge.removeWebSocketListener(defaults.listener.info.id);
     bridge.removeWebSocketListener(configured.listener.info.id);
     expect(bridge.removeWebSocketEndpoint(added.endpoint.endpointId).endpoints).toEqual([]);
     const matcher = { kind: "string" as const, value: "ws://browser.test/load" };

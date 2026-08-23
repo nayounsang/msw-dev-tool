@@ -76,6 +76,34 @@ describe("WebSocket state model", () => {
     expect(runtime.removeEndpoint).toHaveBeenCalledWith(endpointId);
   });
 
+  it("updates one listener response and schedule without replacing sibling listener state", () => {
+    const slice = createWebSocketSlice();
+    const endpointId = slice.addTempEndpoint({
+      endpoint: "ws://example.test/configured",
+      matcher: { kind: "string", value: "ws://example.test/configured" },
+    });
+    const first = slice.addTempListener({ endpointId });
+    const second = slice.addTempListener({ endpointId, behavior: { preset: "echo" } });
+
+    slice.setListenerCustomResponse(first, { type: "send", dataType: "string", value: "custom" });
+    slice.setListenerResponse(first, { type: "send", dataType: "string", value: "default" });
+    slice.setListenerSchedule(first, { delay: 300, repeat: { interval: 500, repetitions: 3 } });
+
+    expect(slice.getState().listeners).toEqual([
+      expect.objectContaining({
+        info: expect.objectContaining({ id: first }),
+        customResponse: expect.objectContaining({ value: "custom" }),
+        response: expect.objectContaining({ value: "default" }),
+        delay: 300,
+        repeat: { interval: 500, repetitions: 3 },
+      }),
+      expect.objectContaining({
+        info: expect.objectContaining({ id: second }),
+        behavior: { preset: "echo" },
+      }),
+    ]);
+  });
+
   it("keeps code entries on reset and rejects deleting them", () => {
     const slice = createWebSocketSlice();
     const codeInfo = {
@@ -139,6 +167,34 @@ describe("WebSocket state model", () => {
 
     expect(second).not.toBe(first);
     expect(slice.getState().endpoints).toHaveLength(2);
+  });
+
+  it("hydrates saved code endpoint state while preserving unsaved code endpoints", () => {
+    const slice = createWebSocketSlice();
+    const codeInfo = (id: string) => ({
+      id,
+      kind: "websocket" as const,
+      endpoint: `ws://example.test/${id}`,
+      operation: "endpoint",
+      source: "code" as const,
+    });
+    slice.registerCodeEndpoint({ info: codeInfo("saved-code"), matcher: { kind: "string", value: "saved-code" } });
+    slice.registerCodeEndpoint({ info: codeInfo("live-code"), matcher: { kind: "string", value: "live-code" } });
+    const tempId = slice.addTempEndpoint({
+      endpoint: "ws://example.test/hydrated-temp",
+      matcher: { kind: "string", value: "hydrated-temp" },
+    });
+    const saved = slice.getState().endpoints
+      .filter((entry) => entry.endpointId !== "live-code")
+      .map((entry) => entry.endpointId === "saved-code" ? { ...entry, enabled: false } : entry);
+
+    slice.hydrate(saved);
+
+    expect(slice.getState().endpoints).toEqual([
+      expect.objectContaining({ endpointId: "saved-code", enabled: false }),
+      expect.objectContaining({ endpointId: "live-code", enabled: true }),
+      expect.objectContaining({ endpointId: tempId, info: expect.objectContaining({ source: "temp" }) }),
+    ]);
   });
 
   it("allocates a fresh listener ID after an earlier listener is removed", () => {
