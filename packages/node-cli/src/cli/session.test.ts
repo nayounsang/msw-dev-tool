@@ -20,7 +20,6 @@ const api = vi.hoisted(() => ({
   setSnapshotWebSocketListenerCustomResponse: vi.fn(),
   setSnapshotWebSocketListenerEnabled: vi.fn(),
   setSnapshotWebSocketListenerResponse: vi.fn(),
-  setSnapshotWebSocketListenerSchedule: vi.fn(),
 }));
 vi.mock("@msw-dev-tool/core/node/internal", () => api);
 import { FileSnapshotCliSession } from "./session";
@@ -80,7 +79,11 @@ describe("FileSnapshotCliSession", () => {
     await expect(session.get("a")).resolves.toEqual({ id: "a" });
     const calls = [
       session.setBehavior("a", "delay"),
-      session.setCustomResponse("a", { status: 200 }),
+      session.setCustomResponse("a", {
+        status: "200",
+        contentType: "text/plain",
+        response: "ok",
+      }),
       session.addTemp({ path: "/t", method: "get", contentType: "text/plain", status: "200" }),
       session.removeTemp("a"),
       session.reset(),
@@ -119,12 +122,6 @@ describe("FileSnapshotCliSession", () => {
         ],
       }),
     );
-    api.setSnapshotWebSocketListenerSchedule.mockReturnValue(
-      wsSnapshot({
-        ...endpointWithListener,
-        listeners: [{ ...wsListener, delay: 300, repeat: { interval: 500, repetitions: 3 } }],
-      }),
-    );
     const session = new FileSnapshotCliSession("/tmp/session.json");
     await expect(session.listWebSocket()).resolves.toEqual([wsEndpoint]);
     await expect(session.getWebSocketEndpoint("ws-1")).resolves.toEqual(wsEndpoint);
@@ -144,23 +141,25 @@ describe("FileSnapshotCliSession", () => {
       session.addWebSocketListener({
         endpointId: "ws-1",
         behavior: { preset: "default" },
-        response: { type: "send", dataType: "string", value: "default" },
-        customResponse: { type: "send", dataType: "string", value: "custom" },
-        delay: 300,
-        repeat: { interval: 500, repetitions: 3 },
+        response: {
+          type: "send",
+          dataType: "string",
+          value: "default",
+          delay: 300,
+          repeat: { interval: 500, repetitions: 3 },
+        },
+        customResponse: { type: "send", dataType: "string", value: "custom", delay: 100 },
       }),
       session.setWebSocketListenerResponse(wsListener.info.id, {
         type: "send",
         dataType: "string",
         value: "default",
-      }),
-      session.setWebSocketListenerSchedule(wsListener.info.id, {
         delay: 300,
         repeat: { interval: 500, repetitions: "Infinity" },
       }),
     ];
     await vi.advanceTimersByTimeAsync(300);
-    await expect(Promise.all(calls)).resolves.toHaveLength(11);
+    await expect(Promise.all(calls)).resolves.toHaveLength(10);
     expect(api.addSnapshotWebSocketEndpoint).toHaveBeenCalledWith(
       "/tmp/session.json",
       wsEndpoint.matcher,
@@ -172,20 +171,25 @@ describe("FileSnapshotCliSession", () => {
     );
     expect(api.addSnapshotWebSocketListener).toHaveBeenCalledWith("/tmp/session.json", "ws-1", {
       behavior: { preset: "default" },
-      response: { type: "send", dataType: "string", value: "default" },
-      customResponse: { type: "send", dataType: "string", value: "custom" },
-      delay: 300,
-      repeat: { interval: 500, repetitions: 3 },
+      response: {
+        type: "send",
+        dataType: "string",
+        value: "default",
+        delay: 300,
+        repeat: { interval: 500, repetitions: 3 },
+      },
+      customResponse: { type: "send", dataType: "string", value: "custom", delay: 100 },
     });
     expect(api.setSnapshotWebSocketListenerResponse).toHaveBeenCalledWith(
       "/tmp/session.json",
       wsListener.info.id,
-      { type: "send", dataType: "string", value: "default" },
-    );
-    expect(api.setSnapshotWebSocketListenerSchedule).toHaveBeenCalledWith(
-      "/tmp/session.json",
-      wsListener.info.id,
-      { delay: 300, repeat: { interval: 500, repetitions: "Infinity" } },
+      {
+        type: "send",
+        dataType: "string",
+        value: "default",
+        delay: 300,
+        repeat: { interval: 500, repetitions: "Infinity" },
+      },
     );
     vi.useRealTimers();
   });

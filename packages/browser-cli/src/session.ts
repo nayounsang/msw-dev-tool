@@ -9,13 +9,12 @@ import {
 } from "@msw-dev-tool/cli-core";
 import {
   BROWSER_CONTROL_KEY,
-  CustomResponse,
+  HttpResponseConfig,
   HttpHandlerBehavior,
   SerializableWebSocketMatcher,
   TempHandlerInput,
   WebSocketBehaviorSelection,
-  WebSocketResponse,
-  WebSocketRepeat,
+  WebSocketResponseConfig,
   AddWebSocketListenerInput,
   WebSocketEndpointConfig,
 } from "@msw-dev-tool/core/shared";
@@ -31,7 +30,7 @@ const REQUIRED_BROWSER_CONTROL_METHOD_VERSIONS = {
   list: 1,
   get: 1,
   setBehavior: 1,
-  setCustomResponse: 1,
+  setCustomResponse: 2,
   addTemp: 1,
   removeTemp: 1,
   reset: 1,
@@ -44,9 +43,8 @@ const REQUIRED_BROWSER_CONTROL_METHOD_VERSIONS = {
   removeWebSocketListener: 1,
   setWebSocketListenerEnabled: 1,
   setWebSocketListenerBehavior: 1,
-  setWebSocketListenerCustomResponse: 1,
-  setWebSocketListenerResponse: 1,
-  setWebSocketListenerSchedule: 1,
+  setWebSocketListenerCustomResponse: 2,
+  setWebSocketListenerResponse: 2,
 } as const;
 
 type BrowserControlMethod = keyof typeof REQUIRED_BROWSER_CONTROL_METHOD_VERSIONS;
@@ -82,7 +80,7 @@ export class CdpBrowserCliSession implements CliSession {
   public setBehavior(id: string, behavior: HttpHandlerBehavior): Promise<CliMutationResult> {
     return this.invoke("setBehavior", [id, behavior]);
   }
-  public setCustomResponse(id: string, response: CustomResponse): Promise<CliMutationResult> {
+  public setCustomResponse(id: string, response: HttpResponseConfig): Promise<CliMutationResult> {
     return this.invoke("setCustomResponse", [id, response]);
   }
   public addTemp(data: TempHandlerInput): Promise<CliMutationResult> {
@@ -147,20 +145,14 @@ export class CdpBrowserCliSession implements CliSession {
   }
   public setWebSocketListenerCustomResponse(
     listenerId: string,
-    response: WebSocketResponse,
+    response: WebSocketResponseConfig,
   ): Promise<CliWebSocketListenerResult> {
     return this.invoke("setWebSocketListenerCustomResponse", [listenerId, response]);
   }
   public setWebSocketListenerResponse(
     listenerId: string,
-    response: WebSocketResponse,
+    response: WebSocketResponseConfig,
   ): Promise<CliWebSocketListenerResult> {
     return this.invoke("setWebSocketListenerResponse", [listenerId, response]);
-  }
-  public setWebSocketListenerSchedule(
-    listenerId: string,
-    input: { delay?: number; repeat?: WebSocketRepeat },
-  ): Promise<CliWebSocketListenerResult> {
-    return this.invoke("setWebSocketListenerSchedule", [listenerId, input]);
   }
 }

@@ -7,8 +7,8 @@ Start Chrome with `--remote-debugging-port=9222` and a non-default `--user-data-
 ```bash
 msw-dev-tool-browser tabs --cdp-url http://127.0.0.1:9222
 msw-dev-tool-browser ws-list --cdp-url http://127.0.0.1:9222 --target <target-id>
-msw-dev-tool-browser ws-add-listener '<endpoint-id>' --json '{"behavior":{"preset":"default"},"response":{"type":"send","dataType":"string","value":"temp response"},"customResponse":{"type":"send","dataType":"string","value":"custom response"},"delay":300,"repeat":{"interval":500,"repetitions":3}}' --cdp-url http://127.0.0.1:9222 --target <target-id>
-msw-dev-tool-browser ws-set-listener-schedule '<listener-id>' --json '{"delay":300,"repeat":{"interval":500,"repetitions":"Infinity"}}' --cdp-url http://127.0.0.1:9222 --target <target-id>
+msw-dev-tool-browser ws-add-listener '<endpoint-id>' --json '{"behavior":{"preset":"default"},"response":{"type":"send","dataType":"string","value":"temp response","delay":300,"repeat":{"interval":500,"repetitions":3}},"customResponse":{"type":"send","dataType":"string","value":"custom response","delay":100}}' --cdp-url http://127.0.0.1:9222 --target <target-id>
+msw-dev-tool-browser ws-set-listener-response '<listener-id>' --json '{"type":"send","dataType":"string","value":"scheduled","delay":300,"repeat":{"interval":500,"repetitions":"Infinity"}}' --cdp-url http://127.0.0.1:9222 --target <target-id>
 msw-dev-tool-browser ws-set-listener-response '<listener-id>' --json '{"type":"send","dataType":"string","value":"updated temp response"}' --cdp-url http://127.0.0.1:9222 --target <target-id>
 msw-dev-tool-browser ws-set-listener-custom-response '<listener-id>' --json '{"type":"send","dataType":"Blob","value":"68 69","metadata":{"type":"text/plain"}}' --cdp-url http://127.0.0.1:9222 --target <target-id>
 msw-dev-tool-browser ws-set-listener-behavior '<listener-id>' --json '{"preset":"custom response"}' --cdp-url http://127.0.0.1:9222 --target <target-id>
