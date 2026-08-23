@@ -146,16 +146,11 @@ describe("browser control bridge", () => {
     const persistedBeforeInvalidBehavior = sessionStorage.getItem(STORAGE_KEY);
     expect(() => bridge.addWebSocketListener(added.endpoint.endpointId, { preset: "invalid" })).toThrow();
     expect(() => bridge.setWebSocketListenerBehavior(listener.listener.info.id, { preset: "invalid" })).toThrow();
-    expect(() => bridge.addWebSocketListener(added.endpoint.endpointId, { preset: "default" })).toThrow(
-      "Temporary WebSocket listeners require a response behavior"
-    );
-    expect(() => bridge.setWebSocketListenerBehavior(listener.listener.info.id, { preset: "default" })).toThrow(
-      "Temporary WebSocket listeners require a response behavior"
-    );
+    expect(() => bridge.setWebSocketListenerBehavior(listener.listener.info.id, { preset: "default" })).not.toThrow();
     expect(bridge.getWebSocketEndpoint(added.endpoint.endpointId)?.listeners).toEqual([
-      expect.objectContaining({ behavior: { preset: "close", options: { code: 4001 } } }),
+      expect.objectContaining({ behavior: { preset: "default" } }),
     ]);
-    expect(sessionStorage.getItem(STORAGE_KEY)).toBe(persistedBeforeInvalidBehavior);
+    expect(sessionStorage.getItem(STORAGE_KEY)).not.toBe(persistedBeforeInvalidBehavior);
     expect(bridge.removeWebSocketListener(listener.listener.info.id).endpoints[0]?.listeners).toEqual([]);
     expect(bridge.removeWebSocketEndpoint(added.endpoint.endpointId).endpoints).toEqual([]);
     const matcher = { kind: "string" as const, value: "ws://browser.test/load" };
