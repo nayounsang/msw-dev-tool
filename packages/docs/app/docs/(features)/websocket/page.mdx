@@ -24,6 +24,43 @@ export const handlers = [
 
 After the handler connects, the WebSocket panel lists its endpoint and discovered `message` listener.
 
+## Configure a custom response
+
+The listener Behavior and its custom response data are separate settings:
+
+1. Open the pencil button in the listener row and save a custom response.
+2. Select **custom response** in the Behavior control.
+3. Trigger the WebSocket message or connection flow in the application.
+
+The editor supports two response actions:
+
+- **Send** sends one value when the listener receives a message.
+  - **String** sends the value as text. JSON is allowed as plain text, for example `{"type":"notification","ready":true}`.
+  - **Blob** sends bytes from a space-separated hexadecimal sequence, for example `89 50 4E 47 0D 0A 1A 0A`. An optional metadata `type` can be supplied for the Blob.
+  - **ArrayBuffer** sends the same hexadecimal byte representation as an ArrayBuffer.
+- **Close** closes the WebSocket after the listener receives a message. The close code and reason are optional. Codes must be `1000` or in the `3000`–`4999` range, and the reason is limited to 123 UTF-8 bytes.
+
+Example configurations:
+
+```json
+{ "type": "send", "dataType": "string", "value": "hello" }
+```
+
+```json
+{
+  "type": "send",
+  "dataType": "Blob",
+  "value": "89 50 4E 47 0D 0A 1A 0A",
+  "metadata": { "type": "image/png" }
+}
+```
+
+```json
+{ "type": "close", "code": 4001, "reason": "Unauthorized" }
+```
+
+Save replaces the listener's stored custom response. Closing the editor without saving leaves the previous configuration unchanged. Selecting **custom response** without a saved configuration produces `Please configure a custom response before using this behavior.`
+
 ## Verify real-time message states
 
 Select a listener and choose the response behavior that fits the flow you are checking.
@@ -33,6 +70,7 @@ Select a listener and choose the response behavior that fits the flow you are ch
 - **Send null** returns `null` to verify nullable-message handling.
 - **No reply** leaves a sent message unanswered so you can verify waiting states.
 - **Send sequence** returns the configured sequence behavior to explore ordered real-time updates.
+- **Custom response** uses the saved custom response configuration. Choose `Send` or `Close`; Send supports String, Blob, and ArrayBuffer values, while Blob and ArrayBuffer values use space-separated hexadecimal bytes.
 
 Use these controls to verify chat messages, notifications, pending indicators, and UI that depends on incoming data.
 

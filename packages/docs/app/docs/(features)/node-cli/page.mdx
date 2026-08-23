@@ -83,6 +83,7 @@ msw-dev-tool --pid 4182 ws-add-endpoint --json '{"kind":"string","value":"ws://l
 msw-dev-tool --pid 4182 ws-set-endpoint-enabled 'websocket:endpoint:ws://localhost:8080/chat' false
 msw-dev-tool --pid 4182 ws-add-listener 'websocket:endpoint:ws://localhost:8080/preview:0' --json '{"preset":"send","options":{"message":"hello"}}'
 msw-dev-tool --pid 4182 ws-set-listener-behavior '<listener-id>' --json '{"preset":"close","options":{"code":4001,"reason":"test"}}'
+msw-dev-tool --pid 4182 ws-set-listener-custom-response '<listener-id>' --json '{"type":"send","dataType":"string","value":"hello"}'
 msw-dev-tool --pid 4182 ws-set-listener-enabled '<listener-id>' false
 msw-dev-tool --pid 4182 ws-remove-listener '<temporary-listener-id>'
 msw-dev-tool --pid 4182 ws-remove-endpoint 'websocket:endpoint:ws://localhost:8080/preview:0'
@@ -92,4 +93,4 @@ msw-dev-tool --pid 4182 ws-remove-endpoint 'websocket:endpoint:ws://localhost:80
 {"ok":true,"endpoint":{"endpointId":"websocket:endpoint:ws://localhost:8080/chat","enabled":false,"listeners":[]}}
 ```
 
-`ws-add-endpoint`, `ws-add-listener`, and `ws-set-listener-behavior` accept their matcher or behavior through `--json`. Supported listener presets are `default`, `send`, `echo`, `send-null`, `no-reply`, `send-sequence`, and `close`. Code-discovered endpoints and listeners cannot be removed; remove commands apply only to temporary items.
+`ws-add-endpoint`, `ws-add-listener`, and `ws-set-listener-behavior` accept their matcher or behavior through `--json`. Save custom response data with `ws-set-listener-custom-response`, then select `{ "preset": "custom response" }`. Send supports String, Blob, and ArrayBuffer values; Blob and ArrayBuffer values are space-separated hexadecimal bytes. Close accepts optional `code` and `reason`. Code-discovered endpoints and listeners cannot be removed; remove commands apply only to temporary items.
