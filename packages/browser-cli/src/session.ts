@@ -14,7 +14,9 @@ import {
   SerializableWebSocketMatcher,
   TempHandlerInput,
   WebSocketBehaviorSelection,
-  WebSocketCustomResponse,
+  WebSocketResponse,
+  WebSocketRepeat,
+  AddWebSocketListenerInput,
   WebSocketEndpointConfig,
 } from "@msw-dev-tool/core/shared";
 import { CdpClient } from "./cdp";
@@ -40,6 +42,8 @@ const REQUIRED_BROWSER_CONTROL_METHOD_VERSIONS = {
   setWebSocketListenerEnabled: 1,
   setWebSocketListenerBehavior: 1,
   setWebSocketListenerCustomResponse: 1,
+  setWebSocketListenerResponse: 1,
+  setWebSocketListenerSchedule: 1,
 } as const;
 
 type BrowserControlMethod = keyof typeof REQUIRED_BROWSER_CONTROL_METHOD_VERSIONS;
@@ -80,8 +84,10 @@ export class CdpBrowserCliSession implements CliSession {
   public setWebSocketEndpointEnabled(endpointId: string, enabled: boolean): Promise<CliWebSocketEndpointResult> {
     return this.invoke("setWebSocketEndpointEnabled", [endpointId, enabled]);
   }
-  public addWebSocketListener(endpointId: string, behavior: WebSocketBehaviorSelection): Promise<CliWebSocketListenerResult> {
-    return this.invoke("addWebSocketListener", [endpointId, behavior]);
+  public addWebSocketListener(input: AddWebSocketListenerInput): Promise<CliWebSocketListenerResult>;
+  public addWebSocketListener(endpointId: string, behavior: WebSocketBehaviorSelection): Promise<CliWebSocketListenerResult>;
+  public addWebSocketListener(inputOrEndpointId: AddWebSocketListenerInput | string, behavior?: WebSocketBehaviorSelection): Promise<CliWebSocketListenerResult> {
+    return this.invoke("addWebSocketListener", [typeof inputOrEndpointId === "string" ? inputOrEndpointId : inputOrEndpointId, ...(typeof inputOrEndpointId === "string" ? [behavior] : [])]);
   }
   public removeWebSocketListener(listenerId: string): Promise<CliWebSocketInfo> {
     return this.invoke("removeWebSocketListener", [listenerId]);
@@ -92,7 +98,13 @@ export class CdpBrowserCliSession implements CliSession {
   public setWebSocketListenerBehavior(listenerId: string, behavior: WebSocketBehaviorSelection): Promise<CliWebSocketListenerResult> {
     return this.invoke("setWebSocketListenerBehavior", [listenerId, behavior]);
   }
-  public setWebSocketListenerCustomResponse(listenerId: string, response: WebSocketCustomResponse): Promise<CliWebSocketListenerResult> {
+  public setWebSocketListenerCustomResponse(listenerId: string, response: WebSocketResponse): Promise<CliWebSocketListenerResult> {
     return this.invoke("setWebSocketListenerCustomResponse", [listenerId, response]);
+  }
+  public setWebSocketListenerResponse(listenerId: string, response: WebSocketResponse): Promise<CliWebSocketListenerResult> {
+    return this.invoke("setWebSocketListenerResponse", [listenerId, response]);
+  }
+  public setWebSocketListenerSchedule(listenerId: string, input: { delay?: number; repeat?: WebSocketRepeat }): Promise<CliWebSocketListenerResult> {
+    return this.invoke("setWebSocketListenerSchedule", [listenerId, input]);
   }
 }
