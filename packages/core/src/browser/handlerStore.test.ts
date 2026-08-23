@@ -134,6 +134,15 @@ describe("browser control bridge", () => {
     expect(bridge.setWebSocketListenerBehavior(listener.listener.info.id, { preset: "close", options: { code: 4001 } }).listener.behavior).toEqual({
       preset: "close", options: { code: 4001 },
     });
+    expect(bridge.setWebSocketListenerCustomResponse(listener.listener.info.id, {
+      type: "send",
+      dataType: "string",
+      value: "custom websocket response",
+    }).listener.customResponse).toEqual({
+      type: "send",
+      dataType: "string",
+      value: "custom websocket response",
+    });
     const persistedBeforeInvalidBehavior = sessionStorage.getItem(STORAGE_KEY);
     expect(() => bridge.addWebSocketListener(added.endpoint.endpointId, { preset: "invalid" })).toThrow();
     expect(() => bridge.setWebSocketListenerBehavior(listener.listener.info.id, { preset: "invalid" })).toThrow();

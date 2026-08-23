@@ -24,6 +24,7 @@ import {
   removeSnapshotWebSocketListener,
   setSnapshotWebSocketEndpointEnabled,
   setSnapshotWebSocketListenerBehavior,
+  setSnapshotWebSocketListenerCustomResponse,
   setSnapshotWebSocketListenerEnabled,
   readSnapshotOrEmpty,
   getSessionPathForPid,
@@ -170,9 +171,22 @@ describe("snapshot file protocol", () => {
     await setSnapshotWebSocketEndpointEnabled(sessionPath, endpoint.endpointId, false);
     await setSnapshotWebSocketListenerEnabled(sessionPath, listener.info.id, false);
     await setSnapshotWebSocketListenerBehavior(sessionPath, listener.info.id, { preset: "close", options: { code: 4000 } });
+    await setSnapshotWebSocketListenerCustomResponse(sessionPath, listener.info.id, {
+      type: "send",
+      dataType: "string",
+      value: "custom websocket response",
+    });
     await expect(getSnapshotWebSocketEndpoint(sessionPath, endpoint.endpointId)).resolves.toMatchObject({
       enabled: false,
-      listeners: [{ enabled: false, behavior: { preset: "close", options: { code: 4000 } } }],
+      listeners: [{
+        enabled: false,
+        behavior: { preset: "close", options: { code: 4000 } },
+        customResponse: {
+          type: "send",
+          dataType: "string",
+          value: "custom websocket response",
+        },
+      }],
     });
 
     await removeSnapshotWebSocketListener(sessionPath, listener.info.id);
