@@ -1,0 +1,10 @@
+.next
+.turbo
+.yarn
+coverage
+dist
+dist-ssr
+node_modules
+packages/docs/public/_pagefind
+**/public/mockServiceWorker.js
+yarn.lock
