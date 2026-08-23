@@ -80,6 +80,7 @@ msw-dev-tool-browser ws-set-endpoint-enabled 'websocket:endpoint:ws://localhost:
 msw-dev-tool-browser ws-add-listener 'websocket:endpoint:ws://localhost:8080/preview:0' --json '{"preset":"send","options":{"message":"hello"}}' <cdp>
 msw-dev-tool-browser ws-set-listener-behavior '<listener-id>' --json '{"preset":"close"}' <cdp>
 msw-dev-tool-browser ws-set-listener-custom-response '<listener-id>' --json '{"type":"send","dataType":"Blob","value":"68 69","metadata":{"type":"text/plain"}}' <cdp>
+msw-dev-tool-browser ws-set-listener-behavior '<listener-id>' --json '{"preset":"custom response"}' <cdp>
 msw-dev-tool-browser ws-set-listener-enabled '<listener-id>' false <cdp>
 msw-dev-tool-browser ws-remove-listener '<temporary-listener-id>' <cdp>
 msw-dev-tool-browser ws-remove-endpoint 'websocket:endpoint:ws://localhost:8080/preview:0' <cdp>
