@@ -145,8 +145,8 @@ describe("temporary WebSocket runtime", () => {
 });
 
 describe("closeWebSocketConnections", () => {
-  it("dispatches configured custom string, binary, and close responses", async () => {
-    const endpoint = ws.link("ws://wrapper.test/custom-response");
+  const setupCustomResponseHarness = async (path: string) => {
+    const endpoint = ws.link(`ws://wrapper.test/${path}`);
     const handler = endpoint.addEventListener("connection", () => undefined);
     const store = createHandlerStore<SetupServer>({
       createRuntime: (handlers) => setupServer(...handlers),
@@ -160,21 +160,41 @@ describe("closeWebSocketConnections", () => {
     const client = { send: vi.fn(), close: vi.fn() };
     adapter.registerWebSocketConnection(endpointId, client);
     store.getState().setWebSocketListenerBehavior(listenerId, { preset: "custom response" });
+    return { adapter, endpointId, listenerId, client, store };
+  };
 
+  it("dispatches a configured custom string response", async () => {
+    const { adapter, endpointId, listenerId, client, store } = await setupCustomResponseHarness("custom-string");
     store.getState().setWebSocketListenerCustomResponse(listenerId, { type: "send", dataType: "string", value: "hello" });
     adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
-    expect(client.send).toHaveBeenLastCalledWith("hello");
+    expect(client.send).toHaveBeenCalledWith("hello");
+  });
 
+  it("dispatches a configured ArrayBuffer response", async () => {
+    const { adapter, endpointId, listenerId, client, store } = await setupCustomResponseHarness("custom-arraybuffer");
     store.getState().setWebSocketListenerCustomResponse(listenerId, { type: "send", dataType: "ArrayBuffer", value: "68 69" });
     adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
     expect(Array.from(new Uint8Array(client.send.mock.calls.at(-1)?.[0] as ArrayBuffer))).toEqual([104, 105]);
+  });
 
+  it("dispatches a configured Blob response", async () => {
+    const { adapter, endpointId, listenerId, client, store } = await setupCustomResponseHarness("custom-blob");
+    store.getState().setWebSocketListenerCustomResponse(listenerId, { type: "send", dataType: "Blob", value: "68 69", metadata: { type: "text/plain" } });
+    adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
+    const blob = client.send.mock.calls.at(-1)?.[0] as Blob;
+    expect(blob).toBeInstanceOf(Blob);
+    expect(blob.type).toBe("text/plain");
+    await expect(blob.text()).resolves.toBe("hi");
+  });
+
+  it("dispatches a configured close response", async () => {
+    const { adapter, endpointId, listenerId, client, store } = await setupCustomResponseHarness("custom-close");
     store.getState().setWebSocketListenerCustomResponse(listenerId, { type: "close", code: 4001, reason: "Unauthorized" });
     adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
     expect(client.close).toHaveBeenCalledWith(4001, "Unauthorized");
   });
 
-  it("throws the HTTP-compatible error when custom response is missing", async () => {
+  it("throws when custom response is missing", async () => {
     const endpoint = ws.link("ws://wrapper.test/missing-custom-response");
     const handler = endpoint.addEventListener("connection", () => undefined);
     const store = createHandlerStore<SetupServer>({ createRuntime: (handlers) => setupServer(...handlers) });

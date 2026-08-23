@@ -11,10 +11,16 @@ describe("WebSocket custom response payloads", () => {
     expect(() => parseWebSocketHex("6 6g")).toThrow("Binary WebSocket response");
   });
 
-  it("returns string, ArrayBuffer, and Blob payloads", async () => {
+  it("returns a string payload", () => {
     expect(toWebSocketSendData({ type: "send", dataType: "string", value: "hello" })).toBe("hello");
+  });
+
+  it("returns an ArrayBuffer payload", () => {
     const buffer = toWebSocketSendData({ type: "send", dataType: "ArrayBuffer", value: "68 69" });
     expect(Array.from(new Uint8Array(buffer as ArrayBuffer))).toEqual([104, 105]);
+  });
+
+  it("returns a Blob payload with metadata", async () => {
     const blob = toWebSocketSendData({ type: "send", dataType: "Blob", value: "68 69", metadata: { type: "text/plain" } });
     expect(blob).toBeInstanceOf(Blob);
     expect((blob as Blob).type).toBe("text/plain");
