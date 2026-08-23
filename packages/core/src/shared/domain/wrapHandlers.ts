@@ -1,6 +1,6 @@
 import { HttpResponse } from "msw";
 import type { BehaviorResolverResult } from "../types";
-import { CustomResponse, HttpHandlerBehavior } from "../types";
+import { HttpResponseConfig, HttpHandlerBehavior } from "../types";
 import { getHandlerResponseByBehavior } from "../utils/handler";
 import { getRowId } from "../utils/store";
 import { isHttpHandler } from "../utils/validate";
@@ -34,7 +34,7 @@ const toStrictResolverResult = async (result: unknown): Promise<BehaviorResolver
 export const wrapHandlersWithBehavior = <T>(
   handlers: T[],
   getBehavior: (id: string) => HttpHandlerBehavior | undefined,
-  getCustomResponse: (id: string) => CustomResponse | undefined = () => undefined,
+  getCustomResponse: (id: string) => HttpResponseConfig | undefined = () => undefined,
 ): T[] => {
   return handlers.map((handler) => {
     if (!isHttpHandler(handler)) {

@@ -1,4 +1,4 @@
-import { CustomResponse, FlattenHandler, HttpHandlerBehavior } from "../types";
+import { HttpResponseConfig, FlattenHandler, HttpHandlerBehavior } from "../types";
 
 export const getFlattenHandlerById = (
   handlers: FlattenHandler[],
@@ -17,7 +17,7 @@ export const getHandlerBehavior = (
 export const getHandlerCustomResponse = (
   handlers: FlattenHandler[],
   id: string,
-): CustomResponse | undefined => getFlattenHandlerById(handlers, id)?.customResponse;
+): HttpResponseConfig | undefined => getFlattenHandlerById(handlers, id)?.customResponse;
 
 export const setHandlerBehavior = (
   handlers: FlattenHandler[],
@@ -30,7 +30,7 @@ export const setHandlerBehavior = (
 export const setHandlerCustomResponse = (
   handlers: FlattenHandler[],
   id: string,
-  customResponse: CustomResponse,
+  customResponse: HttpResponseConfig,
 ): FlattenHandler[] =>
   handlers.map((handler) => (handler.id === id ? { ...handler, customResponse } : handler));
 

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { HttpResponse } from "msw";
-import { CustomBehavior, HttpMethod } from "../types";
+import { CustomBehavior, HttpMethod, MimeType, StringHttpStatusCode } from "../types";
 import { getRowId } from "../utils/store";
 import { createHttpHandler } from "../testing/createHttpHandler";
 import { wrapHandlersWithBehavior } from "./wrapHandlers";
@@ -57,7 +57,12 @@ describe("wrapHandlersWithBehavior", () => {
     wrapHandlersWithBehavior(
       [handler],
       () => CustomBehavior.CUSTOM_RESPONSE,
-      () => ({ body: "custom", headers: { "X-Handler": "yes" }, status: 203 }),
+      () => ({
+        contentType: MimeType.TEXT_PLAIN,
+        response: "custom",
+        header: '{"X-Handler":"yes"}',
+        status: StringHttpStatusCode.ACCEPTED,
+      }),
     );
 
     const result = await handler.resolver({
@@ -68,7 +73,7 @@ describe("wrapHandlersWithBehavior", () => {
     });
 
     if (!(result instanceof Response)) throw new Error("Expected Response");
-    expect(result.status).toBe(203);
+    expect(result.status).toBe(202);
     expect(result.headers.get("X-Handler")).toBe("yes");
     expect(await result.text()).toBe("custom");
   });

@@ -1,17 +1,11 @@
-import {
-  webSocketEndpointSchema,
-  webSocketResponseSchema,
-  webSocketRepeatSchema,
-  webSocketDelaySchema,
-} from "../schema/websocket";
+import { webSocketEndpointSchema, webSocketResponseConfigSchema } from "../schema/websocket";
 import type {
   AddWebSocketListenerInput,
   SerializableWebSocketMatcher,
   WebSocketBehaviorSelection,
   WebSocketEndpointConfig,
   WebSocketListenerConfig,
-  WebSocketResponse,
-  WebSocketRepeat,
+  WebSocketResponseConfig,
 } from "../types";
 
 export const canonicalWebSocketMatcher = (matcher: SerializableWebSocketMatcher): string =>
@@ -122,13 +116,13 @@ export const addTemporaryWebSocketListener = (
     enabled: true,
     behavior,
     response:
-      input.response === undefined ? undefined : webSocketResponseSchema.parse(input.response),
+      input.response === undefined
+        ? undefined
+        : webSocketResponseConfigSchema.parse(input.response),
     customResponse:
       input.customResponse === undefined
         ? undefined
-        : webSocketResponseSchema.parse(input.customResponse),
-    delay: input.delay === undefined ? 0 : webSocketDelaySchema.parse(input.delay),
-    repeat: input.repeat === undefined ? undefined : webSocketRepeatSchema.parse(input.repeat),
+        : webSocketResponseConfigSchema.parse(input.customResponse),
   };
   const nextEndpoints = endpoints.map((entry) =>
     entry.endpointId === endpointId
@@ -193,9 +187,9 @@ export const setWebSocketListenerBehavior = (
 export const setWebSocketListenerCustomResponse = (
   endpoints: WebSocketEndpointConfig[],
   listenerId: string,
-  customResponse: WebSocketResponse,
+  customResponse: WebSocketResponseConfig,
 ) => {
-  const response = webSocketResponseSchema.parse(customResponse);
+  const response = webSocketResponseConfigSchema.parse(customResponse);
   const nextEndpoints = endpoints.map((endpoint) => ({
     ...endpoint,
     listeners: endpoint.listeners.map((entry) =>
@@ -209,37 +203,13 @@ export const setWebSocketListenerCustomResponse = (
 export const setWebSocketListenerResponse = (
   endpoints: WebSocketEndpointConfig[],
   listenerId: string,
-  response: WebSocketResponse,
+  response: WebSocketResponseConfig,
 ) => {
-  const parsed = webSocketResponseSchema.parse(response);
+  const parsed = webSocketResponseConfigSchema.parse(response);
   const nextEndpoints = endpoints.map((endpoint) => ({
     ...endpoint,
     listeners: endpoint.listeners.map((entry) =>
       entry.info.id === listenerId ? { ...entry, response: parsed } : entry,
-    ),
-  }));
-  const { endpoint, listener } = findListener(nextEndpoints, listenerId);
-  return { endpoints: nextEndpoints, endpoint, listener };
-};
-
-export const setWebSocketListenerSchedule = (
-  endpoints: WebSocketEndpointConfig[],
-  listenerId: string,
-  input: { delay?: number; repeat?: WebSocketRepeat },
-) => {
-  const currentListener = findListener(endpoints, listenerId).listener;
-  const delay = "delay" in input ? (input.delay ?? 0) : (currentListener.delay ?? 0);
-  const parsedRepeat =
-    "repeat" in input && input.repeat !== undefined
-      ? webSocketRepeatSchema.parse(input.repeat)
-      : "repeat" in input
-        ? undefined
-        : currentListener.repeat;
-  webSocketDelaySchema.parse(delay);
-  const nextEndpoints = endpoints.map((endpoint) => ({
-    ...endpoint,
-    listeners: endpoint.listeners.map((entry) =>
-      entry.info.id === listenerId ? { ...entry, delay, repeat: parsedRepeat } : entry,
     ),
   }));
   const { endpoint, listener } = findListener(nextEndpoints, listenerId);

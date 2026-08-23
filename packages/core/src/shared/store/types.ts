@@ -1,5 +1,5 @@
 import {
-  CustomResponse,
+  HttpResponseConfig,
   FlattenHandler,
   Handler,
   HttpHandlerBehavior,
@@ -7,8 +7,7 @@ import {
   ManagedWebSocketListener,
   DevToolHandlerInfo,
   WebSocketBehaviorSelection,
-  WebSocketResponse,
-  WebSocketRepeat,
+  WebSocketResponseConfig,
   AddWebSocketListenerInput,
   WebSocketEndpointConfig,
   TempHandlerInput,
@@ -35,8 +34,8 @@ export type HandlerStoreBaseState = {
   getFlattenHandlerById: (id: string) => FlattenHandler | undefined;
   getHandlerBehavior: (id: string) => HttpHandlerBehavior | undefined;
   setHandlerBehavior: (id: string, behavior: HttpHandlerBehavior) => void;
-  getHandlerCustomResponse: (id: string) => CustomResponse | undefined;
-  setHandlerCustomResponse: (id: string, response: CustomResponse) => void;
+  getHandlerCustomResponse: (id: string) => HttpResponseConfig | undefined;
+  setHandlerCustomResponse: (id: string, response: HttpResponseConfig) => void;
   removeTempHandler: (id: string) => void;
   webSocketEndpoints: ManagedWebSocketEndpoint[];
   webSocketListeners: ManagedWebSocketListener[];
@@ -56,12 +55,11 @@ export type HandlerStoreBaseState = {
   setWebSocketEndpointEnabled: (endpointId: string, enabled: boolean) => void;
   setWebSocketListenerEnabled: (listenerId: string, enabled: boolean) => void;
   setWebSocketListenerBehavior: (listenerId: string, behavior: WebSocketBehaviorSelection) => void;
-  setWebSocketListenerCustomResponse: (listenerId: string, response: WebSocketResponse) => void;
-  setWebSocketListenerResponse: (listenerId: string, response: WebSocketResponse) => void;
-  setWebSocketListenerSchedule: (
+  setWebSocketListenerCustomResponse: (
     listenerId: string,
-    input: { delay?: number; repeat?: WebSocketRepeat },
+    response: WebSocketResponseConfig,
   ) => void;
+  setWebSocketListenerResponse: (listenerId: string, response: WebSocketResponseConfig) => void;
   hydrateWebSocket: (endpoints: WebSocketEndpointConfig[]) => void;
   getWebSocketEndpoint: (endpointId: string) => WebSocketEndpointConfig | undefined;
   getWebSocketListener: (

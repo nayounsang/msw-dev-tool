@@ -85,17 +85,28 @@ describe("WebSocket state model", () => {
     const first = slice.addTempListener({ endpointId });
     const second = slice.addTempListener({ endpointId, behavior: { preset: "echo" } });
 
-    slice.setListenerCustomResponse(first, { type: "send", dataType: "string", value: "custom" });
-    slice.setListenerResponse(first, { type: "send", dataType: "string", value: "default" });
-    slice.setListenerSchedule(first, { delay: 300, repeat: { interval: 500, repetitions: 3 } });
+    slice.setListenerCustomResponse(first, {
+      type: "send",
+      dataType: "string",
+      value: "custom",
+    });
+    slice.setListenerResponse(first, {
+      type: "send",
+      dataType: "string",
+      value: "default",
+      delay: 300,
+      repeat: { interval: 500, repetitions: 3 },
+    });
 
     expect(slice.getState().listeners).toEqual([
       expect.objectContaining({
         info: expect.objectContaining({ id: first }),
         customResponse: expect.objectContaining({ value: "custom" }),
-        response: expect.objectContaining({ value: "default" }),
-        delay: 300,
-        repeat: { interval: 500, repetitions: 3 },
+        response: expect.objectContaining({
+          value: "default",
+          delay: 300,
+          repeat: { interval: 500, repetitions: 3 },
+        }),
       }),
       expect.objectContaining({
         info: expect.objectContaining({ id: second }),

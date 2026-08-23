@@ -22,10 +22,10 @@ export const httpHandlerSchema = z.object({
 export {
   tempHandlerSchema,
   handlerSchema,
-  customResponseSchema,
+  httpResponseConfigSchema,
   isValidHandlerPath,
 } from "./handler";
-export type { TempHandlerSchema, HandlerSchema, CustomResponseSchema } from "./handler";
+export type { TempHandlerSchema, HandlerSchema, HttpResponseConfigSchema } from "./handler";
 export {
   webSocketEndpointsSchema,
   webSocketEndpointSchema,
@@ -34,8 +34,7 @@ export {
   webSocketBehaviorSchema,
   webSocketSendOptionsSchema,
   webSocketCloseOptionsSchema,
-  webSocketResponseSchema,
-  webSocketCustomResponseSchema,
+  webSocketResponseConfigSchema,
   webSocketRepeatSchema,
   webSocketDelaySchema,
 } from "./websocket";

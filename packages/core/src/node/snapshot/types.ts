@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { HttpHandlerBehavior, HttpMethod } from "../../shared/types";
 import { webSocketEndpointsSchema } from "../../shared/schema/websocket";
-import { customResponseSchema, tempHandlerSchema } from "../../shared/schema";
+import { httpResponseConfigSchema, tempHandlerSchema } from "../../shared/schema";
 
 export const tempHandlerInputSchema = tempHandlerSchema;
 
@@ -12,7 +12,7 @@ export const serializableFlattenHandlerSchema = z.object({
   behavior: z.nativeEnum(HttpHandlerBehavior),
   type: z.enum(["temp", "default"]),
   tempInput: tempHandlerInputSchema.optional(),
-  customResponse: customResponseSchema.optional(),
+  customResponse: httpResponseConfigSchema.optional(),
 });
 
 export const sessionSnapshotSchema = z.object({

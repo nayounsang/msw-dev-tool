@@ -38,9 +38,10 @@ describe("mergeStorageData", () => {
   it("overlays a saved custom response onto a matching handler", () => {
     const id = getRowId({ path: "/a", method: "get" });
     const customResponse = {
-      body: '{"cached":true}',
-      headers: { "X-Source": "storage" },
-      status: 201,
+      response: '{"cached":true}',
+      header: '{"X-Source":"storage"}',
+      contentType: MimeType.APPLICATION_JSON,
+      status: StringHttpStatusCode.CREATED,
     };
     const merged = mergeStorageData(
       { flattenHandlers: [makeFlatten({ id, path: "/a", method: HttpMethod.GET })] },

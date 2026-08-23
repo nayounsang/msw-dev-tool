@@ -2,8 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   serializableWebSocketMatcherSchema,
   webSocketBehaviorSchema,
-  webSocketCustomResponseSchema,
-  webSocketResponseSchema,
+  webSocketResponseConfigSchema,
   webSocketRepeatSchema,
   webSocketListenerSchema,
   webSocketEndpointsSchema,
@@ -123,10 +122,10 @@ describe("websocket schema", () => {
   it("validates custom WebSocket responses", () => {
     expect(() => webSocketBehaviorSchema.parse({ preset: "custom response" })).not.toThrow();
     expect(() =>
-      webSocketCustomResponseSchema.parse({ type: "send", dataType: "string", value: "hello" }),
+      webSocketResponseConfigSchema.parse({ type: "send", dataType: "string", value: "hello" }),
     ).not.toThrow();
     expect(() =>
-      webSocketCustomResponseSchema.parse({
+      webSocketResponseConfigSchema.parse({
         type: "send",
         dataType: "Blob",
         value: "68 69",
@@ -134,25 +133,31 @@ describe("websocket schema", () => {
       }),
     ).not.toThrow();
     expect(() =>
-      webSocketCustomResponseSchema.parse({
+      webSocketResponseConfigSchema.parse({
         type: "send",
         dataType: "ArrayBuffer",
         value: "68 69",
       }),
     ).not.toThrow();
     expect(() =>
-      webSocketCustomResponseSchema.parse({ type: "close", code: 4001, reason: "Unauthorized" }),
+      webSocketResponseConfigSchema.parse({ type: "close", code: 4001, reason: "Unauthorized" }),
     ).not.toThrow();
     expect(() =>
-      webSocketCustomResponseSchema.parse({ type: "send", dataType: "Blob", value: "6g" }),
+      webSocketResponseConfigSchema.parse({ type: "send", dataType: "Blob", value: "6g" }),
     ).toThrow();
-    expect(webSocketResponseSchema.parse({ type: "close", code: 1000 })).toEqual({
+    expect(webSocketResponseConfigSchema.parse({ type: "close", code: 1000 })).toEqual({
       type: "close",
       code: 1000,
     });
     expect(
-      webSocketCustomResponseSchema.parse({ type: "send", dataType: "string", value: "hello" }),
-    ).toEqual(webSocketResponseSchema.parse({ type: "send", dataType: "string", value: "hello" }));
+      webSocketResponseConfigSchema.parse({
+        type: "send",
+        dataType: "string",
+        value: "hello",
+        delay: 10,
+        repeat: { interval: 20, repetitions: 2 },
+      }),
+    ).toMatchObject({ delay: 10, repeat: { interval: 20, repetitions: 2 } });
   });
 
   it("validates listener scheduling and defaults old listeners", () => {
@@ -181,6 +186,6 @@ describe("websocket schema", () => {
       event: "message",
       enabled: true,
     });
-    expect(listener).toMatchObject({ behavior: { preset: "default" }, delay: 0 });
+    expect(listener).toMatchObject({ behavior: { preset: "default" } });
   });
 });

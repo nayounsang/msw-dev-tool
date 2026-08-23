@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import { HttpResponse, passthrough } from "msw";
-import { CustomBehavior, HttpErrorStatusCode, STANDARD_HTTP_STATUS_TEXT } from "../types";
+import {
+  CustomBehavior,
+  HttpErrorStatusCode,
+  MimeType,
+  STANDARD_HTTP_STATUS_TEXT,
+  StringHttpStatusCode,
+} from "../types";
 import { getHandlerResponseByBehavior } from "./handler";
 
 vi.mock("msw", async (importOriginal) => {
@@ -63,9 +69,10 @@ describe("getHandlerResponseByBehavior", () => {
       CustomBehavior.CUSTOM_RESPONSE,
       async () => HttpResponse.json({ original: true }),
       {
-        body: '{"custom":true}',
-        headers: { "Content-Type": "application/json", "X-Source": "dev-tool" },
-        status: 201,
+        response: '{"custom":true}',
+        header: '{"X-Source":"dev-tool"}',
+        contentType: MimeType.APPLICATION_JSON,
+        status: StringHttpStatusCode.CREATED,
       },
     );
 
@@ -77,17 +84,22 @@ describe("getHandlerResponseByBehavior", () => {
     expect(await result.text()).toBe('{"custom":true}');
   });
 
-  it("uses 200 OK when a custom response has no status configuration", async () => {
+  it("uses configured status text when provided", async () => {
     const result = await getHandlerResponseByBehavior(
       CustomBehavior.CUSTOM_RESPONSE,
       async () => HttpResponse.json({ original: true }),
-      { body: "default status" },
+      {
+        response: "custom status",
+        contentType: MimeType.TEXT_PLAIN,
+        status: StringHttpStatusCode.OK,
+        statusText: "Custom OK",
+      },
     );
 
     expect(result).toBeInstanceOf(Response);
     if (!(result instanceof Response)) throw new Error("Expected Response");
     expect(result.status).toBe(200);
-    expect(result.statusText).toBe("OK");
+    expect(result.statusText).toBe("Custom OK");
   });
 
   it("throws when CUSTOM_RESPONSE has not been configured", async () => {

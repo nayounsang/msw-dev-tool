@@ -5,7 +5,6 @@ import {
   setWebSocketListenerBehavior,
   setWebSocketListenerCustomResponse,
   setWebSocketListenerResponse,
-  setWebSocketListenerSchedule,
 } from "./state";
 import type { WebSocketEndpointConfig } from "../types";
 
@@ -16,9 +15,9 @@ const endpoint = (value = "ws://state.test/chat"): WebSocketEndpointConfig =>
   }).endpoint;
 
 describe("temporary WebSocket listener state", () => {
-  it("defaults temporary listeners to default behavior and delay zero", () => {
+  it("defaults temporary listeners to default behavior", () => {
     const created = addTemporaryWebSocketListener([endpoint()], endpoint().endpointId, {});
-    expect(created.listener).toMatchObject({ behavior: { preset: "default" }, delay: 0 });
+    expect(created.listener).toMatchObject({ behavior: { preset: "default" } });
   });
 
   it("keeps response and customResponse independent while changing behavior", () => {
@@ -62,61 +61,27 @@ describe("temporary WebSocket listener state", () => {
     });
   });
 
-  it("supports partial schedule changes and removes repeat explicitly", () => {
+  it("stores independent schedules with the default and custom responses", () => {
     const initial = endpoint();
     const added = addTemporaryWebSocketListener([initial], initial.endpointId, {
-      delay: 300,
-      repeat: { interval: 500, repetitions: "Infinity" },
+      response: {
+        type: "send",
+        dataType: "string",
+        value: "default",
+        delay: 300,
+        repeat: { interval: 500, repetitions: "Infinity" },
+      },
+      customResponse: {
+        type: "send",
+        dataType: "string",
+        value: "custom",
+        delay: 100,
+        repeat: { interval: 50, repetitions: 3 },
+      },
     });
-    const withSibling = addTemporaryWebSocketListener(added.endpoints, initial.endpointId, {
-      behavior: { preset: "no-reply" },
-    });
-    const delayOnly = setWebSocketListenerSchedule(withSibling.endpoints, added.listener.info.id, {
-      delay: 200,
-    });
-    expect(delayOnly.listener).toMatchObject({
-      delay: 200,
-      repeat: { interval: 500, repetitions: "Infinity" },
-    });
-    const defaultedDelay = setWebSocketListenerSchedule(
-      delayOnly.endpoints,
-      added.listener.info.id,
-      { delay: undefined },
-    );
-    expect(defaultedDelay.listener).toMatchObject({
-      delay: 0,
-      repeat: { interval: 500, repetitions: "Infinity" },
-    });
-    const legacyDelay = defaultedDelay.endpoints.map((entry) => ({
-      ...entry,
-      listeners: entry.listeners.map((listener) =>
-        listener.info.id === added.listener.info.id ? { ...listener, delay: undefined } : listener,
-      ),
-    }));
-    const normalizedLegacyDelay = setWebSocketListenerSchedule(
-      legacyDelay,
-      added.listener.info.id,
-      {},
-    );
-    expect(normalizedLegacyDelay.listener.delay).toBe(0);
-    const changed = setWebSocketListenerSchedule(
-      normalizedLegacyDelay.endpoints,
-      added.listener.info.id,
-      { repeat: undefined },
-    );
-    expect(changed.listener).toMatchObject({ delay: 0 });
-    expect(changed.listener.repeat).toBeUndefined();
-    const rescheduled = setWebSocketListenerSchedule(changed.endpoints, added.listener.info.id, {
-      delay: 100,
-      repeat: { interval: 50, repetitions: 3 },
-    });
-    expect(rescheduled.listener).toMatchObject({
-      delay: 100,
-      repeat: { interval: 50, repetitions: 3 },
-    });
-    expect(rescheduled.endpoint.listeners[1]).toMatchObject({
-      info: { id: withSibling.listener.info.id },
-      behavior: { preset: "no-reply" },
+    expect(added.listener).toMatchObject({
+      response: { delay: 300, repeat: { interval: 500, repetitions: "Infinity" } },
+      customResponse: { delay: 100, repeat: { interval: 50, repetitions: 3 } },
     });
   });
 });

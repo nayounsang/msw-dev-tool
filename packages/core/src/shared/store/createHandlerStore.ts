@@ -179,14 +179,14 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
         listeners.forEach((config) => {
           if (!config?.enabled) return;
           const defaultAction = config.behavior;
-          const sendResponse = (response: import("../types").WebSocketResponse) => {
+          const sendResponse = (response: import("../types").WebSocketResponseConfig) => {
             const schedules =
               responseSchedules.get(client) ?? new Map<string, Set<ResponseSchedule>>();
             responseSchedules.set(client, schedules);
             const listenerSchedules = schedules.get(config.info.id) ?? new Set<ResponseSchedule>();
             schedules.set(config.info.id, listenerSchedules);
-            const repetitions = config.repeat?.repetitions ?? 1;
-            const interval = config.repeat?.interval ?? 0;
+            const repetitions = response.repeat?.repetitions ?? 1;
+            const interval = response.repeat?.interval ?? 0;
             let count = 0;
             const schedule: ResponseSchedule = { cancelled: false };
             const run = () => {
@@ -207,8 +207,8 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
               listenerSchedules.add(schedule);
             };
             listenerSchedules.add(schedule);
-            if (!config.delay) run();
-            else schedule.timer = setTimeout(run, config.delay);
+            if (!response.delay) run();
+            else schedule.timer = setTimeout(run, response.delay);
           };
           if (defaultAction.preset === "default") {
             if (config.response) sendResponse(config.response);
@@ -461,11 +461,6 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
       setWebSocketListenerResponse: (listenerId, response) => {
         clearListenerTimers(listenerId);
         webSocketSlice.setListenerResponse(listenerId, response);
-        syncWebSocketState();
-      },
-      setWebSocketListenerSchedule: (listenerId, input) => {
-        clearListenerTimers(listenerId);
-        webSocketSlice.setListenerSchedule(listenerId, input);
         syncWebSocketState();
       },
       getHandlerCustomResponse: (id) => lookupCustomResponse(id),

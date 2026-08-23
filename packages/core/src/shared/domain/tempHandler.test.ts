@@ -63,7 +63,12 @@ describe("buildTempHandler", () => {
     const { handler } = buildTempHandler(
       baseInput,
       () => CustomBehavior.CUSTOM_RESPONSE,
-      () => ({ body: "temporary custom", headers: { "X-Temp": "yes" }, status: 202 }),
+      () => ({
+        contentType: MimeType.TEXT_PLAIN,
+        response: "temporary custom",
+        header: '{"X-Temp":"yes"}',
+        status: StringHttpStatusCode.ACCEPTED,
+      }),
     );
 
     const result = await handler.resolver({

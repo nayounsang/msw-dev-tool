@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { STORAGE_KEY } from "../../shared/const";
 import { HttpMethod, MimeType, StringHttpStatusCode } from "../../shared/types";
 import { getRowId } from "../../shared/utils/store";
-import { handlerSchema } from "./handler";
+import { handlerSchema, httpResponseConfigSchema } from "./handler";
 
 const validBase = {
   path: "/api/items",
@@ -117,6 +117,23 @@ describe("handlerSchema", () => {
     expect(
       handlerSchema.safeParse({ ...validBase, contentType: MimeType.TEXT_HTML, response: "<main>" })
         .success,
+    ).toBe(true);
+  });
+
+  it("uses the same browser MIME validation for custom response settings", () => {
+    expect(
+      httpResponseConfigSchema.safeParse({
+        contentType: MimeType.APPLICATION_XML,
+        status: StringHttpStatusCode.OK,
+        response: "<item>ok</item>",
+      }).success,
+    ).toBe(true);
+    expect(
+      httpResponseConfigSchema.safeParse({
+        contentType: MimeType.TEXT_HTML,
+        status: StringHttpStatusCode.OK,
+        response: "<main>ok</main>",
+      }).success,
     ).toBe(true);
   });
 });

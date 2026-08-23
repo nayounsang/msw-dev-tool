@@ -16,10 +16,9 @@ import {
 import { HandlerSchema } from "./schema";
 import {
   tempHandlerSchema,
+  httpResponseConfigSchema,
   webSocketBehaviorSchema,
-  webSocketResponseSchema,
-  webSocketRepeatSchema,
-  webSocketDelaySchema,
+  webSocketResponseConfigSchema,
 } from "../shared/schema";
 import { webSocketEndpointFromMatcher } from "../shared/websocket/state";
 import { getBrowserStorageSnapshot, mergeStorageData } from "./storage";
@@ -77,7 +76,6 @@ const mapState = (base: HandlerStoreInternalState<SetupWorker>): HandlerStoreSta
   setWebSocketListenerBehavior: base.setWebSocketListenerBehavior,
   setWebSocketListenerCustomResponse: base.setWebSocketListenerCustomResponse,
   setWebSocketListenerResponse: base.setWebSocketListenerResponse,
-  setWebSocketListenerSchedule: base.setWebSocketListenerSchedule,
   hydrateWebSocket: base.hydrateWebSocket,
   getWebSocketEndpoint: base.getWebSocketEndpoint,
   getWebSocketListener: base.getWebSocketListener,
@@ -214,7 +212,9 @@ const registerBrowserControlBridge = () => {
     },
     setCustomResponse: (id, response) => {
       requireHandler(id);
-      handlerStore.getState().setHandlerCustomResponse(id, response);
+      handlerStore
+        .getState()
+        .setHandlerCustomResponse(id, httpResponseConfigSchema.parse(response));
       return { ...describeBrowserSession(), handler: toSerializable(requireHandler(id)) };
     },
     addTemp: (data) => {
@@ -262,19 +262,11 @@ const registerBrowserControlBridge = () => {
               response:
                 inputOrEndpointId.response === undefined
                   ? undefined
-                  : webSocketResponseSchema.parse(inputOrEndpointId.response),
+                  : webSocketResponseConfigSchema.parse(inputOrEndpointId.response),
               customResponse:
                 inputOrEndpointId.customResponse === undefined
                   ? undefined
-                  : webSocketResponseSchema.parse(inputOrEndpointId.customResponse),
-              delay:
-                inputOrEndpointId.delay === undefined
-                  ? undefined
-                  : webSocketDelaySchema.parse(inputOrEndpointId.delay),
-              repeat:
-                inputOrEndpointId.repeat === undefined
-                  ? undefined
-                  : webSocketRepeatSchema.parse(inputOrEndpointId.repeat),
+                  : webSocketResponseConfigSchema.parse(inputOrEndpointId.customResponse),
             };
       const listenerId = handlerStore.getState().addTempWebSocketListener(input);
       return {
@@ -301,22 +293,17 @@ const registerBrowserControlBridge = () => {
     setWebSocketListenerCustomResponse: (listenerId, response) => {
       handlerStore
         .getState()
-        .setWebSocketListenerCustomResponse(listenerId, webSocketResponseSchema.parse(response));
+        .setWebSocketListenerCustomResponse(
+          listenerId,
+          webSocketResponseConfigSchema.parse(response),
+        );
       const listener = requireWebSocketListener(listenerId);
       return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener };
     },
     setWebSocketListenerResponse: (listenerId, response) => {
       handlerStore
         .getState()
-        .setWebSocketListenerResponse(listenerId, webSocketResponseSchema.parse(response));
-      const listener = requireWebSocketListener(listenerId);
-      return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener };
-    },
-    setWebSocketListenerSchedule: (listenerId, input) => {
-      const schedule = { ...input };
-      if ("repeat" in input && input.repeat !== undefined)
-        schedule.repeat = webSocketRepeatSchema.parse(input.repeat);
-      handlerStore.getState().setWebSocketListenerSchedule(listenerId, schedule);
+        .setWebSocketListenerResponse(listenerId, webSocketResponseConfigSchema.parse(response));
       const listener = requireWebSocketListener(listenerId);
       return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener };
     },

@@ -1,16 +1,14 @@
-import { delay, HttpHandler as MswHttpHandler, HttpMethods, HttpResponse } from "msw";
+import { HttpHandler as MswHttpHandler, HttpMethods } from "msw";
 import {
   FlattenHandler,
-  CustomResponse,
+  HttpResponseConfig,
   HttpHandler,
   HttpHandlerBehavior,
   HttpMethod,
-  MimeType,
   TempHandlerInput,
 } from "../types";
 import type { HydratableFlattenHandler } from "../utils/storage";
-import { headerRecordSchema } from "../schema";
-import { getHandlerResponseByBehavior } from "../utils/handler";
+import { createHttpResponseFromConfig, getHandlerResponseByBehavior } from "../utils/handler";
 import { getRowId } from "../utils/store";
 import { isHttpHandler } from "../utils/validate";
 
@@ -41,46 +39,17 @@ const toMswMethod = (method: HttpMethod): HttpMethods => {
 export const buildTempHandler = (
   data: TempHandlerInput,
   getBehavior: (id: string) => HttpHandlerBehavior | undefined,
-  getCustomResponse: (id: string) => CustomResponse | undefined = () => undefined,
+  getCustomResponse: (id: string) => HttpResponseConfig | undefined = () => undefined,
 ): { handler: HttpHandler; flattenHandler: FlattenHandler } => {
-  const {
-    path,
-    method,
-    response,
-    status,
-    contentType,
-    delay: responseDelay,
-    statusText,
-    header,
-  } = data;
-
-  const contentLength: Partial<Record<MimeType, string>> = {
-    [MimeType.APPLICATION_JSON]: response ? new Blob([response]).size.toString() : "0",
-  };
+  const { path, method } = data;
 
   const id = getRowId({ path, method });
-
-  const parsedHeader = header ? headerRecordSchema.parse(JSON.parse(header)) : undefined;
-
-  const headers = {
-    "Content-Type": contentType,
-    ...(contentLength[contentType] ? { "Content-Length": contentLength[contentType] } : {}),
-    ...parsedHeader,
-  };
 
   const created = new MswHttpHandler(toMswMethod(method), path, async () => {
     const behavior = getBehavior(id);
     return await getHandlerResponseByBehavior(
       behavior,
-      async () => {
-        await delay(responseDelay);
-        // Create a fresh response per request — body streams are single-use.
-        return new HttpResponse(response, {
-          status: Number(status),
-          statusText: statusText,
-          headers,
-        });
-      },
+      () => createHttpResponseFromConfig(data),
       getCustomResponse(id),
     );
   });
@@ -109,7 +78,7 @@ export const buildTempHandler = (
 export const rehydrateTempHandlers = (
   handlers: HydratableFlattenHandler[],
   getBehavior: (id: string) => HttpHandlerBehavior | undefined,
-  getCustomResponse: (id: string) => CustomResponse | undefined = () => undefined,
+  getCustomResponse: (id: string) => HttpResponseConfig | undefined = () => undefined,
 ): FlattenHandler[] => {
   return handlers.flatMap((entry) => {
     if (entry.type !== "temp") {

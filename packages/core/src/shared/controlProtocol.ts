@@ -1,11 +1,10 @@
-import { CustomResponse, HttpHandlerBehavior } from "./types";
+import { HttpResponseConfig, HttpHandlerBehavior } from "./types";
 import type {
   PersistedFlattenHandler,
   SerializableWebSocketMatcher,
   TempHandlerInput,
   WebSocketBehaviorSelection,
-  WebSocketResponse,
-  WebSocketRepeat,
+  WebSocketResponseConfig,
   AddWebSocketListenerInput,
   WebSocketEndpointConfig,
   WebSocketListenerConfig,
@@ -22,7 +21,7 @@ export const BROWSER_CONTROL_METHOD_VERSIONS = {
   list: 1,
   get: 1,
   setBehavior: 1,
-  setCustomResponse: 1,
+  setCustomResponse: 2,
   addTemp: 1,
   removeTemp: 1,
   reset: 1,
@@ -35,9 +34,8 @@ export const BROWSER_CONTROL_METHOD_VERSIONS = {
   removeWebSocketListener: 1,
   setWebSocketListenerEnabled: 1,
   setWebSocketListenerBehavior: 1,
-  setWebSocketListenerCustomResponse: 1,
-  setWebSocketListenerResponse: 1,
-  setWebSocketListenerSchedule: 1,
+  setWebSocketListenerCustomResponse: 2,
+  setWebSocketListenerResponse: 2,
 } as const;
 
 export type BrowserControlMethod = keyof typeof BROWSER_CONTROL_METHOD_VERSIONS;
@@ -67,7 +65,7 @@ export type BrowserControlBridge = {
   list: () => PersistedFlattenHandler[];
   get: (id: string) => PersistedFlattenHandler | undefined;
   setBehavior: (id: string, behavior: HttpHandlerBehavior) => BrowserControlMutationResult;
-  setCustomResponse: (id: string, response: CustomResponse) => BrowserControlMutationResult;
+  setCustomResponse: (id: string, response: HttpResponseConfig) => BrowserControlMutationResult;
   addTemp: (data: TempHandlerInput) => BrowserControlMutationResult;
   removeTemp: (id: string) => BrowserControlSessionInfo;
   reset: () => BrowserControlSessionInfo;
@@ -96,14 +94,10 @@ export type BrowserControlBridge = {
   ) => BrowserControlWebSocketListenerResult;
   setWebSocketListenerCustomResponse: (
     listenerId: string,
-    response: WebSocketResponse,
+    response: WebSocketResponseConfig,
   ) => BrowserControlWebSocketListenerResult;
   setWebSocketListenerResponse: (
     listenerId: string,
-    response: WebSocketResponse,
-  ) => BrowserControlWebSocketListenerResult;
-  setWebSocketListenerSchedule: (
-    listenerId: string,
-    input: { delay?: number; repeat?: WebSocketRepeat },
+    response: WebSocketResponseConfig,
   ) => BrowserControlWebSocketListenerResult;
 };

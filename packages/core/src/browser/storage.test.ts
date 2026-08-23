@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { STORAGE_KEY } from "../shared/const";
-import { CustomBehavior, HttpHandlerBehavior, HttpMethod } from "../shared/types";
+import {
+  CustomBehavior,
+  HttpHandlerBehavior,
+  HttpMethod,
+  MimeType,
+  StringHttpStatusCode,
+} from "../shared/types";
 import { getRowId } from "../shared/utils";
 import { getBrowserStorageSnapshot, getStorageData, mergeStorageData } from "./storage";
 import { createFlattenHandler } from "../shared/testing/createHttpHandler";
@@ -61,9 +67,10 @@ describe("getStorageData", () => {
   it("preserves a persisted custom response", () => {
     const id = getRowId({ path: "/custom", method: "get" });
     const customResponse = {
-      body: '{"source":"session"}',
-      headers: { "X-Source": "session" },
-      status: 202,
+      response: '{"source":"session"}',
+      header: '{"X-Source":"session"}',
+      contentType: MimeType.APPLICATION_JSON,
+      status: StringHttpStatusCode.ACCEPTED,
     };
     sessionStorage.setItem(
       STORAGE_KEY,

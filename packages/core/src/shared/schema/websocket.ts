@@ -13,13 +13,34 @@ const hexSequenceSchema = z
     "Binary WebSocket response must be a space-separated hexadecimal sequence",
   );
 const webSocketMetadataSchema = z.object({ type: z.string().optional() }).strict();
-export const webSocketResponseSchema = z.union([
+export const webSocketRepeatSchema = z
+  .object({
+    interval: z.number().int().nonnegative(),
+    repetitions: z.union([z.number().int().positive(), z.literal("Infinity")]),
+  })
+  .strict()
+  .superRefine(({ interval, repetitions }, context) => {
+    if (repetitions === "Infinity" && interval === 0) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["interval"],
+        message: "Infinite WebSocket repetition requires a positive interval",
+      });
+    }
+  });
+export const webSocketDelaySchema = z.number().int().nonnegative();
+const scheduleShape = {
+  delay: webSocketDelaySchema.optional(),
+  repeat: webSocketRepeatSchema.optional(),
+};
+export const webSocketResponseConfigSchema = z.union([
   z
     .object({
       type: z.literal("send"),
       dataType: z.literal("string"),
       value: z.string(),
       metadata: webSocketMetadataSchema.optional(),
+      ...scheduleShape,
     })
     .strict(),
   z
@@ -28,6 +49,7 @@ export const webSocketResponseSchema = z.union([
       dataType: z.literal("Blob"),
       value: hexSequenceSchema,
       metadata: webSocketMetadataSchema.optional(),
+      ...scheduleShape,
     })
     .strict(),
   z
@@ -36,6 +58,7 @@ export const webSocketResponseSchema = z.union([
       dataType: z.literal("ArrayBuffer"),
       value: hexSequenceSchema,
       metadata: webSocketMetadataSchema.optional(),
+      ...scheduleShape,
     })
     .strict(),
   z
@@ -56,27 +79,10 @@ export const webSocketResponseSchema = z.union([
           "WebSocket close reason must not exceed 123 UTF-8 bytes",
         )
         .optional(),
+      ...scheduleShape,
     })
     .strict(),
 ]);
-/** @deprecated Use webSocketResponseSchema. */
-export const webSocketCustomResponseSchema = webSocketResponseSchema;
-export const webSocketRepeatSchema = z
-  .object({
-    interval: z.number().int().nonnegative(),
-    repetitions: z.union([z.number().int().positive(), z.literal("Infinity")]),
-  })
-  .strict()
-  .superRefine(({ interval, repetitions }, context) => {
-    if (repetitions === "Infinity" && interval === 0) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["interval"],
-        message: "Infinite WebSocket repetition requires a positive interval",
-      });
-    }
-  });
-export const webSocketDelaySchema = z.number().int().nonnegative();
 export const webSocketSendOptionsSchema = z.object({ message: z.string() }).strict();
 export const webSocketCloseOptionsSchema = z
   .object({
@@ -130,10 +136,8 @@ export const webSocketListenerSchema = z.object({
   event: z.literal("message"),
   enabled: z.boolean(),
   behavior: webSocketBehaviorSchema.default({ preset: "default" }),
-  response: webSocketResponseSchema.optional(),
-  customResponse: webSocketResponseSchema.optional(),
-  delay: webSocketDelaySchema.default(0),
-  repeat: webSocketRepeatSchema.optional(),
+  response: webSocketResponseConfigSchema.optional(),
+  customResponse: webSocketResponseConfigSchema.optional(),
 });
 export const webSocketEndpointSchema = z.object({
   info: webSocketInfoSchema,
