@@ -26,10 +26,7 @@ export const PostCardSkeleton = ({ setPostId }: PostCardSkeletonProps) => {
               <div className="bg-orange-500/20 h-5 w-16 rounded animate-pulse"></div>
               <div className="bg-neutral-700 h-4 w-8 rounded animate-pulse"></div>
             </div>
-            <button
-              className="text-neutral-400 hover:text-white"
-              onClick={() => setPostId(null)}
-            >
+            <button className="text-neutral-400 hover:text-white" onClick={() => setPostId(null)}>
               <XIcon className="w-5 h-5" />
             </button>
           </div>

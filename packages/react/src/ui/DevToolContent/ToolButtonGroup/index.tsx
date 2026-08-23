@@ -24,28 +24,35 @@ export const ToolButtonGroup = ({
         Reset Dev tool
       </Button>
       {secondaryAction}
-      {showAddHandler && <Dialog.Root open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <Dialog.Trigger render={<Button><Plus size={16} />Add Temp Handler</Button>} />
-        <Dialog.Portal>
-          <Dialog.Backdrop className="msw-dt-dialog-backdrop" forceRender />
-          <Dialog.Popup className="msw-dt-dialog-popup-viewport">
-            <div className="msw-dt-dialog-inner-center">
-              <Flex align="center" justify="space-between">
-                <Dialog.Title className="msw-dt-dialog-title-sm">
-                  Add Temp Handler
-                </Dialog.Title>
-                <Dialog.Close render={<CloseButton />} />
-              </Flex>
-              <Dialog.Description className="msw-dt-dialog-description">
-                Temp handler is stored in the session storage. If you{" "}
-                <span className="msw-dt-font-bold">reset dev tool</span>, it will be{" "}
-                <span className="msw-dt-danger-text">deleted</span>.
-              </Dialog.Description>
-              <AddTempHandlerForm onClose={() => setIsDialogOpen(false)} />
-            </div>
-          </Dialog.Popup>
-        </Dialog.Portal>
-      </Dialog.Root>}
+      {showAddHandler && (
+        <Dialog.Root open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog.Trigger
+            render={
+              <Button>
+                <Plus size={16} />
+                Add Temp Handler
+              </Button>
+            }
+          />
+          <Dialog.Portal>
+            <Dialog.Backdrop className="msw-dt-dialog-backdrop" forceRender />
+            <Dialog.Popup className="msw-dt-dialog-popup-viewport">
+              <div className="msw-dt-dialog-inner-center">
+                <Flex align="center" justify="space-between">
+                  <Dialog.Title className="msw-dt-dialog-title-sm">Add Temp Handler</Dialog.Title>
+                  <Dialog.Close render={<CloseButton />} />
+                </Flex>
+                <Dialog.Description className="msw-dt-dialog-description">
+                  Temp handler is stored in the session storage. If you{" "}
+                  <span className="msw-dt-font-bold">reset dev tool</span>, it will be{" "}
+                  <span className="msw-dt-danger-text">deleted</span>.
+                </Dialog.Description>
+                <AddTempHandlerForm onClose={() => setIsDialogOpen(false)} />
+              </div>
+            </Dialog.Popup>
+          </Dialog.Portal>
+        </Dialog.Root>
+      )}
     </Flex>
   );
 };

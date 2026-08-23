@@ -15,14 +15,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@msw-dev-tool/core/node/internal": path.resolve(
-        __dirname,
-        "../core/src/node/internal.ts"
-      ),
-      "@msw-dev-tool/core/node": path.resolve(
-        __dirname,
-        "../core/src/node/index.ts"
-      ),
+      "@msw-dev-tool/core/node/internal": path.resolve(__dirname, "../core/src/node/internal.ts"),
+      "@msw-dev-tool/core/node": path.resolve(__dirname, "../core/src/node/index.ts"),
     },
   },
 });

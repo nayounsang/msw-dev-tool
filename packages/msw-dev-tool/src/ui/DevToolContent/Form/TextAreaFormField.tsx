@@ -16,7 +16,7 @@ export const TextAreaFormField = forwardRef<HTMLTextAreaElement, TextAreaFormFie
         <TextArea id={id} ref={ref} {...rest} />
       </FormFieldBase>
     );
-  }
+  },
 );
 
 TextAreaFormField.displayName = "TextAreaFormField";

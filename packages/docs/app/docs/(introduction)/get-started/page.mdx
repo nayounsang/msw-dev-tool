@@ -26,8 +26,8 @@ MSW Dev Tool extends an MSW setup. Start by installing and configuring MSW for y
 ## 2. Install MSW Dev Tool
 
 <Callout type="warning">
-  The legacy `msw-dev-tool` package is no longer maintained and is scheduled for
-  removal. Use the packages below for all new and existing integrations.
+  The legacy `msw-dev-tool` package is no longer maintained and is scheduled for removal. Use the
+  packages below for all new and existing integrations.
 </Callout>
 
 ### Browser UI
@@ -110,6 +110,7 @@ agent or script needs to control that Node session.
 ### Browser UI
 
 ##### 1. Integrate with msw
+
 Replace MSW's `setupWorker` with `setupDevToolWorker` from `@msw-dev-tool/core/browser`:
 
 ```ts copy
@@ -125,6 +126,7 @@ export const worker = setupDevToolWorker(...handlers);
 For detailed information about **msw browser integration**, please refer to the [msw official documentation](https://mswjs.io/docs/integrations/browser).
 
 ##### 3. Add DevTool UI
+
 Add the `MSWDevTool` component and `msw-dev-tool.css` to your jsx:
 
 ```tsx {1-2}
@@ -171,5 +173,6 @@ AI agents can control the Node session with `@msw-dev-tool/node-cli`. See [Node 
 ## Questions & Support
 
 Have questions? We're here to help!
+
 - [Open a Discussion](https://github.com/nayounsang/msw-dev-tool/discussions) for questions and ideas
 - [Report an Issue](https://github.com/nayounsang/msw-dev-tool/issues) for bugs

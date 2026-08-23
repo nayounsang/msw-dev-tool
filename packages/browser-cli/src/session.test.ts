@@ -31,45 +31,77 @@ describe("CdpBrowserCliSession", () => {
     const client = { call } as unknown as CdpClient;
     const session = new CdpBrowserCliSession(client);
 
-    await expect(session.setBehavior("handler-a", "delay")).resolves.toEqual({ revision: 2, handlerCount: 1 });
-    expect(call).toHaveBeenCalledWith("Runtime.evaluate", expect.objectContaining({
-      awaitPromise: true,
-      returnByValue: true,
-      expression: expect.stringContaining("__MSW_DEV_TOOL_CONTROL__"),
-    }));
-    expect(call).toHaveBeenCalledWith("Runtime.evaluate", expect.objectContaining({
-      expression: expect.stringContaining('bridge.methods?.["setBehavior"] !== 1'),
-    }));
-    expect(call.mock.calls[0]?.[1]).toEqual(expect.objectContaining({
-      expression: expect.not.stringContaining("bridge.version"),
-    }));
+    await expect(session.setBehavior("handler-a", "delay")).resolves.toEqual({
+      revision: 2,
+      handlerCount: 1,
+    });
+    expect(call).toHaveBeenCalledWith(
+      "Runtime.evaluate",
+      expect.objectContaining({
+        awaitPromise: true,
+        returnByValue: true,
+        expression: expect.stringContaining("__MSW_DEV_TOOL_CONTROL__"),
+      }),
+    );
+    expect(call).toHaveBeenCalledWith(
+      "Runtime.evaluate",
+      expect.objectContaining({
+        expression: expect.stringContaining('bridge.methods?.["setBehavior"] !== 1'),
+      }),
+    );
+    expect(call.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({
+        expression: expect.not.stringContaining("bridge.version"),
+      }),
+    );
   });
 
   it("sends custom response configuration through the page control bridge", async () => {
     const call = vi.fn().mockResolvedValue({ result: { value: { revision: 3, handlerCount: 1 } } });
     const session = new CdpBrowserCliSession({ call } as unknown as CdpClient);
 
-    await expect(session.setCustomResponse("handler-a", { status: 201, body: "created" })).resolves.toEqual({ revision: 3, handlerCount: 1 });
-    expect(call).toHaveBeenCalledWith("Runtime.evaluate", expect.objectContaining({
-      expression: expect.stringContaining('"setCustomResponse"'),
-    }));
+    await expect(
+      session.setCustomResponse("handler-a", { status: 201, body: "created" }),
+    ).resolves.toEqual({ revision: 3, handlerCount: 1 });
+    expect(call).toHaveBeenCalledWith(
+      "Runtime.evaluate",
+      expect.objectContaining({
+        expression: expect.stringContaining('"setCustomResponse"'),
+      }),
+    );
   });
 
   it("sends WebSocket custom response configuration through the page control bridge", async () => {
     const call = vi.fn().mockResolvedValue({ result: { value: { endpoint: {}, listener: {} } } });
     const session = new CdpBrowserCliSession({ call } as unknown as CdpClient);
 
-    await expect(session.setWebSocketListenerCustomResponse("listener-a", {
-      type: "send", dataType: "Blob", value: "68 69", metadata: { type: "text/plain" },
-    })).resolves.toEqual({ endpoint: {}, listener: {} });
-    expect(call).toHaveBeenCalledWith("Runtime.evaluate", expect.objectContaining({
-      expression: expect.stringContaining('"setWebSocketListenerCustomResponse"'),
-    }));
+    await expect(
+      session.setWebSocketListenerCustomResponse("listener-a", {
+        type: "send",
+        dataType: "Blob",
+        value: "68 69",
+        metadata: { type: "text/plain" },
+      }),
+    ).resolves.toEqual({ endpoint: {}, listener: {} });
+    expect(call).toHaveBeenCalledWith(
+      "Runtime.evaluate",
+      expect.objectContaining({
+        expression: expect.stringContaining('"setWebSocketListenerCustomResponse"'),
+      }),
+    );
   });
 
   it("surfaces a bridge error from Chrome", async () => {
-    const client = { call: vi.fn().mockResolvedValue({ exceptionDetails: { exception: { description: "Error: bridge unavailable\n    at internal webpack frame" } } }) } as unknown as CdpClient;
-    await expect(new CdpBrowserCliSession(client).list()).rejects.toThrow("Error: bridge unavailable");
+    const client = {
+      call: vi.fn().mockResolvedValue({
+        exceptionDetails: {
+          exception: { description: "Error: bridge unavailable\n    at internal webpack frame" },
+        },
+      }),
+    } as unknown as CdpClient;
+    await expect(new CdpBrowserCliSession(client).list()).rejects.toThrow(
+      "Error: bridge unavailable",
+    );
     await expect(new CdpBrowserCliSession(client).list()).rejects.not.toThrow("webpack");
   });
 
@@ -84,8 +116,10 @@ describe("CdpBrowserCliSession", () => {
       ...(includeImplementation ? { setCustomResponse } : {}),
     });
 
-    await expect(new CdpBrowserCliSession(client).setCustomResponse("handler-a", {})).rejects.toThrow(
-      'MSW Dev Tool browser control method "setCustomResponse" version 1 is unavailable. Update @msw-dev-tool/core.'
+    await expect(
+      new CdpBrowserCliSession(client).setCustomResponse("handler-a", {}),
+    ).rejects.toThrow(
+      'MSW Dev Tool browser control method "setCustomResponse" version 1 is unavailable. Update @msw-dev-tool/core.',
     );
     expect(setCustomResponse).not.toHaveBeenCalled();
   });
@@ -97,7 +131,9 @@ describe("CdpBrowserCliSession", () => {
       setBehavior,
     });
 
-    await expect(new CdpBrowserCliSession(client).setBehavior("handler-a", "delay")).resolves.toEqual({
+    await expect(
+      new CdpBrowserCliSession(client).setBehavior("handler-a", "delay"),
+    ).resolves.toEqual({
       revision: 4,
       handlerCount: 1,
     });
@@ -110,20 +146,31 @@ describe("CdpBrowserCliSession", () => {
     await session.describe();
     await session.list();
     await session.get("a");
-    await session.addTemp({ path: "/tmp", method: "get", contentType: "text/plain", status: "200" });
+    await session.addTemp({
+      path: "/tmp",
+      method: "get",
+      contentType: "text/plain",
+      status: "200",
+    });
     await session.removeTemp("a");
     await session.reset();
     expect(call).toHaveBeenCalledTimes(6);
   });
 
   it("uses the CDP text field when no exception description is present", async () => {
-    const client = { call: vi.fn().mockResolvedValue({ exceptionDetails: { text: "evaluation failed" } }) } as unknown as CdpClient;
+    const client = {
+      call: vi.fn().mockResolvedValue({ exceptionDetails: { text: "evaluation failed" } }),
+    } as unknown as CdpClient;
     await expect(new CdpBrowserCliSession(client).describe()).rejects.toThrow("evaluation failed");
   });
 
   it("falls back to the generic evaluation error when Chrome provides no message", async () => {
-    const client = { call: vi.fn().mockResolvedValue({ exceptionDetails: { text: "" } }) } as unknown as CdpClient;
-    await expect(new CdpBrowserCliSession(client).describe()).rejects.toThrow("CDP evaluation failed");
+    const client = {
+      call: vi.fn().mockResolvedValue({ exceptionDetails: { text: "" } }),
+    } as unknown as CdpClient;
+    await expect(new CdpBrowserCliSession(client).describe()).rejects.toThrow(
+      "CDP evaluation failed",
+    );
   });
 
   it("forwards every WebSocket operation with serializable arguments", async () => {
@@ -132,22 +179,52 @@ describe("CdpBrowserCliSession", () => {
     const addWebSocketEndpoint = vi.fn(() => ({ endpoint: { endpointId: "endpoint-a" } }));
     const removeWebSocketEndpoint = vi.fn(() => ({ endpoints: [] }));
     const setWebSocketEndpointEnabled = vi.fn(() => ({ endpoint: { endpointId: "endpoint-a" } }));
-    const addWebSocketListener = vi.fn(() => ({ endpoint: { endpointId: "endpoint-a" }, listener: { info: { id: "listener-a" } } }));
+    const addWebSocketListener = vi.fn(() => ({
+      endpoint: { endpointId: "endpoint-a" },
+      listener: { info: { id: "listener-a" } },
+    }));
     const removeWebSocketListener = vi.fn(() => ({ endpoints: [] }));
-    const setWebSocketListenerEnabled = vi.fn(() => ({ endpoint: { endpointId: "endpoint-a" }, listener: { info: { id: "listener-a" } } }));
-    const setWebSocketListenerBehavior = vi.fn(() => ({ endpoint: { endpointId: "endpoint-a" }, listener: { info: { id: "listener-a" } } }));
-    const setWebSocketListenerResponse = vi.fn(() => ({ endpoint: { endpointId: "endpoint-a" }, listener: { info: { id: "listener-a" } } }));
-    const setWebSocketListenerSchedule = vi.fn(() => ({ endpoint: { endpointId: "endpoint-a" }, listener: { info: { id: "listener-a" } } }));
+    const setWebSocketListenerEnabled = vi.fn(() => ({
+      endpoint: { endpointId: "endpoint-a" },
+      listener: { info: { id: "listener-a" } },
+    }));
+    const setWebSocketListenerBehavior = vi.fn(() => ({
+      endpoint: { endpointId: "endpoint-a" },
+      listener: { info: { id: "listener-a" } },
+    }));
+    const setWebSocketListenerResponse = vi.fn(() => ({
+      endpoint: { endpointId: "endpoint-a" },
+      listener: { info: { id: "listener-a" } },
+    }));
+    const setWebSocketListenerSchedule = vi.fn(() => ({
+      endpoint: { endpointId: "endpoint-a" },
+      listener: { info: { id: "listener-a" } },
+    }));
     const { client, call } = createEvaluatingClient({
       methods: {
-        listWebSocket: 1, getWebSocketEndpoint: 1, addWebSocketEndpoint: 1,
-        removeWebSocketEndpoint: 1, setWebSocketEndpointEnabled: 1, addWebSocketListener: 1,
-        removeWebSocketListener: 1, setWebSocketListenerEnabled: 1, setWebSocketListenerBehavior: 1,
-        setWebSocketListenerResponse: 1, setWebSocketListenerSchedule: 1,
+        listWebSocket: 1,
+        getWebSocketEndpoint: 1,
+        addWebSocketEndpoint: 1,
+        removeWebSocketEndpoint: 1,
+        setWebSocketEndpointEnabled: 1,
+        addWebSocketListener: 1,
+        removeWebSocketListener: 1,
+        setWebSocketListenerEnabled: 1,
+        setWebSocketListenerBehavior: 1,
+        setWebSocketListenerResponse: 1,
+        setWebSocketListenerSchedule: 1,
       },
-      listWebSocket, getWebSocketEndpoint, addWebSocketEndpoint, removeWebSocketEndpoint,
-      setWebSocketEndpointEnabled, addWebSocketListener, removeWebSocketListener,
-      setWebSocketListenerEnabled, setWebSocketListenerBehavior, setWebSocketListenerResponse, setWebSocketListenerSchedule,
+      listWebSocket,
+      getWebSocketEndpoint,
+      addWebSocketEndpoint,
+      removeWebSocketEndpoint,
+      setWebSocketEndpointEnabled,
+      addWebSocketListener,
+      removeWebSocketListener,
+      setWebSocketListenerEnabled,
+      setWebSocketListenerBehavior,
+      setWebSocketListenerResponse,
+      setWebSocketListenerSchedule,
     });
     const session = new CdpBrowserCliSession(client);
     const matcher = { kind: "regexp" as const, source: "browser\\.example", flags: "i" };
@@ -161,16 +238,47 @@ describe("CdpBrowserCliSession", () => {
     await session.addWebSocketListener("endpoint-a", behavior);
     await session.removeWebSocketListener("listener-a");
     await session.setWebSocketListenerEnabled("listener-a", false);
-    await session.setWebSocketListenerBehavior("listener-a", { preset: "close", options: { code: 4001, reason: "done" } });
-    await session.addWebSocketListener({ endpointId: "endpoint-a", behavior: { preset: "default" }, response: { type: "send", dataType: "string", value: "default" }, customResponse: { type: "send", dataType: "string", value: "custom" }, delay: 300, repeat: { interval: 500, repetitions: 3 } });
-    await session.setWebSocketListenerResponse("listener-a", { type: "send", dataType: "string", value: "default" });
-    await session.setWebSocketListenerSchedule("listener-a", { delay: 300, repeat: { interval: 500, repetitions: "Infinity" } });
+    await session.setWebSocketListenerBehavior("listener-a", {
+      preset: "close",
+      options: { code: 4001, reason: "done" },
+    });
+    await session.addWebSocketListener({
+      endpointId: "endpoint-a",
+      behavior: { preset: "default" },
+      response: { type: "send", dataType: "string", value: "default" },
+      customResponse: { type: "send", dataType: "string", value: "custom" },
+      delay: 300,
+      repeat: { interval: 500, repetitions: 3 },
+    });
+    await session.setWebSocketListenerResponse("listener-a", {
+      type: "send",
+      dataType: "string",
+      value: "default",
+    });
+    await session.setWebSocketListenerSchedule("listener-a", {
+      delay: 300,
+      repeat: { interval: 500, repetitions: "Infinity" },
+    });
 
     expect(addWebSocketEndpoint).toHaveBeenCalledWith(matcher);
     expect(addWebSocketListener).toHaveBeenCalledWith("endpoint-a", behavior);
-    expect(addWebSocketListener).toHaveBeenLastCalledWith({ endpointId: "endpoint-a", behavior: { preset: "default" }, response: { type: "send", dataType: "string", value: "default" }, customResponse: { type: "send", dataType: "string", value: "custom" }, delay: 300, repeat: { interval: 500, repetitions: 3 } });
-    expect(setWebSocketListenerResponse).toHaveBeenCalledWith("listener-a", { type: "send", dataType: "string", value: "default" });
-    expect(setWebSocketListenerSchedule).toHaveBeenCalledWith("listener-a", { delay: 300, repeat: { interval: 500, repetitions: "Infinity" } });
+    expect(addWebSocketListener).toHaveBeenLastCalledWith({
+      endpointId: "endpoint-a",
+      behavior: { preset: "default" },
+      response: { type: "send", dataType: "string", value: "default" },
+      customResponse: { type: "send", dataType: "string", value: "custom" },
+      delay: 300,
+      repeat: { interval: 500, repetitions: 3 },
+    });
+    expect(setWebSocketListenerResponse).toHaveBeenCalledWith("listener-a", {
+      type: "send",
+      dataType: "string",
+      value: "default",
+    });
+    expect(setWebSocketListenerSchedule).toHaveBeenCalledWith("listener-a", {
+      delay: 300,
+      repeat: { interval: 500, repetitions: "Infinity" },
+    });
     expect(call).toHaveBeenCalledTimes(12);
     expect(call.mock.calls[2]?.[1].expression).toContain('"source":"browser\\\\.example"');
     expect(call.mock.calls[4]?.[1].expression).toContain("false");
@@ -178,8 +286,16 @@ describe("CdpBrowserCliSession", () => {
 
   it.each([
     ["the capability manifest is missing", {}, true],
-    ["the WebSocket method version is incompatible", { methods: { addWebSocketEndpoint: 2 } }, true],
-    ["the WebSocket method implementation is missing", { methods: { addWebSocketEndpoint: 1 } }, false],
+    [
+      "the WebSocket method version is incompatible",
+      { methods: { addWebSocketEndpoint: 2 } },
+      true,
+    ],
+    [
+      "the WebSocket method implementation is missing",
+      { methods: { addWebSocketEndpoint: 1 } },
+      false,
+    ],
   ])("rejects WebSocket invocation when %s", async (_scenario, bridge, includeImplementation) => {
     const addWebSocketEndpoint = vi.fn();
     const { client } = createEvaluatingClient({
@@ -187,8 +303,13 @@ describe("CdpBrowserCliSession", () => {
       ...(includeImplementation ? { addWebSocketEndpoint } : {}),
     });
 
-    await expect(new CdpBrowserCliSession(client).addWebSocketEndpoint({ kind: "string", value: "ws://localhost" })).rejects.toThrow(
-      'MSW Dev Tool browser control method "addWebSocketEndpoint" version 1 is unavailable. Update @msw-dev-tool/core.'
+    await expect(
+      new CdpBrowserCliSession(client).addWebSocketEndpoint({
+        kind: "string",
+        value: "ws://localhost",
+      }),
+    ).rejects.toThrow(
+      'MSW Dev Tool browser control method "addWebSocketEndpoint" version 1 is unavailable. Update @msw-dev-tool/core.',
     );
     expect(addWebSocketEndpoint).not.toHaveBeenCalled();
   });

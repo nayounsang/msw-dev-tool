@@ -8,10 +8,7 @@ import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const pkg = require("./package.json");
 
-const externalPackages = [
-  ...Object.keys(pkg.peerDependencies || {}),
-  "msw/browser",
-];
+const externalPackages = [...Object.keys(pkg.peerDependencies || {}), "msw/browser"];
 export default [
   {
     input: "src/index.ts",
@@ -47,10 +44,7 @@ export default [
       }),
     ],
     onwarn(warning, warn) {
-      if (
-        warning.code === "MODULE_LEVEL_DIRECTIVE" &&
-        warning.message.includes("use client")
-      ) {
+      if (warning.code === "MODULE_LEVEL_DIRECTIVE" && warning.message.includes("use client")) {
         return;
       }
 

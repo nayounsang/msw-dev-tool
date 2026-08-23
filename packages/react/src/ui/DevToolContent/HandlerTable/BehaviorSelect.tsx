@@ -1,10 +1,6 @@
 import { Row } from "@tanstack/react-table";
 import React from "react";
-import {
-  FlattenHandler,
-  useHandlerStore,
-  HttpHandlerBehavior,
-} from "@msw-dev-tool/core/browser";
+import { FlattenHandler, useHandlerStore, HttpHandlerBehavior } from "@msw-dev-tool/core/browser";
 import { Select } from "../../Components/Select";
 
 const options = Object.values(HttpHandlerBehavior).map((behavior) => ({
@@ -14,8 +10,8 @@ const options = Object.values(HttpHandlerBehavior).map((behavior) => ({
 
 export const BehaviorSelect = ({ row }: { row: Row<FlattenHandler> }) => {
   const id = row.original.id;
-  const setHandlerBehavior = useHandlerStore((state)=>state.setHandlerBehavior);
-  const getHandlerBehavior = useHandlerStore((state)=>state.getHandlerBehavior);
+  const setHandlerBehavior = useHandlerStore((state) => state.setHandlerBehavior);
+  const getHandlerBehavior = useHandlerStore((state) => state.getHandlerBehavior);
 
   return (
     <Select

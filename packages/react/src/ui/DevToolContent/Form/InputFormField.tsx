@@ -13,10 +13,10 @@ export const InputFormField = forwardRef<HTMLInputElement, InputFormFieldProps>(
 
     return (
       <FormFieldBase id={id} label={label} error={error} required={required}>
-        <Input id={id} ref={ref} {...rest} className="box-border"/>
+        <Input id={id} ref={ref} {...rest} className="box-border" />
       </FormFieldBase>
     );
-  }
+  },
 );
 
 InputFormField.displayName = "InputFormField";

@@ -1,9 +1,5 @@
 import { z } from "zod";
-import {
-  HttpMethod,
-  MimeType,
-  StringHttpStatusCode,
-} from "../types";
+import { HttpMethod, MimeType, StringHttpStatusCode } from "../types";
 
 const bodylessStatusCodes = new Set([204, 205, 304]);
 
@@ -57,12 +53,9 @@ export const isValidHandlerPath = (input: string) => {
 
 export const tempHandlerSchema = z
   .object({
-    path: z
-      .string()
-      .min(1, { message: "Path is required" })
-      .refine(isValidHandlerPath, {
-        message: "Invalid URL or path format",
-      }),
+    path: z.string().min(1, { message: "Path is required" }).refine(isValidHandlerPath, {
+      message: "Invalid URL or path format",
+    }),
     delay: z.number().min(0, { message: "Invalid delay time" }).optional(),
     contentType: z.nativeEnum(MimeType),
     status: z.nativeEnum(StringHttpStatusCode),
@@ -78,10 +71,7 @@ export const tempHandlerSchema = z
   })
   .superRefine((data, ctx) => {
     if (!data.response) return;
-    if (
-      data.contentType === MimeType.APPLICATION_JSON &&
-      !isValidJson(data.response)
-    ) {
+    if (data.contentType === MimeType.APPLICATION_JSON && !isValidJson(data.response)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: `Invalid response body for ${data.contentType}`,

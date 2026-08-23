@@ -5,7 +5,8 @@ export type FlexProps = ComponentProps<"div"> & {
   gap?: number;
   direction?: "row" | "column";
   align?: "flex-start" | "center" | "flex-end" | "stretch" | "baseline";
-  justify?: "flex-start" | "center" | "flex-end" | "space-between" | "space-around" | "space-evenly";
+  justify?:
+    "flex-start" | "center" | "flex-end" | "space-between" | "space-around" | "space-evenly";
   wrap?: "nowrap" | "wrap" | "wrap-reverse";
   py?: number;
   px?: number;
@@ -45,12 +46,7 @@ export const Flex = forwardRef<HTMLDivElement, FlexProps>((props, ref) => {
   };
 
   return (
-    <div
-      ref={ref}
-      className={clsx(className)}
-      style={inlineStyle}
-      {...restProps}
-    >
+    <div ref={ref} className={clsx(className)} style={inlineStyle} {...restProps}>
       {children}
     </div>
   );

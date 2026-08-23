@@ -27,7 +27,7 @@ export const listSessionPids = async (cwd = process.cwd()): Promise<number[]> =>
 
 export const ensureSessionPath = async (
   cwd = process.cwd(),
-  pid = process.pid
+  pid = process.pid,
 ): Promise<string> => {
   const sessionPath = getSessionPathForPid(pid, cwd);
   await fs.mkdir(path.dirname(sessionPath), { recursive: true });

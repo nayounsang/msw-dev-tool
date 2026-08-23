@@ -9,11 +9,7 @@ interface KeyValueInputListProps {
   title: ReactNode;
 }
 
-export const KeyValueInputList = ({
-  items,
-  setItems,
-  title,
-}: KeyValueInputListProps) => {
+export const KeyValueInputList = ({ items, setItems, title }: KeyValueInputListProps) => {
   const id = useId();
 
   const [key, setKey] = useState("");
@@ -104,11 +100,7 @@ export const KeyValueInputList = ({
             >
               {value}
             </span>
-            <Button
-              onClick={() => handleDelete(key)}
-              variant="soft"
-              color="crimson"
-            >
+            <Button onClick={() => handleDelete(key)} variant="soft" color="crimson">
               <TrashIcon />
               Delete
             </Button>

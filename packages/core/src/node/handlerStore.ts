@@ -1,9 +1,5 @@
 import { setupServer, SetupServer } from "msw/node";
-import {
-  createHandlerStore,
-  HandlerStoreInternalState,
-  StoreApi,
-} from "../shared/store";
+import { createHandlerStore, HandlerStoreInternalState, StoreApi } from "../shared/store";
 import { FlattenHandler, Handler } from "../shared/types";
 import { applySnapshotToRuntime, SessionController, SessionSnapshot } from "./snapshot";
 
@@ -42,7 +38,7 @@ const resetFromCodeHandlers = (): FlattenHandler[] => {
 export const setupDevToolServer = async (...handlers: Handler[]): Promise<SetupServer> => {
   if (activeSession) {
     throw new Error(
-      "MSW Dev Tool Node session is already initialized in this process. Dispose the existing session before creating another one."
+      "MSW Dev Tool Node session is already initialized in this process. Dispose the existing session before creating another one.",
     );
   }
 
@@ -56,7 +52,10 @@ export const setupDevToolServer = async (...handlers: Handler[]): Promise<SetupS
   });
 
   try {
-    await session.start(baseStore.getState().flattenHandlers, baseStore.getState().webSocket.endpoints);
+    await session.start(
+      baseStore.getState().flattenHandlers,
+      baseStore.getState().webSocket.endpoints,
+    );
     activeSession = session;
     return server;
   } catch (error) {

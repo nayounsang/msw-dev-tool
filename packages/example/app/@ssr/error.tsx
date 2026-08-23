@@ -10,9 +10,7 @@ export default function SsrError({
   return (
     <div>
       <h2>SSR mocking</h2>
-      <p style={{ color: "crimson" }}>
-        SSR section failed: {error.message}
-      </p>
+      <p style={{ color: "crimson" }}>SSR section failed: {error.message}</p>
       <button type="button" onClick={reset} style={{ padding: "8px 16px" }}>
         Retry SSR
       </button>

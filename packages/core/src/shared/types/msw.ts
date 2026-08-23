@@ -7,16 +7,14 @@ import {
   HttpResponseResolver,
 } from "msw";
 
-export type BehaviorResolverResult =
-  | AsyncResponseResolverReturnType<DefaultBodyType>
-  | Response;
+export type BehaviorResolverResult = AsyncResponseResolverReturnType<DefaultBodyType> | Response;
 
 /**
  * To use private method: `resolver`.
  * Includes plain `Response` so `HttpResponse.error()` (network error) stays returnable.
  */
 export type DevToolResponseResolver = (
-  info: Parameters<HttpResponseResolver>[0]
+  info: Parameters<HttpResponseResolver>[0],
 ) => BehaviorResolverResult | Promise<BehaviorResolverResult>;
 
 export type HttpHandler = _HttpHandler & {

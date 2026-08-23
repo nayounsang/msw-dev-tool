@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { HttpResponse } from "msw";
 import { HttpHandlerBehavior, HttpMethod } from "../types";
-import {
-  convertHandlers,
-  getObjFromRowId,
-  getRowId,
-  initMSWDevToolStore,
-} from "./store";
+import { convertHandlers, getObjFromRowId, getRowId, initMSWDevToolStore } from "./store";
 import { createHttpHandler } from "../testing/createHttpHandler";
 
 describe("getRowId / getObjFromRowId", () => {
@@ -22,9 +17,7 @@ describe("getRowId / getObjFromRowId", () => {
 describe("convertHandlers", () => {
   it("flattens http handlers with default behavior and type", () => {
     const httpHandler = createHttpHandler(HttpMethod.GET, "/ok");
-    const { flattenHandlers, unsupportedHandlers } = convertHandlers([
-      httpHandler,
-    ]);
+    const { flattenHandlers, unsupportedHandlers } = convertHandlers([httpHandler]);
 
     expect(unsupportedHandlers).toEqual([]);
     expect(flattenHandlers).toEqual([
@@ -42,10 +35,7 @@ describe("convertHandlers", () => {
   it("collects non-http handlers as unsupported", () => {
     const httpHandler = createHttpHandler(HttpMethod.POST, "/items");
     const unsupported = { kind: "ws" };
-    const { flattenHandlers, unsupportedHandlers } = convertHandlers([
-      httpHandler,
-      unsupported,
-    ]);
+    const { flattenHandlers, unsupportedHandlers } = convertHandlers([httpHandler, unsupported]);
 
     expect(flattenHandlers).toHaveLength(1);
     expect(unsupportedHandlers).toEqual([unsupported]);
@@ -58,9 +48,7 @@ describe("convertHandlers", () => {
     };
     const { flattenHandlers } = convertHandlers([handler]);
     expect(flattenHandlers[0].method).toBe(HttpMethod.GET);
-    expect(flattenHandlers[0].id).toBe(
-      getRowId({ path: "/upper", method: HttpMethod.GET })
-    );
+    expect(flattenHandlers[0].id).toBe(getRowId({ path: "/upper", method: HttpMethod.GET }));
   });
 });
 

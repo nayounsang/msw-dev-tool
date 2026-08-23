@@ -38,7 +38,7 @@ export const handlerSchema = tempHandlerSchema
     {
       message: "Duplicate handler. Change method or path.",
       path: ["path"],
-    }
+    },
   );
 
 export type HandlerSchema = z.infer<typeof handlerSchema>;

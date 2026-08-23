@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  CustomBehavior,
-  HttpHandlerBehavior,
-  HttpMethod,
-} from "../types";
+import { CustomBehavior, HttpHandlerBehavior, HttpMethod } from "../types";
 import { getRowId } from "../utils/store";
 import { createFlattenHandler } from "../testing/createHttpHandler";
 import {
@@ -89,9 +85,7 @@ describe("removeTempHandler", () => {
       }),
     ];
 
-    expect(() => removeTempHandler(handlers, defaultId)).toThrow(
-      /cannot be deleted/
-    );
+    expect(() => removeTempHandler(handlers, defaultId)).toThrow(/cannot be deleted/);
     expect(() => removeTempHandler(handlers, "missing")).toThrow(/not found/);
 
     const next = removeTempHandler(handlers, tempId);
@@ -103,9 +97,7 @@ describe("removeTempHandler", () => {
 describe("appendFlattenHandler", () => {
   it("appends without mutating the original list", () => {
     const id = getRowId({ path: "/a", method: "get" });
-    const handlers = [
-      createFlattenHandler({ id, path: "/a", method: HttpMethod.GET }),
-    ];
+    const handlers = [createFlattenHandler({ id, path: "/a", method: HttpMethod.GET })];
     const entry = createFlattenHandler({
       id: getRowId({ path: "/b", method: "post" }),
       path: "/b",
@@ -120,9 +112,7 @@ describe("appendFlattenHandler", () => {
 
   it("rejects duplicate ids", () => {
     const id = getRowId({ path: "/a", method: "get" });
-    const handlers = [
-      createFlattenHandler({ id, path: "/a", method: HttpMethod.GET }),
-    ];
+    const handlers = [createFlattenHandler({ id, path: "/a", method: HttpMethod.GET })];
 
     expect(() =>
       appendFlattenHandler(
@@ -132,8 +122,8 @@ describe("appendFlattenHandler", () => {
           path: "/a",
           method: HttpMethod.GET,
           type: "temp",
-        })
-      )
+        }),
+      ),
     ).toThrow(/Duplicate handler id/);
   });
 });

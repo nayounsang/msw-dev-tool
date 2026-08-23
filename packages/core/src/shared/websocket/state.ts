@@ -41,7 +41,7 @@ const findEndpoint = (endpoints: WebSocketEndpointConfig[], endpointId: string) 
 
 const findListener = (endpoints: WebSocketEndpointConfig[], listenerId: string) => {
   const endpoint = endpoints.find((entry) =>
-    entry.listeners.some((listener) => listener.info.id === listenerId)
+    entry.listeners.some((listener) => listener.info.id === listenerId),
   );
   const listener = endpoint?.listeners.find((entry) => entry.info.id === listenerId);
   if (!endpoint || !listener) throw new Error(`WebSocket listener not found: ${listenerId}`);
@@ -51,7 +51,7 @@ const findListener = (endpoints: WebSocketEndpointConfig[], listenerId: string) 
 export const addTemporaryWebSocketEndpoint = (
   endpoints: WebSocketEndpointConfig[],
   matcherInput: SerializableWebSocketMatcher,
-  endpoint = webSocketEndpointFromMatcher(matcherInput)
+  endpoint = webSocketEndpointFromMatcher(matcherInput),
 ) => {
   const matcher = matcherInput;
   let index = 0;
@@ -72,11 +72,13 @@ export const addTemporaryWebSocketEndpoint = (
 
 export const removeTemporaryWebSocketEndpoint = (
   endpoints: WebSocketEndpointConfig[],
-  endpointId: string
+  endpointId: string,
 ) => {
   const endpoint = findEndpoint(endpoints, endpointId);
   if (endpoint.info.source !== "temp") {
-    throw new Error(`WebSocket endpoints generated from codebase cannot be deleted (id: ${endpointId})`);
+    throw new Error(
+      `WebSocket endpoints generated from codebase cannot be deleted (id: ${endpointId})`,
+    );
   }
   return { endpoints: endpoints.filter((entry) => entry.endpointId !== endpointId), endpoint };
 };
@@ -84,11 +86,11 @@ export const removeTemporaryWebSocketEndpoint = (
 export const setWebSocketEndpointEnabled = (
   endpoints: WebSocketEndpointConfig[],
   endpointId: string,
-  enabled: boolean
+  enabled: boolean,
 ) => {
   findEndpoint(endpoints, endpointId);
   const nextEndpoints = endpoints.map((entry) =>
-    entry.endpointId === endpointId ? { ...entry, enabled } : entry
+    entry.endpointId === endpointId ? { ...entry, enabled } : entry,
   );
   return { endpoints: nextEndpoints, endpoint: findEndpoint(nextEndpoints, endpointId) };
 };
@@ -96,7 +98,7 @@ export const setWebSocketEndpointEnabled = (
 export const addTemporaryWebSocketListener = (
   endpoints: WebSocketEndpointConfig[],
   endpointId: string,
-  input: Omit<AddWebSocketListenerInput, "endpointId">
+  input: Omit<AddWebSocketListenerInput, "endpointId">,
 ) => {
   const endpoint = findEndpoint(endpoints, endpointId);
   const behavior = input.behavior ?? { preset: "default" };
@@ -108,29 +110,43 @@ export const addTemporaryWebSocketListener = (
     listenerId = createTemporaryWebSocketListenerId(endpointId, index);
   }
   const listener: WebSocketListenerConfig = {
-    info: { id: listenerId, kind: "websocket", endpoint: endpoint.info.endpoint, operation: "message", source: "temp" },
+    info: {
+      id: listenerId,
+      kind: "websocket",
+      endpoint: endpoint.info.endpoint,
+      operation: "message",
+      source: "temp",
+    },
     endpointId,
     event: "message",
     enabled: true,
     behavior,
-    response: input.response === undefined ? undefined : webSocketResponseSchema.parse(input.response),
-    customResponse: input.customResponse === undefined ? undefined : webSocketResponseSchema.parse(input.customResponse),
+    response:
+      input.response === undefined ? undefined : webSocketResponseSchema.parse(input.response),
+    customResponse:
+      input.customResponse === undefined
+        ? undefined
+        : webSocketResponseSchema.parse(input.customResponse),
     delay: input.delay === undefined ? 0 : webSocketDelaySchema.parse(input.delay),
     repeat: input.repeat === undefined ? undefined : webSocketRepeatSchema.parse(input.repeat),
   };
   const nextEndpoints = endpoints.map((entry) =>
-    entry.endpointId === endpointId ? { ...entry, listeners: [...entry.listeners, listener] } : entry
+    entry.endpointId === endpointId
+      ? { ...entry, listeners: [...entry.listeners, listener] }
+      : entry,
   );
   return { endpoints: nextEndpoints, endpoint: findEndpoint(nextEndpoints, endpointId), listener };
 };
 
 export const removeTemporaryWebSocketListener = (
   endpoints: WebSocketEndpointConfig[],
-  listenerId: string
+  listenerId: string,
 ) => {
   const { listener } = findListener(endpoints, listenerId);
   if (listener.info.source !== "temp") {
-    throw new Error(`WebSocket listeners generated from codebase cannot be deleted (id: ${listenerId})`);
+    throw new Error(
+      `WebSocket listeners generated from codebase cannot be deleted (id: ${listenerId})`,
+    );
   }
   return {
     endpoints: endpoints.map((endpoint) => ({
@@ -144,13 +160,13 @@ export const removeTemporaryWebSocketListener = (
 export const setWebSocketListenerEnabled = (
   endpoints: WebSocketEndpointConfig[],
   listenerId: string,
-  enabled: boolean
+  enabled: boolean,
 ) => {
   findListener(endpoints, listenerId);
   const nextEndpoints = endpoints.map((endpoint) => ({
     ...endpoint,
     listeners: endpoint.listeners.map((entry) =>
-      entry.info.id === listenerId ? { ...entry, enabled } : entry
+      entry.info.id === listenerId ? { ...entry, enabled } : entry,
     ),
   }));
   const { endpoint, listener } = findListener(nextEndpoints, listenerId);
@@ -160,14 +176,14 @@ export const setWebSocketListenerEnabled = (
 export const setWebSocketListenerBehavior = (
   endpoints: WebSocketEndpointConfig[],
   listenerId: string,
-  behaviorInput: WebSocketBehaviorSelection
+  behaviorInput: WebSocketBehaviorSelection,
 ) => {
   findListener(endpoints, listenerId);
   const behavior = behaviorInput;
   const nextEndpoints = endpoints.map((endpoint) => ({
     ...endpoint,
     listeners: endpoint.listeners.map((entry) =>
-      entry.info.id === listenerId ? { ...entry, behavior } : entry
+      entry.info.id === listenerId ? { ...entry, behavior } : entry,
     ),
   }));
   const { endpoint, listener } = findListener(nextEndpoints, listenerId);
@@ -183,7 +199,7 @@ export const setWebSocketListenerCustomResponse = (
   const nextEndpoints = endpoints.map((endpoint) => ({
     ...endpoint,
     listeners: endpoint.listeners.map((entry) =>
-      entry.info.id === listenerId ? { ...entry, customResponse: response } : entry
+      entry.info.id === listenerId ? { ...entry, customResponse: response } : entry,
     ),
   }));
   const { endpoint, listener } = findListener(nextEndpoints, listenerId);
@@ -199,7 +215,7 @@ export const setWebSocketListenerResponse = (
   const nextEndpoints = endpoints.map((endpoint) => ({
     ...endpoint,
     listeners: endpoint.listeners.map((entry) =>
-      entry.info.id === listenerId ? { ...entry, response: parsed } : entry
+      entry.info.id === listenerId ? { ...entry, response: parsed } : entry,
     ),
   }));
   const { endpoint, listener } = findListener(nextEndpoints, listenerId);
@@ -212,15 +228,18 @@ export const setWebSocketListenerSchedule = (
   input: { delay?: number; repeat?: WebSocketRepeat },
 ) => {
   const currentListener = findListener(endpoints, listenerId).listener;
-  const delay = "delay" in input ? input.delay ?? 0 : currentListener.delay ?? 0;
-  const parsedRepeat = "repeat" in input && input.repeat !== undefined
-    ? webSocketRepeatSchema.parse(input.repeat)
-    : "repeat" in input ? undefined : currentListener.repeat;
+  const delay = "delay" in input ? (input.delay ?? 0) : (currentListener.delay ?? 0);
+  const parsedRepeat =
+    "repeat" in input && input.repeat !== undefined
+      ? webSocketRepeatSchema.parse(input.repeat)
+      : "repeat" in input
+        ? undefined
+        : currentListener.repeat;
   webSocketDelaySchema.parse(delay);
   const nextEndpoints = endpoints.map((endpoint) => ({
     ...endpoint,
     listeners: endpoint.listeners.map((entry) =>
-      entry.info.id === listenerId ? { ...entry, delay, repeat: parsedRepeat } : entry
+      entry.info.id === listenerId ? { ...entry, delay, repeat: parsedRepeat } : entry,
     ),
   }));
   const { endpoint, listener } = findListener(nextEndpoints, listenerId);

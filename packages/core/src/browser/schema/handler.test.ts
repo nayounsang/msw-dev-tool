@@ -1,10 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { STORAGE_KEY } from "../../shared/const";
-import {
-  HttpMethod,
-  MimeType,
-  StringHttpStatusCode,
-} from "../../shared/types";
+import { HttpMethod, MimeType, StringHttpStatusCode } from "../../shared/types";
 import { getRowId } from "../../shared/utils/store";
 import { handlerSchema } from "./handler";
 
@@ -46,9 +42,7 @@ describe("handlerSchema", () => {
     });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.issues.some((i) => i.path[0] === "header")).toBe(
-        true
-      );
+      expect(result.error.issues.some((i) => i.path[0] === "header")).toBe(true);
     }
   });
 
@@ -60,9 +54,7 @@ describe("handlerSchema", () => {
     });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.issues.some((i) => i.path[0] === "response")).toBe(
-        true
-      );
+      expect(result.error.issues.some((i) => i.path[0] === "response")).toBe(true);
     }
   });
 
@@ -90,24 +82,41 @@ describe("handlerSchema", () => {
             },
           ],
         },
-      })
+      }),
     );
 
     const result = handlerSchema.safeParse({ ...validBase });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(
-        result.error.issues.some((i) =>
-          i.message.includes("Duplicate handler")
-        )
-      ).toBe(true);
+      expect(result.error.issues.some((i) => i.message.includes("Duplicate handler"))).toBe(true);
     }
   });
 
   it("validates XML and HTML response bodies only for their matching content types", () => {
-    expect(handlerSchema.safeParse({ ...validBase, contentType: MimeType.APPLICATION_XML, response: "<item>ok</item>" }).success).toBe(true);
-    expect(handlerSchema.safeParse({ ...validBase, contentType: MimeType.APPLICATION_XML, response: "<item>" }).success).toBe(true);
-    expect(handlerSchema.safeParse({ ...validBase, contentType: MimeType.TEXT_HTML, response: "<main>ok</main>" }).success).toBe(true);
-    expect(handlerSchema.safeParse({ ...validBase, contentType: MimeType.TEXT_HTML, response: "<main>" }).success).toBe(true);
+    expect(
+      handlerSchema.safeParse({
+        ...validBase,
+        contentType: MimeType.APPLICATION_XML,
+        response: "<item>ok</item>",
+      }).success,
+    ).toBe(true);
+    expect(
+      handlerSchema.safeParse({
+        ...validBase,
+        contentType: MimeType.APPLICATION_XML,
+        response: "<item>",
+      }).success,
+    ).toBe(true);
+    expect(
+      handlerSchema.safeParse({
+        ...validBase,
+        contentType: MimeType.TEXT_HTML,
+        response: "<main>ok</main>",
+      }).success,
+    ).toBe(true);
+    expect(
+      handlerSchema.safeParse({ ...validBase, contentType: MimeType.TEXT_HTML, response: "<main>" })
+        .success,
+    ).toBe(true);
   });
 });

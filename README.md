@@ -40,12 +40,12 @@ For Node MSW sessions, use `setupDevToolServer` from `@msw-dev-tool/core/node` a
 
 ## Packages
 
-| Package | Purpose |
-| --- | --- |
-| `@msw-dev-tool/core` | Runtime integration for browser and Node MSW handlers |
-| `@msw-dev-tool/react` | Browser UI for HTTP and WebSocket scenario control |
-| `@msw-dev-tool/node-cli` | Machine-readable control for Node sessions |
-| `@msw-dev-tool/browser-cli` | Machine-readable CDP control for browser sessions |
+| Package                     | Purpose                                               |
+| --------------------------- | ----------------------------------------------------- |
+| `@msw-dev-tool/core`        | Runtime integration for browser and Node MSW handlers |
+| `@msw-dev-tool/react`       | Browser UI for HTTP and WebSocket scenario control    |
+| `@msw-dev-tool/node-cli`    | Machine-readable control for Node sessions            |
+| `@msw-dev-tool/browser-cli` | Machine-readable CDP control for browser sessions     |
 
 ## License
 

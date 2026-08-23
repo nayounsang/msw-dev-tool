@@ -5,17 +5,14 @@ import { describe, expect, it } from "vitest";
 import { useHandlerStore } from "./react";
 
 function UnstableSelectorComponent() {
-  const ids = useHandlerStore((state) =>
-    state.flattenHandlers.map((handler) => handler.id)
-  );
+  const ids = useHandlerStore((state) => state.flattenHandlers.map((handler) => handler.id));
 
   return <span data-testid="ids">{ids.length}</span>;
 }
 
 function SelectorChangeComponent({ selectCount }: { selectCount: boolean }) {
-  const value = useHandlerStore(selectCount
-    ? (state) => state.flattenHandlers.length
-    : (state) => state.restHandlers.length
+  const value = useHandlerStore(
+    selectCount ? (state) => state.flattenHandlers.length : (state) => state.restHandlers.length,
   );
   return <span data-testid="value">{value}</span>;
 }
@@ -29,9 +26,7 @@ describe("useHandlerStore", () => {
       root.render(<UnstableSelectorComponent />);
     });
 
-    expect(container.querySelector("[data-testid='ids']")?.textContent).toBe(
-      "0"
-    );
+    expect(container.querySelector("[data-testid='ids']")?.textContent).toBe("0");
 
     await act(async () => {
       root.unmount();

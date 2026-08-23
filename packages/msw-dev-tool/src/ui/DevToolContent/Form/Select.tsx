@@ -1,9 +1,4 @@
-import React, {
-  ForwardedRef,
-  PropsWithChildren,
-  forwardRef,
-  CSSProperties,
-} from "react";
+import React, { ForwardedRef, PropsWithChildren, forwardRef, CSSProperties } from "react";
 import {
   Select as _Select,
   SelectProps as _SelectProps,
@@ -20,11 +15,7 @@ import {
   SelectViewport,
   SelectItem as _SelectItem,
 } from "@radix-ui/react-select";
-import {
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-} from "@radix-ui/react-icons";
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "@radix-ui/react-icons";
 import { usePortalContainer } from "../../PortalContainerProvider";
 
 interface SelectProps extends _SelectProps {
@@ -37,7 +28,7 @@ interface SelectProps extends _SelectProps {
 
 export const Select = forwardRef<HTMLButtonElement, SelectProps>(
   ({ options, placeholder, label, id, style, ...rest }, ref) => {
-    const container = usePortalContainer()
+    const container = usePortalContainer();
     return (
       <_Select data-theme="light" data-radix-color-scheme="light" {...rest}>
         <SelectTrigger
@@ -48,10 +39,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           ref={ref}
           style={style}
         >
-          <SelectValue
-            placeholder={placeholder}
-            className="msw-dt-text-ellipsis"
-          />
+          <SelectValue placeholder={placeholder} className="msw-dt-text-ellipsis" />
           <SelectIcon className="msw-dt-select-icon">
             <ChevronDownIcon />
           </SelectIcon>
@@ -84,35 +72,25 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
         )}
       </_Select>
     );
-  }
+  },
 );
 
 Select.displayName = "Select";
 
 const SelectItem = React.forwardRef(
   (
-    {
-      children,
-      className,
-      value,
-      ...props
-    }: PropsWithChildren<SelectItemProps>,
-    forwardedRef: ForwardedRef<HTMLDivElement>
+    { children, className, value, ...props }: PropsWithChildren<SelectItemProps>,
+    forwardedRef: ForwardedRef<HTMLDivElement>,
   ) => {
     return (
-      <_SelectItem
-        className="msw-dt-select-item"
-        value={value}
-        {...props}
-        ref={forwardedRef}
-      >
+      <_SelectItem className="msw-dt-select-item" value={value} {...props} ref={forwardedRef}>
         <SelectItemText>{children}</SelectItemText>
         <SelectItemIndicator className="msw-dt-select-item-indicator">
           <CheckIcon />
         </SelectItemIndicator>
       </_SelectItem>
     );
-  }
+  },
 );
 
 SelectItem.displayName = "SelectItem";

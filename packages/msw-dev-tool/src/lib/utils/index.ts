@@ -9,12 +9,7 @@ import {
   StorageData,
 } from "../types";
 import { SetupWorker } from "msw/lib/browser";
-import {
-  AsyncResponseResolverReturnType,
-  delay,
-  HttpResponse,
-  passthrough,
-} from "msw";
+import { AsyncResponseResolverReturnType, delay, HttpResponse, passthrough } from "msw";
 import { STORAGE_KEY } from "../const";
 
 export const getRowId = ({ path, method }: { path: string; method: string }) =>
@@ -60,14 +55,12 @@ export const initMSWDevToolStore = (worker: SetupWorker) => {
 };
 
 export const isHttpHandler = (handler: Handler): handler is HttpHandler => {
-  return (
-    "info" in handler && "method" in handler.info && "path" in handler.info
-  );
+  return "info" in handler && "method" in handler.info && "path" in handler.info;
 };
 
 export const getHandlerResponseByBehavior = async (
   behavior: HttpHandlerBehavior | undefined,
-  originalResolverCallback: () => AsyncResponseResolverReturnType<any>
+  originalResolverCallback: () => AsyncResponseResolverReturnType<any>,
 ): Promise<AsyncResponseResolverReturnType<any>> => {
   if (!behavior || behavior === CustomBehavior.DEFAULT) {
     return originalResolverCallback();
@@ -108,16 +101,12 @@ export const getStorageData = (): StorageData => {
   return JSON.parse(storage).state;
 };
 
-export const mergeStorageData = ({
-  flattenHandlers: newFlattenHandlers,
-}: StorageData) => {
+export const mergeStorageData = ({ flattenHandlers: newFlattenHandlers }: StorageData) => {
   const { flattenHandlers: savedFlattenHandlers } = getStorageData();
 
   // Merge with saved and new element based on worker's default handlers
   const flattenHandlers = newFlattenHandlers.map((newHandler) => {
-    const savedHandler = savedFlattenHandlers.find(
-      (h) => h.id === newHandler.id
-    );
+    const savedHandler = savedFlattenHandlers.find((h) => h.id === newHandler.id);
     if (savedHandler) {
       return {
         ...newHandler,

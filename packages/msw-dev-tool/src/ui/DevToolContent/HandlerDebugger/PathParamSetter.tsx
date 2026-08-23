@@ -18,7 +18,7 @@ export const PathParamSetter = ({
         <Flex direction="column" gap="2" py="2">
           {Object.entries(paramValues).map(([key, value]) => (
             <Flex align="center" gap="2" key={key}>
-              <Label htmlFor={`param-${key}`} style={{ width:"160px" }}>
+              <Label htmlFor={`param-${key}`} style={{ width: "160px" }}>
                 {key}:
               </Label>
               <TextField.Root

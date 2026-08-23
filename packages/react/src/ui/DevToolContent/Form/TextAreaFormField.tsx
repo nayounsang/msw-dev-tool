@@ -9,15 +9,15 @@ interface TextAreaFormFieldProps extends TextAreaProps {
 }
 
 export const TextAreaFormField = forwardRef<HTMLTextAreaElement, TextAreaFormFieldProps>(
-  ({ label, error, required,className, ...rest }, ref) => {
+  ({ label, error, required, className, ...rest }, ref) => {
     const id = useId();
 
     return (
       <FormFieldBase id={id} label={label} error={error} required={required}>
-        <TextArea id={id} ref={ref} {...rest} className={clsx("box-border", className)}/>
+        <TextArea id={id} ref={ref} {...rest} className={clsx("box-border", className)} />
       </FormFieldBase>
     );
-  }
+  },
 );
 
 TextAreaFormField.displayName = "TextAreaFormField";

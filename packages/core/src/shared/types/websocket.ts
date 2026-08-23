@@ -1,6 +1,5 @@
 export type SerializableWebSocketMatcher =
-  | { kind: "string"; value: string }
-  | { kind: "regexp"; source: string; flags: string };
+  { kind: "string"; value: string } | { kind: "regexp"; source: string; flags: string };
 
 export type ManagedWebSocketEndpoint = {
   id: string;
@@ -34,7 +33,7 @@ export type WebSocketResponse =
       type: "close";
       code?: number;
       reason?: string;
-  };
+    };
 
 /** @deprecated Use WebSocketResponse. */
 export type WebSocketCustomResponse = WebSocketResponse;

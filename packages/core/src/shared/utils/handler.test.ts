@@ -1,10 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { HttpResponse, passthrough } from "msw";
-import {
-  CustomBehavior,
-  HttpErrorStatusCode,
-  STANDARD_HTTP_STATUS_TEXT,
-} from "../types";
+import { CustomBehavior, HttpErrorStatusCode, STANDARD_HTTP_STATUS_TEXT } from "../types";
 import { getHandlerResponseByBehavior } from "./handler";
 
 vi.mock("msw", async (importOriginal) => {
@@ -26,18 +22,16 @@ describe("getHandlerResponseByBehavior", () => {
   });
 
   it("returns passthrough for DISABLE", async () => {
-    const result = await getHandlerResponseByBehavior(
-      CustomBehavior.DISABLE,
-      async () => HttpResponse.json({})
+    const result = await getHandlerResponseByBehavior(CustomBehavior.DISABLE, async () =>
+      HttpResponse.json({}),
     );
     expect(result).toEqual(passthrough());
   });
 
   it("awaits delay and returns empty Response for DELAY", async () => {
     const { delay } = await import("msw");
-    const result = await getHandlerResponseByBehavior(
-      CustomBehavior.DELAY,
-      async () => HttpResponse.json({})
+    const result = await getHandlerResponseByBehavior(CustomBehavior.DELAY, async () =>
+      HttpResponse.json({}),
     );
 
     expect(delay).toHaveBeenCalledWith("infinite");
@@ -45,9 +39,8 @@ describe("getHandlerResponseByBehavior", () => {
   });
 
   it("returns null JSON body for RETURN_NULL", async () => {
-    const result = await getHandlerResponseByBehavior(
-      CustomBehavior.RETURN_NULL,
-      async () => HttpResponse.json({ shouldNot: true })
+    const result = await getHandlerResponseByBehavior(CustomBehavior.RETURN_NULL, async () =>
+      HttpResponse.json({ shouldNot: true }),
     );
 
     expect(result).toBeInstanceOf(Response);
@@ -59,9 +52,8 @@ describe("getHandlerResponseByBehavior", () => {
   });
 
   it("returns network error for NETWORK_ERROR", async () => {
-    const result = await getHandlerResponseByBehavior(
-      CustomBehavior.NETWORK_ERROR,
-      async () => HttpResponse.json({})
+    const result = await getHandlerResponseByBehavior(CustomBehavior.NETWORK_ERROR, async () =>
+      HttpResponse.json({}),
     );
     expect(result).toEqual(HttpResponse.error());
   });
@@ -74,7 +66,7 @@ describe("getHandlerResponseByBehavior", () => {
         body: '{"custom":true}',
         headers: { "Content-Type": "application/json", "X-Source": "dev-tool" },
         status: 201,
-      }
+      },
     );
 
     expect(result).toBeInstanceOf(Response);
@@ -89,7 +81,7 @@ describe("getHandlerResponseByBehavior", () => {
     const result = await getHandlerResponseByBehavior(
       CustomBehavior.CUSTOM_RESPONSE,
       async () => HttpResponse.json({ original: true }),
-      { body: "default status" }
+      { body: "default status" },
     );
 
     expect(result).toBeInstanceOf(Response);
@@ -100,23 +92,17 @@ describe("getHandlerResponseByBehavior", () => {
 
   it("throws when CUSTOM_RESPONSE has not been configured", async () => {
     await expect(
-      getHandlerResponseByBehavior(
-        CustomBehavior.CUSTOM_RESPONSE,
-        async () => HttpResponse.json({})
-      )
-    ).rejects.toThrow(
-      "Please configure a custom response before using this behavior."
-    );
+      getHandlerResponseByBehavior(CustomBehavior.CUSTOM_RESPONSE, async () =>
+        HttpResponse.json({}),
+      ),
+    ).rejects.toThrow("Please configure a custom response before using this behavior.");
   });
 
   it.each([
     [HttpErrorStatusCode.NOT_FOUND, "Not Found"],
     [HttpErrorStatusCode.SERVICE_UNAVAILABLE, "Service Unavailable"],
   ])("returns the standard status text for error behavior %i", async (status, statusText) => {
-    const result = await getHandlerResponseByBehavior(
-      status,
-      async () => HttpResponse.json({})
-    );
+    const result = await getHandlerResponseByBehavior(status, async () => HttpResponse.json({}));
 
     expect(result).toBeInstanceOf(Response);
     if (!(result instanceof Response)) {

@@ -10,19 +10,16 @@ import {
 
 export type { BehaviorResolverResult };
 
-type MaybeBehaviorResolverResult =
-  | BehaviorResolverResult
-  | Promise<BehaviorResolverResult>;
+type MaybeBehaviorResolverResult = BehaviorResolverResult | Promise<BehaviorResolverResult>;
 
 const DEFAULT_HTTP_STATUS = 200;
 
-const getDefaultStatusText = (status: number) =>
-  STANDARD_HTTP_STATUS_TEXT[status] ?? "";
+const getDefaultStatusText = (status: number) => STANDARD_HTTP_STATUS_TEXT[status] ?? "";
 
 export const getHandlerResponseByBehavior = async (
   behavior: HttpHandlerBehavior | undefined | string,
   originalResolverCallback: () => MaybeBehaviorResolverResult,
-  customResponse?: CustomResponse
+  customResponse?: CustomResponse,
 ): Promise<BehaviorResolverResult> => {
   if (!behavior || behavior === CustomBehavior.DEFAULT) {
     return originalResolverCallback();
@@ -47,9 +44,7 @@ export const getHandlerResponseByBehavior = async (
 
   if (behavior === CustomBehavior.CUSTOM_RESPONSE) {
     if (!customResponse) {
-      throw new Error(
-        "Please configure a custom response before using this behavior."
-      );
+      throw new Error("Please configure a custom response before using this behavior.");
     }
     const status = customResponse.status ?? DEFAULT_HTTP_STATUS;
     return new HttpResponse(customResponse.body ?? null, {

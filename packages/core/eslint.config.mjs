@@ -28,10 +28,7 @@ export default tseslint.config(
           varsIgnorePattern: "^_",
         },
       ],
-      "@typescript-eslint/consistent-type-assertions": [
-        "error",
-        { assertionStyle: "never" },
-      ],
+      "@typescript-eslint/consistent-type-assertions": ["error", { assertionStyle: "never" }],
     },
   },
   {
@@ -60,5 +57,5 @@ export default tseslint.config(
         },
       ],
     },
-  }
+  },
 );

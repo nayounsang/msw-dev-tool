@@ -9,7 +9,7 @@ export default defineConfig({
   plugins: {
     js,
     "@typescript-eslint": tseslint.plugin,
-    "react": pluginReact
+    react: pluginReact,
   },
   languageOptions: {
     globals: globals.browser,
@@ -18,14 +18,14 @@ export default defineConfig({
       ecmaVersion: "latest",
       sourceType: "module",
       ecmaFeatures: {
-        jsx: true
-      }
-    }
+        jsx: true,
+      },
+    },
   },
   settings: {
     react: {
-      version: "18.0.0"
-    }
+      version: "18.0.0",
+    },
   },
   rules: {
     ...js.configs.recommended.rules,
@@ -33,6 +33,6 @@ export default defineConfig({
     ...pluginReact.configs.recommended.rules,
     //"no-restricted-imports": ["error", { paths: ["@radix-ui/themes"] }],
     "no-unused-vars": "off",
-    "@typescript-eslint/no-unused-vars": ["error"]
-  }
+    "@typescript-eslint/no-unused-vars": ["error"],
+  },
 });

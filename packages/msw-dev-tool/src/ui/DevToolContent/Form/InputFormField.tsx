@@ -16,7 +16,7 @@ export const InputFormField = forwardRef<HTMLInputElement, InputFormFieldProps>(
         <TextField.Root id={id} ref={ref} {...rest} />
       </FormFieldBase>
     );
-  }
+  },
 );
 
 InputFormField.displayName = "InputFormField";

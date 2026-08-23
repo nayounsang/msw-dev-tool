@@ -10,7 +10,12 @@ vi.mock("msw/browser", () => ({
   }),
 }));
 
-import { BROWSER_CONTROL_KEY, BrowserControlBridge, handlerStore, setupDevToolWorker } from "./handlerStore";
+import {
+  BROWSER_CONTROL_KEY,
+  BrowserControlBridge,
+  handlerStore,
+  setupDevToolWorker,
+} from "./handlerStore";
 import { STORAGE_KEY } from "../shared/const";
 import { BROWSER_CONTROL_METHOD_VERSIONS } from "../shared/controlProtocol";
 
@@ -39,7 +44,7 @@ describe("browser control bridge", () => {
       method: "get",
       contentType: "application/json",
       status: "200",
-      response: "{\"ok\":true}",
+      response: '{"ok":true}',
     } as const;
     const additions = await Promise.allSettled([
       Promise.resolve().then(() => bridge.addTemp(tempInput)),
@@ -47,12 +52,18 @@ describe("browser control bridge", () => {
     ]);
     const added = additions.find(
       (result): result is PromiseFulfilledResult<{ revision: number; handlerCount: number }> =>
-        result.status === "fulfilled"
+        result.status === "fulfilled",
     );
 
     expect(bridge.get(handler.id)).toMatchObject({ behavior: "delay" });
-    expect(changed).toMatchObject({ revision: initialRevision + 1, handler: { id: handler.id, behavior: "delay" } });
-    expect(added?.value).toMatchObject({ revision: initialRevision + 2, handler: { type: "temp" } });
+    expect(changed).toMatchObject({
+      revision: initialRevision + 1,
+      handler: { id: handler.id, behavior: "delay" },
+    });
+    expect(added?.value).toMatchObject({
+      revision: initialRevision + 2,
+      handler: { type: "temp" },
+    });
     expect(additions.filter((result) => result.status === "rejected")).toHaveLength(1);
     expect(bridge.list()).toHaveLength(2);
 
@@ -61,7 +72,9 @@ describe("browser control bridge", () => {
 
     expect(removed.revision).toBe(initialRevision + 3);
     expect(reset.revision).toBe(initialRevision + 4);
-    expect(bridge.list()).toEqual([expect.objectContaining({ id: handler.id, behavior: "default", type: "default" })]);
+    expect(bridge.list()).toEqual([
+      expect.objectContaining({ id: handler.id, behavior: "default", type: "default" }),
+    ]);
     expect(JSON.parse(sessionStorage.getItem(STORAGE_KEY)!)).toMatchObject({
       revision: reset.revision,
       state: { flattenHandlers: [{ id: handler.id, behavior: "default" }] },
@@ -96,9 +109,7 @@ describe("browser control bridge", () => {
 
   it("registers wrapped WebSocket endpoints through the browser store adapter", async () => {
     const chat = ws.link("ws://browser.test/chat");
-    await setupDevToolWorker(
-      chat.addEventListener("connection", () => undefined)
-    );
+    await setupDevToolWorker(chat.addEventListener("connection", () => undefined));
 
     expect(handlerStore.getState().webSocketEndpoints).toEqual([
       expect.objectContaining({
@@ -124,34 +135,56 @@ describe("browser control bridge", () => {
       options: { message: "hello" },
     });
 
-    expect(bridge.listWebSocket()).toEqual([expect.objectContaining({
-      endpointId: added.endpoint.endpointId,
-      matcher: { kind: "regexp", source: "browser\\.example\\.local/cli-e2e", flags: "i" },
-    })]);
+    expect(bridge.listWebSocket()).toEqual([
+      expect.objectContaining({
+        endpointId: added.endpoint.endpointId,
+        matcher: { kind: "regexp", source: "browser\\.example\\.local/cli-e2e", flags: "i" },
+      }),
+    ]);
     expect(bridge.getWebSocketEndpoint(added.endpoint.endpointId)).toEqual(listener.endpoint);
-    expect(bridge.setWebSocketEndpointEnabled(added.endpoint.endpointId, false).endpoint.enabled).toBe(false);
-    expect(bridge.setWebSocketListenerEnabled(listener.listener.info.id, false).listener.enabled).toBe(false);
-    expect(bridge.setWebSocketListenerBehavior(listener.listener.info.id, { preset: "close", options: { code: 4001 } }).listener.behavior).toEqual({
-      preset: "close", options: { code: 4001 },
+    expect(
+      bridge.setWebSocketEndpointEnabled(added.endpoint.endpointId, false).endpoint.enabled,
+    ).toBe(false);
+    expect(
+      bridge.setWebSocketListenerEnabled(listener.listener.info.id, false).listener.enabled,
+    ).toBe(false);
+    expect(
+      bridge.setWebSocketListenerBehavior(listener.listener.info.id, {
+        preset: "close",
+        options: { code: 4001 },
+      }).listener.behavior,
+    ).toEqual({
+      preset: "close",
+      options: { code: 4001 },
     });
-    expect(bridge.setWebSocketListenerCustomResponse(listener.listener.info.id, {
-      type: "send",
-      dataType: "string",
-      value: "custom websocket response",
-    }).listener.customResponse).toEqual({
+    expect(
+      bridge.setWebSocketListenerCustomResponse(listener.listener.info.id, {
+        type: "send",
+        dataType: "string",
+        value: "custom websocket response",
+      }).listener.customResponse,
+    ).toEqual({
       type: "send",
       dataType: "string",
       value: "custom websocket response",
     });
     const persistedBeforeInvalidBehavior = sessionStorage.getItem(STORAGE_KEY);
-    expect(() => bridge.addWebSocketListener(added.endpoint.endpointId, { preset: "invalid" })).toThrow();
-    expect(() => bridge.setWebSocketListenerBehavior(listener.listener.info.id, { preset: "invalid" })).toThrow();
-    expect(() => bridge.setWebSocketListenerBehavior(listener.listener.info.id, { preset: "default" })).not.toThrow();
+    expect(() =>
+      bridge.addWebSocketListener(added.endpoint.endpointId, { preset: "invalid" }),
+    ).toThrow();
+    expect(() =>
+      bridge.setWebSocketListenerBehavior(listener.listener.info.id, { preset: "invalid" }),
+    ).toThrow();
+    expect(() =>
+      bridge.setWebSocketListenerBehavior(listener.listener.info.id, { preset: "default" }),
+    ).not.toThrow();
     expect(bridge.getWebSocketEndpoint(added.endpoint.endpointId)?.listeners).toEqual([
       expect.objectContaining({ behavior: { preset: "default" } }),
     ]);
     expect(sessionStorage.getItem(STORAGE_KEY)).not.toBe(persistedBeforeInvalidBehavior);
-    expect(bridge.removeWebSocketListener(listener.listener.info.id).endpoints[0]?.listeners).toEqual([]);
+    expect(
+      bridge.removeWebSocketListener(listener.listener.info.id).endpoints[0]?.listeners,
+    ).toEqual([]);
     const configured = bridge.addWebSocketListener({
       endpointId: added.endpoint.endpointId,
       behavior: { preset: "default" },
@@ -167,9 +200,23 @@ describe("browser control bridge", () => {
       delay: 300,
       repeat: { interval: 500, repetitions: "Infinity" },
     });
-    expect(bridge.setWebSocketListenerResponse(configured.listener.info.id, { type: "send", dataType: "string", value: "updated" }).listener.response).toMatchObject({ value: "updated" });
-    expect(bridge.setWebSocketListenerSchedule(configured.listener.info.id, { delay: 100, repeat: { interval: 50, repetitions: 3 } }).listener).toMatchObject({ delay: 100, repeat: { interval: 50, repetitions: 3 } });
-    expect(bridge.setWebSocketListenerSchedule(configured.listener.info.id, { repeat: undefined }).listener.repeat).toBeUndefined();
+    expect(
+      bridge.setWebSocketListenerResponse(configured.listener.info.id, {
+        type: "send",
+        dataType: "string",
+        value: "updated",
+      }).listener.response,
+    ).toMatchObject({ value: "updated" });
+    expect(
+      bridge.setWebSocketListenerSchedule(configured.listener.info.id, {
+        delay: 100,
+        repeat: { interval: 50, repetitions: 3 },
+      }).listener,
+    ).toMatchObject({ delay: 100, repeat: { interval: 50, repetitions: 3 } });
+    expect(
+      bridge.setWebSocketListenerSchedule(configured.listener.info.id, { repeat: undefined })
+        .listener.repeat,
+    ).toBeUndefined();
     const defaults = bridge.addWebSocketListener({ endpointId: added.endpoint.endpointId });
     expect(defaults.listener).toMatchObject({ behavior: { preset: "default" }, delay: 0 });
     expect(defaults.listener.response).toBeUndefined();
@@ -180,13 +227,15 @@ describe("browser control bridge", () => {
     expect(bridge.removeWebSocketEndpoint(added.endpoint.endpointId).endpoints).toEqual([]);
     const matcher = { kind: "string" as const, value: "ws://browser.test/load" };
     const results = await Promise.all(
-      Array.from({ length: 20 }, () => Promise.resolve().then(() => bridge.addWebSocketEndpoint(matcher)))
+      Array.from({ length: 20 }, () =>
+        Promise.resolve().then(() => bridge.addWebSocketEndpoint(matcher)),
+      ),
     );
 
     expect(new Set(results.map((result) => result.endpoint.endpointId)).size).toBe(20);
     expect(bridge.listWebSocket()).toHaveLength(20);
     expect(() => bridge.removeWebSocketEndpoint("missing-endpoint")).toThrow(
-      "WebSocket endpoint not found: missing-endpoint"
+      "WebSocket endpoint not found: missing-endpoint",
     );
   });
 
@@ -211,34 +260,45 @@ describe("browser control bridge", () => {
 
     expect(handlerStore.getState().getHandlerInfo(endpointId)).toBeUndefined();
     expect(handlerStore.getState().listHandlerInfo("http")).toEqual(
-      expect.arrayContaining([expect.objectContaining({ endpoint: "/hydrate-temp", source: "temp" })])
+      expect.arrayContaining([
+        expect.objectContaining({ endpoint: "/hydrate-temp", source: "temp" }),
+      ]),
     );
     expect(handlerStore.getState().webSocketEndpoints).toEqual([]);
   });
 
   it("hydrates valid WebSocket state from sessionStorage", async () => {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
-      state: {
-        flattenHandlers: [],
-        webSocket: [{
-          info: {
-            id: "websocket:endpoint:string:ws://browser.test/saved:0",
-            kind: "websocket",
-            endpoint: "ws://browser.test/saved",
-            operation: "endpoint",
-            source: "temp",
-          },
-          endpointId: "websocket:endpoint:string:ws://browser.test/saved:0",
-          matcher: { kind: "string", value: "ws://browser.test/saved" },
-          enabled: true,
-          listeners: [],
-        }],
-      },
-    }));
+    sessionStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        state: {
+          flattenHandlers: [],
+          webSocket: [
+            {
+              info: {
+                id: "websocket:endpoint:string:ws://browser.test/saved:0",
+                kind: "websocket",
+                endpoint: "ws://browser.test/saved",
+                operation: "endpoint",
+                source: "temp",
+              },
+              endpointId: "websocket:endpoint:string:ws://browser.test/saved:0",
+              matcher: { kind: "string", value: "ws://browser.test/saved" },
+              enabled: true,
+              listeners: [],
+            },
+          ],
+        },
+      }),
+    );
 
     await setupDevToolWorker();
 
-    expect(handlerStore.getState().getWebSocketEndpoint("websocket:endpoint:string:ws://browser.test/saved:0")).toBeDefined();
+    expect(
+      handlerStore
+        .getState()
+        .getWebSocketEndpoint("websocket:endpoint:string:ws://browser.test/saved:0"),
+    ).toBeDefined();
   });
 
   it("ignores public snapshot assignments for closure-backed slices", async () => {
@@ -247,7 +307,10 @@ describe("browser control bridge", () => {
     const endpointId = handlerStore.getState().webSocket.endpoints[0]!.endpointId;
     const before = handlerStore.getState().getWebSocketEndpoint(endpointId);
 
-    handlerStore.setState({ common: { handlers: [] }, webSocket: { endpoints: [], listeners: [] } });
+    handlerStore.setState({
+      common: { handlers: [] },
+      webSocket: { endpoints: [], listeners: [] },
+    });
 
     expect(handlerStore.getState().common.handlers.length).toBeGreaterThan(0);
     expect(handlerStore.getState().getWebSocketEndpoint(endpointId)).toEqual(before);
@@ -264,13 +327,8 @@ describe("browser control bridge", () => {
       restHandlers: [...current.restHandlers, "another"],
     }));
 
-    expect(handlerStore.getState().restHandlers).toEqual([
-      "unsupported",
-      "another",
-    ]);
-    expect(handlerStore.getState().flattenHandlers).toEqual(
-      initial.flattenHandlers
-    );
+    expect(handlerStore.getState().restHandlers).toEqual(["unsupported", "another"]);
+    expect(handlerStore.getState().flattenHandlers).toEqual(initial.flattenHandlers);
   });
 
   it("rejects control requests for missing handlers", async () => {
@@ -278,8 +336,6 @@ describe("browser control bridge", () => {
     const bridge = getBridge();
 
     expect(bridge.get("missing")).toBeUndefined();
-    expect(() => bridge.setBehavior("missing", "delay")).toThrow(
-      "Handler not found"
-    );
+    expect(() => bridge.setBehavior("missing", "delay")).toThrow("Handler not found");
   });
 });

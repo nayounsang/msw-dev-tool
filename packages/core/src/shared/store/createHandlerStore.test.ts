@@ -32,10 +32,12 @@ describe("createHandlerStore WebSocket coordination", () => {
       source: "code",
     });
 
-    expect(store.getState().getWebSocketEndpoint("code-endpoint")?.listeners.map((listener) => listener.info.id)).toEqual([
-      tempListenerId,
-      "code-endpoint:message:0",
-    ]);
+    expect(
+      store
+        .getState()
+        .getWebSocketEndpoint("code-endpoint")
+        ?.listeners.map((listener) => listener.info.id),
+    ).toEqual([tempListenerId, "code-endpoint:message:0"]);
   });
 
   it("coordinates temporary lifecycle and direct code registration", async () => {
@@ -158,19 +160,21 @@ describe("createHandlerStore WebSocket coordination", () => {
     const endpointId = "websocket:endpoint:string:ws://temp.test/persisted:0";
     const store = createHandlerStore<SetupServer>({
       createRuntime: (handlers) => setupServer(...handlers),
-      getStoredWebSocketState: () => [{
-        info: {
-          id: endpointId,
-          kind: "websocket",
-          endpoint: "ws://temp.test/persisted",
-          operation: "endpoint",
-          source: "temp",
+      getStoredWebSocketState: () => [
+        {
+          info: {
+            id: endpointId,
+            kind: "websocket",
+            endpoint: "ws://temp.test/persisted",
+            operation: "endpoint",
+            source: "temp",
+          },
+          endpointId,
+          matcher: { kind: "string", value: "ws://temp.test/persisted" },
+          enabled: true,
+          listeners: [],
         },
-        endpointId,
-        matcher: { kind: "string", value: "ws://temp.test/persisted" },
-        enabled: true,
-        listeners: [],
-      }],
+      ],
     });
     const runtime = await store.getState().setupDevToolRuntime();
     servers.push(runtime);
@@ -192,19 +196,21 @@ describe("createHandlerStore WebSocket coordination", () => {
       createRuntime: (handlers) => setupServer(...handlers),
     });
     const endpointId = "websocket:endpoint:string:ws://temp.test/offline:0";
-    store.getState().hydrateWebSocket([{
-      info: {
-        id: endpointId,
-        kind: "websocket",
-        endpoint: "ws://temp.test/offline",
-        operation: "endpoint",
-        source: "temp",
+    store.getState().hydrateWebSocket([
+      {
+        info: {
+          id: endpointId,
+          kind: "websocket",
+          endpoint: "ws://temp.test/offline",
+          operation: "endpoint",
+          source: "temp",
+        },
+        endpointId,
+        matcher: { kind: "string", value: "ws://temp.test/offline" },
+        enabled: true,
+        listeners: [],
       },
-      endpointId,
-      matcher: { kind: "string", value: "ws://temp.test/offline" },
-      enabled: true,
-      listeners: [],
-    }]);
+    ]);
 
     expect(store.getState().getWebSocketEndpoint(endpointId)).toBeDefined();
     store.getState().removeWebSocketEndpoint(endpointId);

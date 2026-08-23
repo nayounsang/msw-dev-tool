@@ -7,13 +7,7 @@ export const metadata = {
   description: "Browser + Node MSW example with Next.js SSR",
 };
 
-export default function RootLayout({
-  children,
-  ssr,
-}: {
-  children: ReactNode;
-  ssr: ReactNode;
-}) {
+export default function RootLayout({ children, ssr }: { children: ReactNode; ssr: ReactNode }) {
   return (
     <html lang="en">
       <body>
@@ -21,9 +15,8 @@ export default function RootLayout({
           <main>
             <h1>msw-dev-tool example</h1>
             <p>
-              Client sections use the browser worker + DevTool. The SSR section
-              uses <code>setupDevToolServer</code> (control it with{" "}
-              <code>@msw-dev-tool/node-cli</code>).
+              Client sections use the browser worker + DevTool. The SSR section uses{" "}
+              <code>setupDevToolServer</code> (control it with <code>@msw-dev-tool/node-cli</code>).
             </p>
             {children}
             <hr />

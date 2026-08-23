@@ -21,14 +21,32 @@ export interface SelectProps {
 }
 
 export const Select = forwardRef<HTMLButtonElement, SelectProps>(
-  ({ options, placeholder, label, id, style, className, value, defaultValue, onValueChange, name, disabled, required, searchable = false, alignItemWithTrigger = true }, ref) => {
+  (
+    {
+      options,
+      placeholder,
+      label,
+      id,
+      style,
+      className,
+      value,
+      defaultValue,
+      onValueChange,
+      name,
+      disabled,
+      required,
+      searchable = false,
+      alignItemWithTrigger = true,
+    },
+    ref,
+  ) => {
     const items = options.map((opt) => ({ value: opt.value, label: String(opt.label) }));
     const [query, setQuery] = useState("");
     const visibleOptions = useMemo(() => {
       const normalizedQuery = query.trim().toLowerCase();
       if (!searchable || !normalizedQuery) return options;
       return options.filter(({ label: optionLabel, value: optionValue }) =>
-        `${optionLabel} ${optionValue}`.toLowerCase().includes(normalizedQuery)
+        `${optionLabel} ${optionValue}`.toLowerCase().includes(normalizedQuery),
       );
     }, [options, query, searchable]);
 
@@ -50,7 +68,13 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           style={style}
         >
           <BaseSelect.Value className="msw-dt-text-ellipsis">
-            {(val: string | null) => val ? (items.find((o) => o.value === val)?.label ?? val) : (placeholder ? String(placeholder) : "")}
+            {(val: string | null) =>
+              val
+                ? (items.find((o) => o.value === val)?.label ?? val)
+                : placeholder
+                  ? String(placeholder)
+                  : ""
+            }
           </BaseSelect.Value>
           <BaseSelect.Icon className="msw-dt-select-icon">
             <ChevronDown size={16} />
@@ -78,11 +102,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
               </BaseSelect.ScrollUpArrow>
               <BaseSelect.List className="msw-dt-select-list">
                 {visibleOptions.map((opt) => (
-                  <BaseSelect.Item
-                    key={opt.value}
-                    value={opt.value}
-                    className="msw-dt-select-item"
-                  >
+                  <BaseSelect.Item key={opt.value} value={opt.value} className="msw-dt-select-item">
                     <BaseSelect.ItemText>{opt.label}</BaseSelect.ItemText>
                     <BaseSelect.ItemIndicator className="msw-dt-select-item-indicator">
                       <Check size={14} />
@@ -98,7 +118,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
         </BaseSelect.Portal>
       </BaseSelect.Root>
     );
-  }
+  },
 );
 
 Select.displayName = "Select";

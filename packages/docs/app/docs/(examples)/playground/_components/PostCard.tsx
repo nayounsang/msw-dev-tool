@@ -47,10 +47,7 @@ export const PostCard = ({ postId, setPostId }: PostCardProps) => {
               </span>
               <span className="text-neutral-500 text-sm">#{post?.id}</span>
             </div>
-            <button
-              className="text-neutral-400 hover:text-white"
-              onClick={() => setPostId(null)}
-            >
+            <button className="text-neutral-400 hover:text-white" onClick={() => setPostId(null)}>
               <XIcon className="w-5 h-5" />
             </button>
           </div>

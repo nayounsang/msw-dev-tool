@@ -32,18 +32,16 @@ const _HandlerDebugger = ({ handler }: { handler: HttpHandler }) => {
   const url = new URL(String(path), location.href);
   const { params } = matchRequestUrl(url, path, url.origin);
 
-  const [paramValues, setParamValues] = useState<
-    PathParams<string> | undefined
-  >(
+  const [paramValues, setParamValues] = useState<PathParams<string> | undefined>(
     params
       ? Object.keys(params).reduce(
           (acc, key) => ({
             ...acc,
             [key]: "",
           }),
-          {}
+          {},
         )
-      : undefined
+      : undefined,
   );
   const [headers, setHeaders] = useState<Record<string, string>>({});
   const [searchParams, setSearchParams] = useState<Record<string, string>>({});
@@ -59,20 +57,9 @@ const _HandlerDebugger = ({ handler }: { handler: HttpHandler }) => {
       <Text className="msw-dt-sub-text" style={{ overflowX: "scroll" }}>
         {url.toString()}
       </Text>
-      <PathParamSetter
-        paramValues={paramValues}
-        onParamChange={handleParamChange}
-      />
-      <KeyValueInputList
-        items={searchParams}
-        setItems={setSearchParams}
-        title="Search Params"
-      />
-      <KeyValueInputList
-        items={headers}
-        setItems={setHeaders}
-        title="Headers"
-      />
+      <PathParamSetter paramValues={paramValues} onParamChange={handleParamChange} />
+      <KeyValueInputList items={searchParams} setItems={setSearchParams} title="Search Params" />
+      <KeyValueInputList items={headers} setItems={setHeaders} title="Headers" />
       <RequestPreview
         url={url}
         paramValues={paramValues}

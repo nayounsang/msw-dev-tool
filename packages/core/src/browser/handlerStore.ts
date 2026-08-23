@@ -14,7 +14,13 @@ import {
   BrowserControlBridge,
 } from "../shared/controlProtocol";
 import { HandlerSchema } from "./schema";
-import { tempHandlerSchema, webSocketBehaviorSchema, webSocketResponseSchema, webSocketRepeatSchema, webSocketDelaySchema } from "../shared/schema";
+import {
+  tempHandlerSchema,
+  webSocketBehaviorSchema,
+  webSocketResponseSchema,
+  webSocketRepeatSchema,
+  webSocketDelaySchema,
+} from "../shared/schema";
 import { webSocketEndpointFromMatcher } from "../shared/websocket/state";
 import { getBrowserStorageSnapshot, mergeStorageData } from "./storage";
 
@@ -38,9 +44,7 @@ export type HandlerStoreState = HandlerStoreBaseState & {
 
 type SerializableHandler = Omit<HandlerStoreState["flattenHandlers"][number], "handler">;
 
-const mapState = (
-  base: HandlerStoreInternalState<SetupWorker>
-): HandlerStoreState => ({
+const mapState = (base: HandlerStoreInternalState<SetupWorker>): HandlerStoreState => ({
   worker: base.runtime,
   restHandlers: base.restHandlers,
   flattenHandlers: base.flattenHandlers,
@@ -83,8 +87,7 @@ const mapState = (
 const canUseSessionStorage = () => typeof sessionStorage !== "undefined";
 
 const readBrowserPersistedState = ():
-  | Partial<HandlerStoreInternalState<SetupWorker>>
-  | undefined => {
+  Partial<HandlerStoreInternalState<SetupWorker>> | undefined => {
   if (!canUseSessionStorage()) return undefined;
 
   if (!sessionStorage.getItem(STORAGE_KEY)) return undefined;
@@ -97,7 +100,10 @@ const writeBrowserPersistedState = (partialized: unknown) => {
   if (!canUseSessionStorage()) return;
 
   const previous = getBrowserStorageSnapshot();
-  sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ revision: previous.revision + 1, state: partialized }));
+  sessionStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({ revision: previous.revision + 1, state: partialized }),
+  );
 };
 
 const baseStore = createHandlerStore<SetupWorker>({
@@ -111,9 +117,7 @@ const baseStore = createHandlerStore<SetupWorker>({
   persist: {
     name: STORAGE_KEY,
     partialize: (state) => ({
-    flattenHandlers: state.flattenHandlers.map(
-        ({ handler: _handler, ...rest }) => rest
-      ),
+      flattenHandlers: state.flattenHandlers.map(({ handler: _handler, ...rest }) => rest),
       webSocket: state.webSocket.endpoints,
     }),
     getStoredState: readBrowserPersistedState,
@@ -138,15 +142,12 @@ export const handlerStore: StoreApi<HandlerStoreState> = {
   getState: getMappedState,
   setState: (partial) => {
     const current = getMappedState();
-    const nextPartial =
-      typeof partial === "function" ? partial(current) : partial;
+    const nextPartial = typeof partial === "function" ? partial(current) : partial;
 
     const basePartial: Partial<HandlerStoreInternalState<SetupWorker>> = {};
     if ("worker" in nextPartial) basePartial.runtime = nextPartial.worker;
-    if ("restHandlers" in nextPartial)
-      basePartial.restHandlers = nextPartial.restHandlers;
-    if ("flattenHandlers" in nextPartial)
-      basePartial.flattenHandlers = nextPartial.flattenHandlers;
+    if ("restHandlers" in nextPartial) basePartial.restHandlers = nextPartial.restHandlers;
+    if ("flattenHandlers" in nextPartial) basePartial.flattenHandlers = nextPartial.flattenHandlers;
     if ("webSocketEndpoints" in nextPartial)
       basePartial.webSocketEndpoints = nextPartial.webSocketEndpoints;
     if ("webSocketListeners" in nextPartial)
@@ -162,14 +163,19 @@ export const handlerStore: StoreApi<HandlerStoreState> = {
     }),
 };
 
-const toSerializable = (handler: HandlerStoreState["flattenHandlers"][number]): SerializableHandler => {
+const toSerializable = (
+  handler: HandlerStoreState["flattenHandlers"][number],
+): SerializableHandler => {
   const { handler: _handler, ...rest } = handler;
   return rest;
 };
 
 const describeBrowserSession = () => {
   const snapshot = getBrowserStorageSnapshot();
-  return { revision: snapshot.revision, handlerCount: handlerStore.getState().flattenHandlers.length };
+  return {
+    revision: snapshot.revision,
+    handlerCount: handlerStore.getState().flattenHandlers.length,
+  };
 };
 
 const requireHandler = (id: string) => {
@@ -242,18 +248,39 @@ const registerBrowserControlBridge = () => {
       return { endpoint: requireWebSocketEndpoint(endpointId) };
     },
     addWebSocketListener: (inputOrEndpointId, legacyBehavior) => {
-      const input = typeof inputOrEndpointId === "string"
-        ? { endpointId: inputOrEndpointId, behavior: webSocketBehaviorSchema.parse(legacyBehavior) }
-        : {
-            ...inputOrEndpointId,
-            behavior: inputOrEndpointId.behavior ? webSocketBehaviorSchema.parse(inputOrEndpointId.behavior) : undefined,
-            response: inputOrEndpointId.response === undefined ? undefined : webSocketResponseSchema.parse(inputOrEndpointId.response),
-            customResponse: inputOrEndpointId.customResponse === undefined ? undefined : webSocketResponseSchema.parse(inputOrEndpointId.customResponse),
-            delay: inputOrEndpointId.delay === undefined ? undefined : webSocketDelaySchema.parse(inputOrEndpointId.delay),
-            repeat: inputOrEndpointId.repeat === undefined ? undefined : webSocketRepeatSchema.parse(inputOrEndpointId.repeat),
-          };
+      const input =
+        typeof inputOrEndpointId === "string"
+          ? {
+              endpointId: inputOrEndpointId,
+              behavior: webSocketBehaviorSchema.parse(legacyBehavior),
+            }
+          : {
+              ...inputOrEndpointId,
+              behavior: inputOrEndpointId.behavior
+                ? webSocketBehaviorSchema.parse(inputOrEndpointId.behavior)
+                : undefined,
+              response:
+                inputOrEndpointId.response === undefined
+                  ? undefined
+                  : webSocketResponseSchema.parse(inputOrEndpointId.response),
+              customResponse:
+                inputOrEndpointId.customResponse === undefined
+                  ? undefined
+                  : webSocketResponseSchema.parse(inputOrEndpointId.customResponse),
+              delay:
+                inputOrEndpointId.delay === undefined
+                  ? undefined
+                  : webSocketDelaySchema.parse(inputOrEndpointId.delay),
+              repeat:
+                inputOrEndpointId.repeat === undefined
+                  ? undefined
+                  : webSocketRepeatSchema.parse(inputOrEndpointId.repeat),
+            };
       const listenerId = handlerStore.getState().addTempWebSocketListener(input);
-      return { endpoint: requireWebSocketEndpoint(input.endpointId), listener: requireWebSocketListener(listenerId) };
+      return {
+        endpoint: requireWebSocketEndpoint(input.endpointId),
+        listener: requireWebSocketListener(listenerId),
+      };
     },
     removeWebSocketListener: (listenerId) => {
       handlerStore.getState().removeWebSocketListener(listenerId);
@@ -265,29 +292,30 @@ const registerBrowserControlBridge = () => {
       return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener };
     },
     setWebSocketListenerBehavior: (listenerId, behavior) => {
-      handlerStore.getState().setWebSocketListenerBehavior(
-        listenerId,
-        webSocketBehaviorSchema.parse(behavior)
-      );
+      handlerStore
+        .getState()
+        .setWebSocketListenerBehavior(listenerId, webSocketBehaviorSchema.parse(behavior));
       const listener = requireWebSocketListener(listenerId);
       return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener };
     },
     setWebSocketListenerCustomResponse: (listenerId, response) => {
-      handlerStore.getState().setWebSocketListenerCustomResponse(
-        listenerId,
-        webSocketResponseSchema.parse(response),
-      );
+      handlerStore
+        .getState()
+        .setWebSocketListenerCustomResponse(listenerId, webSocketResponseSchema.parse(response));
       const listener = requireWebSocketListener(listenerId);
       return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener };
     },
     setWebSocketListenerResponse: (listenerId, response) => {
-      handlerStore.getState().setWebSocketListenerResponse(listenerId, webSocketResponseSchema.parse(response));
+      handlerStore
+        .getState()
+        .setWebSocketListenerResponse(listenerId, webSocketResponseSchema.parse(response));
       const listener = requireWebSocketListener(listenerId);
       return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener };
     },
     setWebSocketListenerSchedule: (listenerId, input) => {
       const schedule = { ...input };
-      if ("repeat" in input && input.repeat !== undefined) schedule.repeat = webSocketRepeatSchema.parse(input.repeat);
+      if ("repeat" in input && input.repeat !== undefined)
+        schedule.repeat = webSocketRepeatSchema.parse(input.repeat);
       handlerStore.getState().setWebSocketListenerSchedule(listenerId, schedule);
       const listener = requireWebSocketListener(listenerId);
       return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener };

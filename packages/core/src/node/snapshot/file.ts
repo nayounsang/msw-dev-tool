@@ -22,9 +22,7 @@ const pathExists = async (filePath: string): Promise<boolean> => {
 const isEnoent = (error: unknown): boolean =>
   typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
 
-export const readSnapshot = async (
-  sessionPath: string
-): Promise<SessionSnapshot | null> => {
+export const readSnapshot = async (sessionPath: string): Promise<SessionSnapshot | null> => {
   let raw: string;
   try {
     raw = await fs.readFile(sessionPath, "utf8");
@@ -47,20 +45,17 @@ export const readSnapshot = async (
 
   const parsed = sessionSnapshotSchema.safeParse(json);
   if (!parsed.success) {
-    throw new Error(
-      `Invalid session snapshot schema at ${sessionPath}: ${parsed.error.message}`
-    );
+    throw new Error(`Invalid session snapshot schema at ${sessionPath}: ${parsed.error.message}`);
   }
   return parsed.data;
 };
 
-export const readSnapshotOrEmpty = async (
-  sessionPath: string
-): Promise<SessionSnapshot> => (await readSnapshot(sessionPath)) ?? createEmptySnapshot();
+export const readSnapshotOrEmpty = async (sessionPath: string): Promise<SessionSnapshot> =>
+  (await readSnapshot(sessionPath)) ?? createEmptySnapshot();
 
 export const writeSnapshot = async (
   sessionPath: string,
-  snapshot: SessionSnapshot
+  snapshot: SessionSnapshot,
 ): Promise<void> => {
   const dir = path.dirname(sessionPath);
   await fs.mkdir(dir, { recursive: true });
@@ -78,7 +73,7 @@ export const writeSnapshot = async (
  */
 export const withLockedMutation = async (
   sessionPath: string,
-  mutate: (prev: SessionSnapshot) => SessionSnapshot
+  mutate: (prev: SessionSnapshot) => SessionSnapshot,
 ): Promise<SessionSnapshot> => {
   const dir = path.dirname(sessionPath);
   await fs.mkdir(dir, { recursive: true });

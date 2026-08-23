@@ -1,13 +1,7 @@
 import React from "react";
 import clsx from "clsx";
 
-export type BadgeVariant =
-  | "new"
-  | "updated"
-  | "beta"
-  | "warning"
-  | "important"
-  | "info";
+export type BadgeVariant = "new" | "updated" | "beta" | "warning" | "important" | "info";
 export type BadgeSize = "sm" | "md" | "lg";
 
 interface BadgeProps {
@@ -32,22 +26,17 @@ const sizeClasses: Record<BadgeSize, string> = {
   lg: "text-sm px-2.5 py-1",
 };
 
-export const Badge = ({
-  variant,
-  size = "sm",
-  children,
-  className,
-}: BadgeProps) => {
+export const Badge = ({ variant, size = "sm", children, className }: BadgeProps) => {
   return (
     <span
       className={clsx(
         "inline-flex items-center rounded border font-medium",
         variantClasses[variant],
         sizeClasses[size],
-        className
+        className,
       )}
     >
       {children}
     </span>
   );
-}
+};

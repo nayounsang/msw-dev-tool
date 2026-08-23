@@ -118,7 +118,13 @@ export const CustomResponseDialog = ({ handler }: { handler: FlattenHandler }) =
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Trigger render={<Button variant="ghost" color="gray" title="Configure custom response"><Pencil size={16} /></Button>} />
+      <Dialog.Trigger
+        render={
+          <Button variant="ghost" color="gray" title="Configure custom response">
+            <Pencil size={16} />
+          </Button>
+        }
+      />
       <Dialog.Portal>
         <Dialog.Backdrop className="msw-dt-dialog-backdrop" forceRender />
         <Dialog.Popup className="msw-dt-dialog-popup-viewport">
@@ -130,7 +136,10 @@ export const CustomResponseDialog = ({ handler }: { handler: FlattenHandler }) =
             <Dialog.Description className="msw-dt-dialog-description">
               {CUSTOM_RESPONSE_DESCRIPTION}
             </Dialog.Description>
-            <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.25rem", overflow: "auto" }}>
+            <form
+              onSubmit={onSubmit}
+              style={{ display: "flex", flexDirection: "column", gap: "1.25rem", overflow: "auto" }}
+            >
               <Flex direction="column" gap={5}>
                 <FormFieldBase id={statusId} label="Status Code" error={errors.status?.message}>
                   <Select
@@ -144,10 +153,22 @@ export const CustomResponseDialog = ({ handler }: { handler: FlattenHandler }) =
                     label="Status Code"
                   />
                 </FormFieldBase>
-                <TextAreaFormField label="Body" {...register("body")} error={errors.body?.message} className="msw-dt-min-h-textarea" />
-                <TextAreaFormField label="Response Headers (JSON object)" {...register("headers")} error={errors.headers?.message} className="msw-dt-min-h-textarea" />
+                <TextAreaFormField
+                  label="Body"
+                  {...register("body")}
+                  error={errors.body?.message}
+                  className="msw-dt-min-h-textarea"
+                />
+                <TextAreaFormField
+                  label="Response Headers (JSON object)"
+                  {...register("headers")}
+                  error={errors.headers?.message}
+                  className="msw-dt-min-h-textarea"
+                />
               </Flex>
-              <Button type="submit" color="primary">Save Custom Response</Button>
+              <Button type="submit" color="primary">
+                Save Custom Response
+              </Button>
             </form>
           </div>
         </Dialog.Popup>

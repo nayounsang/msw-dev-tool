@@ -11,9 +11,7 @@ export const ErrorFallback = ({ error }: { error: any }) => {
     <div className="bg-neutral-800 p-4 rounded-lg shadow-md border border-red-500/30 text-center">
       <AlertCircle className="text-red-400 w-8 h-8 mx-auto mb-3" />
       <h3 className="text-lg font-medium text-red-400 mb-3">Error</h3>
-      <p className="text-sm text-neutral-300 mb-4">
-        {error?.message || "Error fetching data"}
-      </p>
+      <p className="text-sm text-neutral-300 mb-4">{error?.message || "Error fetching data"}</p>
       <button
         onClick={async () => {
           setPosts();

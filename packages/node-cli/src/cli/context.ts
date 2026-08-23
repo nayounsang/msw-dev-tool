@@ -14,7 +14,7 @@ export const toCommandContext = ({ sessionPath, pid }: CliContext): CliCommandCo
 });
 
 export const createCliContext = async (
-  flags: Record<string, string | boolean>
+  flags: Record<string, string | boolean>,
 ): Promise<CliContext> => {
   const fromFlag = flags.pid;
   if (typeof fromFlag === "string" && /^\d+$/.test(fromFlag)) {
@@ -32,11 +32,13 @@ export const createCliContext = async (
   const pids = await listSessionPids();
   if (pids.length === 0) {
     throw new Error(
-      "No msw-dev-tool sessions found. Start a Node process with setupDevToolServer() first."
+      "No msw-dev-tool sessions found. Start a Node process with setupDevToolServer() first.",
     );
   }
   if (pids.length > 1) {
-    throw new Error("Multiple msw-dev-tool sessions found. Run `msw-dev-tool sessions` and specify --pid <pid>.");
+    throw new Error(
+      "Multiple msw-dev-tool sessions found. Run `msw-dev-tool sessions` and specify --pid <pid>.",
+    );
   }
   return { pid: pids[0]!, sessionPath: getSessionPathForPid(pids[0]!) };
 };

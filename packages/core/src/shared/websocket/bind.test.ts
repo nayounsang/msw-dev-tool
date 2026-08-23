@@ -1,9 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { WebSocketStoreAdapter } from "./bind";
-import {
-  attachWebSocketHandlerBindHook,
-  bindWebSocketHandler,
-} from "./bind";
+import { attachWebSocketHandlerBindHook, bindWebSocketHandler } from "./bind";
 
 const createAdapter = (): WebSocketStoreAdapter => ({
   registerCodeWebSocketEndpoint: vi.fn(),

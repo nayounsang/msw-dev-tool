@@ -38,13 +38,15 @@ export const getBrowserStorageSnapshot = (): BrowserStorageSnapshot => {
   try {
     rawPayload = JSON.parse(raw);
   } catch {
-    throw new Error(`Invalid msw-dev-tool sessionStorage payload for key "${STORAGE_KEY}": invalid JSON`);
+    throw new Error(
+      `Invalid msw-dev-tool sessionStorage payload for key "${STORAGE_KEY}": invalid JSON`,
+    );
   }
 
   const parsed = browserStoragePayloadSchema.safeParse(rawPayload);
   if (!parsed.success) {
     throw new Error(
-      `Invalid msw-dev-tool sessionStorage payload for key "${STORAGE_KEY}": ${parsed.error.issues[0]?.message ?? "invalid payload"}`
+      `Invalid msw-dev-tool sessionStorage payload for key "${STORAGE_KEY}": ${parsed.error.issues[0]?.message ?? "invalid payload"}`,
     );
   }
   return { revision: parsed.data.revision ?? 0, state: parsed.data.state };
@@ -59,11 +61,6 @@ export const getStorageData = (): PersistedStorageData => {
   return getBrowserStorageSnapshot().state;
 };
 
-export const mergeStorageData = ({
-  flattenHandlers: newFlattenHandlers,
-}: StorageData) => {
-  return mergeStorageDataPure(
-    { flattenHandlers: newFlattenHandlers },
-    getStorageData()
-  );
+export const mergeStorageData = ({ flattenHandlers: newFlattenHandlers }: StorageData) => {
+  return mergeStorageDataPure({ flattenHandlers: newFlattenHandlers }, getStorageData());
 };

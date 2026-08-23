@@ -20,7 +20,7 @@ export const ToolButtonGroup = () => {
   const { resetMSWDevTool } = useHandlerStore();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const container = usePortalContainer()
+  const container = usePortalContainer();
 
   return (
     <Flex gap="6" py="4">
@@ -52,9 +52,7 @@ export const ToolButtonGroup = () => {
               }}
             >
               <Flex align="center" justify="between">
-                <DialogTitle
-                  style={{ margin: 0, fontSize: "1.5rem", fontWeight: "bold" }}
-                >
+                <DialogTitle style={{ margin: 0, fontSize: "1.5rem", fontWeight: "bold" }}>
                   Add Temp Handler
                 </DialogTitle>
                 <DialogClose asChild>
@@ -63,8 +61,8 @@ export const ToolButtonGroup = () => {
               </Flex>
               <DialogDescription style={{ margin: "1rem 0" }}>
                 Temp handler is stored in the session storage. If you{" "}
-                <span style={{ fontWeight: "600" }}>reset dev tool</span>, it
-                will be <span style={{ color: "red" }}>deleted</span>.
+                <span style={{ fontWeight: "600" }}>reset dev tool</span>, it will be{" "}
+                <span style={{ color: "red" }}>deleted</span>.
               </DialogDescription>
               <HandlerForm onClose={() => setIsDialogOpen(false)} />
             </DialogContent>

@@ -27,10 +27,22 @@ const nextConfig: NextConfig = withNextra({
   },
   async redirects() {
     return [
-      { source: "/docs/handler-table", destination: "/docs/http#explore-api-states-and-verify-the-resulting-ui", permanent: true },
-      { source: "/docs/debugger", destination: "/docs/http#send-a-request-with-the-debugger", permanent: true },
+      {
+        source: "/docs/handler-table",
+        destination: "/docs/http#explore-api-states-and-verify-the-resulting-ui",
+        permanent: true,
+      },
+      {
+        source: "/docs/debugger",
+        destination: "/docs/http#send-a-request-with-the-debugger",
+        permanent: true,
+      },
       { source: "/docs/tools", destination: "/docs/http#explore-a-one-off-flow", permanent: true },
-      { source: "/docs/temp-handler", destination: "/docs/http#explore-a-one-off-flow", permanent: true },
+      {
+        source: "/docs/temp-handler",
+        destination: "/docs/http#explore-a-one-off-flow",
+        permanent: true,
+      },
       { source: "/docs/custom-trigger", destination: "/docs/custom-ui", permanent: true },
     ];
   },

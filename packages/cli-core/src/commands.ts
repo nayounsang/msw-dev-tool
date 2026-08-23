@@ -13,20 +13,21 @@ import type { CliCommand, CliCommandContext, JsonResult } from "./types";
 import type { AddWebSocketListenerInput } from "@msw-dev-tool/core/shared";
 
 const parseBehavior = (value: string): HttpHandlerBehavior => {
-  const behavior = (Object.values(HttpHandlerBehavior) as Array<string | number>)
-    .find((candidate) => String(candidate) === value);
+  const behavior = (Object.values(HttpHandlerBehavior) as Array<string | number>).find(
+    (candidate) => String(candidate) === value,
+  );
   if (behavior === undefined) {
     throw new Error(
-      `Unknown behavior "${value}". Valid: ${Object.values(HttpHandlerBehavior).join(", ")}`
+      `Unknown behavior "${value}". Valid: ${Object.values(HttpHandlerBehavior).join(", ")}`,
     );
   }
   return behavior as HttpHandlerBehavior;
 };
 
-const withMetadata = (
-  result: JsonResult,
-  context: CliCommandContext
-): JsonResult => ({ ...result, ...(context.metadata ?? {}) });
+const withMetadata = (result: JsonResult, context: CliCommandContext): JsonResult => ({
+  ...result,
+  ...(context.metadata ?? {}),
+});
 
 const parseCustomResponse = (value: string) => {
   try {
@@ -73,7 +74,7 @@ export const commands: CliCommand[] = [
       if (!id || !behavior) throw new Error("Usage: set-behavior <id> <behavior>");
       return withMetadata(
         { ok: true, ...(await context.session.setBehavior(id, parseBehavior(behavior))) },
-        context
+        context,
       );
     },
   },
@@ -86,8 +87,11 @@ export const commands: CliCommand[] = [
         throw new Error("Usage: set-custom-response <id> --json '<customResponseJson>'");
       }
       return withMetadata(
-        { ok: true, ...(await context.session.setCustomResponse(id, parseCustomResponse(flags.json))) },
-        context
+        {
+          ok: true,
+          ...(await context.session.setCustomResponse(id, parseCustomResponse(flags.json))),
+        },
+        context,
       );
     },
   },
@@ -144,7 +148,10 @@ export const commands: CliCommand[] = [
         throw new Error("Usage: ws-add-endpoint --json '<matcherJson>'");
       }
       const matcher = serializableWebSocketMatcherSchema.parse(JSON.parse(flags.json) as unknown);
-      return withMetadata({ ok: true, ...(await context.session.addWebSocketEndpoint(matcher)) }, context);
+      return withMetadata(
+        { ok: true, ...(await context.session.addWebSocketEndpoint(matcher)) },
+        context,
+      );
     },
   },
   {
@@ -153,7 +160,10 @@ export const commands: CliCommand[] = [
     async execute(context, { positionals }) {
       const id = positionals[1];
       if (!id) throw new Error("Usage: ws-remove-endpoint <endpointId>");
-      return withMetadata({ ok: true, ...(await context.session.removeWebSocketEndpoint(id)) }, context);
+      return withMetadata(
+        { ok: true, ...(await context.session.removeWebSocketEndpoint(id)) },
+        context,
+      );
     },
   },
   {
@@ -161,9 +171,17 @@ export const commands: CliCommand[] = [
     usage: "ws-set-endpoint-enabled <endpointId> <true|false>",
     async execute(context, { positionals }) {
       const [id, enabledStr] = [positionals[1], positionals[2]];
-      if (!id || enabledStr === undefined) throw new Error("Usage: ws-set-endpoint-enabled <endpointId> <true|false>");
-      if (enabledStr !== "true" && enabledStr !== "false") throw new Error("enabled must be true or false");
-      return withMetadata({ ok: true, ...(await context.session.setWebSocketEndpointEnabled(id, enabledStr === "true")) }, context);
+      if (!id || enabledStr === undefined)
+        throw new Error("Usage: ws-set-endpoint-enabled <endpointId> <true|false>");
+      if (enabledStr !== "true" && enabledStr !== "false")
+        throw new Error("enabled must be true or false");
+      return withMetadata(
+        {
+          ok: true,
+          ...(await context.session.setWebSocketEndpointEnabled(id, enabledStr === "true")),
+        },
+        context,
+      );
     },
   },
   {
@@ -174,21 +192,34 @@ export const commands: CliCommand[] = [
         throw new Error("Usage: ws-add-listener <endpointId> --json '<listenerJson>'");
       }
       const value = JSON.parse(flags.json) as Record<string, unknown>;
-      const id = positionals[1] ?? (typeof value.endpointId === "string" ? value.endpointId : undefined);
+      const id =
+        positionals[1] ?? (typeof value.endpointId === "string" ? value.endpointId : undefined);
       if (!id) throw new Error("Usage: ws-add-listener <endpointId> --json '<listenerJson>'");
       const legacyBehavior = webSocketBehaviorSchema.safeParse(value);
       if (legacyBehavior.success) {
-        return withMetadata({ ok: true, ...(await context.session.addWebSocketListener(id, legacyBehavior.data)) }, context);
+        return withMetadata(
+          { ok: true, ...(await context.session.addWebSocketListener(id, legacyBehavior.data)) },
+          context,
+        );
       }
       const input: AddWebSocketListenerInput = {
         endpointId: id,
-        behavior: value.behavior === undefined ? undefined : webSocketBehaviorSchema.parse(value.behavior),
-        response: value.response === undefined ? undefined : webSocketResponseSchema.parse(value.response),
-        customResponse: value.customResponse === undefined ? undefined : webSocketResponseSchema.parse(value.customResponse),
-        delay: value.delay === undefined ? undefined : z.number().int().nonnegative().parse(value.delay),
+        behavior:
+          value.behavior === undefined ? undefined : webSocketBehaviorSchema.parse(value.behavior),
+        response:
+          value.response === undefined ? undefined : webSocketResponseSchema.parse(value.response),
+        customResponse:
+          value.customResponse === undefined
+            ? undefined
+            : webSocketResponseSchema.parse(value.customResponse),
+        delay:
+          value.delay === undefined ? undefined : z.number().int().nonnegative().parse(value.delay),
         repeat: value.repeat === undefined ? undefined : webSocketRepeatSchema.parse(value.repeat),
       };
-      return withMetadata({ ok: true, ...(await context.session.addWebSocketListener(input)) }, context);
+      return withMetadata(
+        { ok: true, ...(await context.session.addWebSocketListener(input)) },
+        context,
+      );
     },
   },
   {
@@ -197,7 +228,10 @@ export const commands: CliCommand[] = [
     async execute(context, { positionals }) {
       const id = positionals[1];
       if (!id) throw new Error("Usage: ws-remove-listener <listenerId>");
-      return withMetadata({ ok: true, ...(await context.session.removeWebSocketListener(id)) }, context);
+      return withMetadata(
+        { ok: true, ...(await context.session.removeWebSocketListener(id)) },
+        context,
+      );
     },
   },
   {
@@ -205,9 +239,17 @@ export const commands: CliCommand[] = [
     usage: "ws-set-listener-enabled <listenerId> <true|false>",
     async execute(context, { positionals }) {
       const [id, enabledStr] = [positionals[1], positionals[2]];
-      if (!id || enabledStr === undefined) throw new Error("Usage: ws-set-listener-enabled <listenerId> <true|false>");
-      if (enabledStr !== "true" && enabledStr !== "false") throw new Error("enabled must be true or false");
-      return withMetadata({ ok: true, ...(await context.session.setWebSocketListenerEnabled(id, enabledStr === "true")) }, context);
+      if (!id || enabledStr === undefined)
+        throw new Error("Usage: ws-set-listener-enabled <listenerId> <true|false>");
+      if (enabledStr !== "true" && enabledStr !== "false")
+        throw new Error("enabled must be true or false");
+      return withMetadata(
+        {
+          ok: true,
+          ...(await context.session.setWebSocketListenerEnabled(id, enabledStr === "true")),
+        },
+        context,
+      );
     },
   },
   {
@@ -219,7 +261,10 @@ export const commands: CliCommand[] = [
         throw new Error("Usage: ws-set-listener-behavior <listenerId> --json '<behaviorJson>'");
       }
       const behavior = webSocketBehaviorSchema.parse(JSON.parse(flags.json) as unknown);
-      return withMetadata({ ok: true, ...(await context.session.setWebSocketListenerBehavior(id, behavior)) }, context);
+      return withMetadata(
+        { ok: true, ...(await context.session.setWebSocketListenerBehavior(id, behavior)) },
+        context,
+      );
     },
   },
   {
@@ -228,10 +273,15 @@ export const commands: CliCommand[] = [
     async execute(context, { flags, positionals }) {
       const id = positionals[1];
       if (!id || typeof flags.json !== "string") {
-        throw new Error("Usage: ws-set-listener-custom-response <listenerId> --json '<customResponseJson>'");
+        throw new Error(
+          "Usage: ws-set-listener-custom-response <listenerId> --json '<customResponseJson>'",
+        );
       }
       const response = webSocketCustomResponseSchema.parse(JSON.parse(flags.json) as unknown);
-      return withMetadata({ ok: true, ...(await context.session.setWebSocketListenerCustomResponse(id, response)) }, context);
+      return withMetadata(
+        { ok: true, ...(await context.session.setWebSocketListenerCustomResponse(id, response)) },
+        context,
+      );
     },
   },
   {
@@ -243,7 +293,10 @@ export const commands: CliCommand[] = [
         throw new Error("Usage: ws-set-listener-response <listenerId> --json '<responseJson>'");
       }
       const response = webSocketResponseSchema.parse(JSON.parse(flags.json) as unknown);
-      return withMetadata({ ok: true, ...(await context.session.setWebSocketListenerResponse(id, response)) }, context);
+      return withMetadata(
+        { ok: true, ...(await context.session.setWebSocketListenerResponse(id, response)) },
+        context,
+      );
     },
   },
   {
@@ -256,20 +309,23 @@ export const commands: CliCommand[] = [
       }
       const value = JSON.parse(flags.json) as { delay?: unknown; repeat?: unknown };
       const input = {
-        ...(value.delay === undefined ? {} : { delay: z.number().int().nonnegative().parse(value.delay) }),
-        ...(value.repeat === undefined ? {} : {
-          repeat: value.repeat === null
-            ? undefined
-            : webSocketRepeatSchema.parse(value.repeat),
-        }),
+        ...(value.delay === undefined
+          ? {}
+          : { delay: z.number().int().nonnegative().parse(value.delay) }),
+        ...(value.repeat === undefined
+          ? {}
+          : {
+              repeat: value.repeat === null ? undefined : webSocketRepeatSchema.parse(value.repeat),
+            }),
       };
-      return withMetadata({ ok: true, ...(await context.session.setWebSocketListenerSchedule(id, input)) }, context);
+      return withMetadata(
+        { ok: true, ...(await context.session.setWebSocketListenerSchedule(id, input)) },
+        context,
+      );
     },
   },
 ];
 
-export const findCommand = (name: string) =>
-  commands.find((command) => command.name === name);
+export const findCommand = (name: string) => commands.find((command) => command.name === name);
 
-export const commandUsage = () =>
-  commands.map((command) => `  ${command.usage}`).join("\n");
+export const commandUsage = () => commands.map((command) => `  ${command.usage}`).join("\n");

@@ -1,22 +1,19 @@
 import { FlattenHandler, PersistedStorageData } from "../types";
 
 export type HydratableFlattenHandler =
-  | FlattenHandler
-  | PersistedStorageData["flattenHandlers"][number];
+  FlattenHandler | PersistedStorageData["flattenHandlers"][number];
 
 /**
  * Pure merge of saved storage data with handlers from the current runtime.
  */
 export const mergeStorageData = (
   { flattenHandlers: newFlattenHandlers }: { flattenHandlers: FlattenHandler[] },
-  saved: PersistedStorageData
+  saved: PersistedStorageData,
 ) => {
   const { flattenHandlers: savedFlattenHandlers } = saved;
 
   const flattenHandlers: HydratableFlattenHandler[] = newFlattenHandlers.map((newHandler) => {
-    const savedHandler = savedFlattenHandlers.find(
-      (h) => h.id === newHandler.id
-    );
+    const savedHandler = savedFlattenHandlers.find((h) => h.id === newHandler.id);
     if (savedHandler) {
       return {
         ...newHandler,
