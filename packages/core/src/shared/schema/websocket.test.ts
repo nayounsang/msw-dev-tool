@@ -3,6 +3,9 @@ import {
   serializableWebSocketMatcherSchema,
   webSocketBehaviorSchema,
   webSocketCustomResponseSchema,
+  webSocketResponseSchema,
+  webSocketRepeatSchema,
+  webSocketListenerSchema,
   webSocketEndpointsSchema,
 } from "./websocket";
 
@@ -105,5 +108,25 @@ describe("websocket schema", () => {
     expect(() => webSocketCustomResponseSchema.parse({ type: "send", dataType: "ArrayBuffer", value: "68 69" })).not.toThrow();
     expect(() => webSocketCustomResponseSchema.parse({ type: "close", code: 4001, reason: "Unauthorized" })).not.toThrow();
     expect(() => webSocketCustomResponseSchema.parse({ type: "send", dataType: "Blob", value: "6g" })).toThrow();
+    expect(webSocketResponseSchema.parse({ type: "close", code: 1000 })).toEqual({ type: "close", code: 1000 });
+    expect(webSocketCustomResponseSchema.parse({ type: "send", dataType: "string", value: "hello" })).toEqual(
+      webSocketResponseSchema.parse({ type: "send", dataType: "string", value: "hello" }),
+    );
+  });
+
+  it("validates listener scheduling and defaults old listeners", () => {
+    expect(webSocketRepeatSchema.parse({ interval: 500, repetitions: "Infinity" })).toEqual({ interval: 500, repetitions: "Infinity" });
+    expect(webSocketRepeatSchema.parse({ interval: 0, repetitions: 3 })).toEqual({ interval: 0, repetitions: 3 });
+    expect(() => webSocketRepeatSchema.parse({ interval: 0, repetitions: "Infinity" }))
+      .toThrow("Infinite WebSocket repetition requires a positive interval");
+    expect(() => webSocketRepeatSchema.parse({ interval: -1, repetitions: 1 })).toThrow();
+    expect(() => webSocketRepeatSchema.parse({ interval: 1, repetitions: 0 })).toThrow();
+    const listener = webSocketListenerSchema.parse({
+      info: { id: "listener", kind: "websocket", endpoint: "ws://test", operation: "message", source: "temp" },
+      endpointId: "endpoint",
+      event: "message",
+      enabled: true,
+    });
+    expect(listener).toMatchObject({ behavior: { preset: "default" }, delay: 0 });
   });
 });

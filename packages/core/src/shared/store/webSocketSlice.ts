@@ -6,7 +6,9 @@ import type {
   WebSocketEndpointConfig,
   WebSocketListenerConfig,
   WebSocketHandlerInfo,
-  WebSocketCustomResponse,
+  WebSocketResponse,
+  WebSocketRepeat,
+  AddWebSocketListenerInput,
 } from "../types";
 import {
   addTemporaryWebSocketEndpoint,
@@ -17,8 +19,11 @@ import {
   setWebSocketEndpointEnabled,
   setWebSocketListenerBehavior,
   setWebSocketListenerCustomResponse,
+  setWebSocketListenerResponse,
+  setWebSocketListenerSchedule,
   setWebSocketListenerEnabled,
 } from "../websocket/state";
+import { webSocketEndpointsSchema } from "../schema/websocket";
 
 export type WebSocketRuntimeAdapter = {
   addTempEndpoint?: (config: WebSocketEndpointConfig) => void;
@@ -62,7 +67,7 @@ export const createWebSocketSlice = (runtime?: WebSocketRuntimeAdapter) => {
       }] });
     },
     registerCodeListener: (input: { info: WebSocketHandlerInfo; endpointId: string; event: "message" }) => {
-      registerListener({ ...input, enabled: true, behavior: defaultBehavior });
+      registerListener({ ...input, enabled: true, behavior: defaultBehavior, delay: 0 });
     },
     addTempEndpoint: (input: { matcher: SerializableWebSocketMatcher; endpoint: string }) => {
       const next = addTemporaryWebSocketEndpoint(state.endpoints, input.matcher, input.endpoint);
@@ -70,8 +75,8 @@ export const createWebSocketSlice = (runtime?: WebSocketRuntimeAdapter) => {
       runtime?.addTempEndpoint?.(next.endpoint);
       return next.endpoint.endpointId;
     },
-    addTempListener: (input: { endpointId: string; behavior: WebSocketBehaviorSelection }) => {
-      const next = addTemporaryWebSocketListener(state.endpoints, input.endpointId, input.behavior);
+    addTempListener: (input: AddWebSocketListenerInput) => {
+      const next = addTemporaryWebSocketListener(state.endpoints, input.endpointId, input);
       set({ endpoints: next.endpoints, listeners: [...state.listeners, next.listener] });
       return next.listener.info.id;
     },
@@ -99,18 +104,27 @@ export const createWebSocketSlice = (runtime?: WebSocketRuntimeAdapter) => {
       const next = setWebSocketListenerBehavior(state.endpoints, listenerId, behavior);
       set({ endpoints: next.endpoints, listeners: state.listeners.map((entry) => entry.info.id === listenerId ? next.listener : entry) });
     },
-    setListenerCustomResponse: (listenerId: string, customResponse: WebSocketCustomResponse) => {
+    setListenerCustomResponse: (listenerId: string, customResponse: WebSocketResponse) => {
       const next = setWebSocketListenerCustomResponse(state.endpoints, listenerId, customResponse);
+      set({ endpoints: next.endpoints, listeners: state.listeners.map((entry) => entry.info.id === listenerId ? next.listener : entry) });
+    },
+    setListenerResponse: (listenerId: string, response: WebSocketResponse) => {
+      const next = setWebSocketListenerResponse(state.endpoints, listenerId, response);
+      set({ endpoints: next.endpoints, listeners: state.listeners.map((entry) => entry.info.id === listenerId ? next.listener : entry) });
+    },
+    setListenerSchedule: (listenerId: string, input: { delay?: number; repeat?: WebSocketRepeat }) => {
+      const next = setWebSocketListenerSchedule(state.endpoints, listenerId, input);
       set({ endpoints: next.endpoints, listeners: state.listeners.map((entry) => entry.info.id === listenerId ? next.listener : entry) });
     },
     replace: (next: WebSocketEndpointConfig[]) => {
       set({ endpoints: next, listeners: next.flatMap((entry) => entry.listeners) });
     },
     hydrate: (saved: WebSocketEndpointConfig[]) => {
+      const normalized = webSocketEndpointsSchema.parse(saved);
       const code = state.endpoints.filter((entry) => entry.info.source === "code");
-      const savedById = new Map(saved.map((entry) => [entry.endpointId, entry]));
+      const savedById = new Map(normalized.map((entry) => [entry.endpointId, entry]));
       const mergedCode = code.map((entry) => savedById.get(entry.endpointId) ?? entry);
-      const temp = saved.filter((entry) => entry.info.source === "temp");
+      const temp = normalized.filter((entry) => entry.info.source === "temp");
       set({ endpoints: [...mergedCode, ...temp], listeners: [...mergedCode, ...temp].flatMap((entry) => entry.listeners) });
     },
     reset: () => {

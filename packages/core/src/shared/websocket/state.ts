@@ -1,13 +1,17 @@
 import {
   webSocketEndpointSchema,
-  webSocketCustomResponseSchema,
+  webSocketResponseSchema,
+  webSocketRepeatSchema,
+  webSocketDelaySchema,
 } from "../schema/websocket";
 import type {
+  AddWebSocketListenerInput,
   SerializableWebSocketMatcher,
   WebSocketBehaviorSelection,
   WebSocketEndpointConfig,
   WebSocketListenerConfig,
-  WebSocketCustomResponse,
+  WebSocketResponse,
+  WebSocketRepeat,
 } from "../types";
 
 export const canonicalWebSocketMatcher = (matcher: SerializableWebSocketMatcher): string =>
@@ -92,13 +96,10 @@ export const setWebSocketEndpointEnabled = (
 export const addTemporaryWebSocketListener = (
   endpoints: WebSocketEndpointConfig[],
   endpointId: string,
-  behaviorInput: WebSocketBehaviorSelection
+  input: Omit<AddWebSocketListenerInput, "endpointId">
 ) => {
   const endpoint = findEndpoint(endpoints, endpointId);
-  const behavior = behaviorInput;
-  if (behavior.preset === "default") {
-    throw new Error("Temporary WebSocket listeners require a response behavior");
-  }
+  const behavior = input.behavior ?? { preset: "default" };
   let index = endpoint.listeners.length;
   let listenerId = createTemporaryWebSocketListenerId(endpointId, index);
   const listeners = endpoints.flatMap((entry) => entry.listeners);
@@ -112,6 +113,10 @@ export const addTemporaryWebSocketListener = (
     event: "message",
     enabled: true,
     behavior,
+    response: input.response === undefined ? undefined : webSocketResponseSchema.parse(input.response),
+    customResponse: input.customResponse === undefined ? undefined : webSocketResponseSchema.parse(input.customResponse),
+    delay: input.delay === undefined ? 0 : webSocketDelaySchema.parse(input.delay),
+    repeat: input.repeat === undefined ? undefined : webSocketRepeatSchema.parse(input.repeat),
   };
   const nextEndpoints = endpoints.map((entry) =>
     entry.endpointId === endpointId ? { ...entry, listeners: [...entry.listeners, listener] } : entry
@@ -157,11 +162,8 @@ export const setWebSocketListenerBehavior = (
   listenerId: string,
   behaviorInput: WebSocketBehaviorSelection
 ) => {
-  const { listener: currentListener } = findListener(endpoints, listenerId);
+  findListener(endpoints, listenerId);
   const behavior = behaviorInput;
-  if (currentListener.info.source === "temp" && behavior.preset === "default") {
-    throw new Error("Temporary WebSocket listeners require a response behavior");
-  }
   const nextEndpoints = endpoints.map((endpoint) => ({
     ...endpoint,
     listeners: endpoint.listeners.map((entry) =>
@@ -175,13 +177,50 @@ export const setWebSocketListenerBehavior = (
 export const setWebSocketListenerCustomResponse = (
   endpoints: WebSocketEndpointConfig[],
   listenerId: string,
-  customResponse: WebSocketCustomResponse,
+  customResponse: WebSocketResponse,
 ) => {
-  const response = webSocketCustomResponseSchema.parse(customResponse);
+  const response = webSocketResponseSchema.parse(customResponse);
   const nextEndpoints = endpoints.map((endpoint) => ({
     ...endpoint,
     listeners: endpoint.listeners.map((entry) =>
       entry.info.id === listenerId ? { ...entry, customResponse: response } : entry
+    ),
+  }));
+  const { endpoint, listener } = findListener(nextEndpoints, listenerId);
+  return { endpoints: nextEndpoints, endpoint, listener };
+};
+
+export const setWebSocketListenerResponse = (
+  endpoints: WebSocketEndpointConfig[],
+  listenerId: string,
+  response: WebSocketResponse,
+) => {
+  const parsed = webSocketResponseSchema.parse(response);
+  const nextEndpoints = endpoints.map((endpoint) => ({
+    ...endpoint,
+    listeners: endpoint.listeners.map((entry) =>
+      entry.info.id === listenerId ? { ...entry, response: parsed } : entry
+    ),
+  }));
+  const { endpoint, listener } = findListener(nextEndpoints, listenerId);
+  return { endpoints: nextEndpoints, endpoint, listener };
+};
+
+export const setWebSocketListenerSchedule = (
+  endpoints: WebSocketEndpointConfig[],
+  listenerId: string,
+  input: { delay?: number; repeat?: WebSocketRepeat },
+) => {
+  const currentListener = findListener(endpoints, listenerId).listener;
+  const delay = "delay" in input ? input.delay ?? 0 : currentListener.delay ?? 0;
+  const parsedRepeat = "repeat" in input && input.repeat !== undefined
+    ? webSocketRepeatSchema.parse(input.repeat)
+    : "repeat" in input ? undefined : currentListener.repeat;
+  webSocketDelaySchema.parse(delay);
+  const nextEndpoints = endpoints.map((endpoint) => ({
+    ...endpoint,
+    listeners: endpoint.listeners.map((entry) =>
+      entry.info.id === listenerId ? { ...entry, delay, repeat: parsedRepeat } : entry
     ),
   }));
   const { endpoint, listener } = findListener(nextEndpoints, listenerId);

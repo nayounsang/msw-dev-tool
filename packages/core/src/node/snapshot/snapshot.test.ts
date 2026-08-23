@@ -25,6 +25,8 @@ import {
   setSnapshotWebSocketEndpointEnabled,
   setSnapshotWebSocketListenerBehavior,
   setSnapshotWebSocketListenerCustomResponse,
+  setSnapshotWebSocketListenerResponse,
+  setSnapshotWebSocketListenerSchedule,
   setSnapshotWebSocketListenerEnabled,
   readSnapshotOrEmpty,
   getSessionPathForPid,
@@ -176,6 +178,15 @@ describe("snapshot file protocol", () => {
       dataType: "string",
       value: "custom websocket response",
     });
+    await setSnapshotWebSocketListenerResponse(sessionPath, listener.info.id, {
+      type: "send",
+      dataType: "string",
+      value: "default websocket response",
+    });
+    await setSnapshotWebSocketListenerSchedule(sessionPath, listener.info.id, {
+      delay: 300,
+      repeat: { interval: 500, repetitions: 3 },
+    });
     await expect(getSnapshotWebSocketEndpoint(sessionPath, endpoint.endpointId)).resolves.toMatchObject({
       enabled: false,
       listeners: [{
@@ -186,12 +197,64 @@ describe("snapshot file protocol", () => {
           dataType: "string",
           value: "custom websocket response",
         },
+        response: {
+          type: "send",
+          dataType: "string",
+          value: "default websocket response",
+        },
+        delay: 300,
+        repeat: { interval: 500, repetitions: 3 },
       }],
     });
+
+    await setSnapshotWebSocketListenerSchedule(sessionPath, listener.info.id, { delay: 100 });
+    await setSnapshotWebSocketListenerSchedule(sessionPath, listener.info.id, { repeat: undefined });
+    await expect(getSnapshotWebSocketEndpoint(sessionPath, endpoint.endpointId)).resolves.toMatchObject({
+      listeners: [{ delay: 100 }],
+    });
+    expect((await getSnapshotWebSocketEndpoint(sessionPath, endpoint.endpointId))?.listeners[0]?.repeat).toBeUndefined();
 
     await removeSnapshotWebSocketListener(sessionPath, listener.info.id);
     await removeSnapshotWebSocketEndpoint(sessionPath, endpoint.endpointId);
     await expect(listSnapshotWebSocketEndpoints(sessionPath)).resolves.toEqual([]);
+  });
+
+  it("stores full and default temporary WebSocket listener inputs independently", async () => {
+    const dir = makeTempDir();
+    const sessionPath = path.join(dir, "session.json");
+    await writeSnapshot(sessionPath, createEmptySnapshot());
+    const endpoint = (await addSnapshotWebSocketEndpoint(sessionPath, {
+      kind: "string",
+      value: "ws://snapshot.test/configured",
+    })).state.webSocket![0]!;
+
+    const defaultListener = (await addSnapshotWebSocketListener(sessionPath, endpoint.endpointId))
+      .state.webSocket![0]!.listeners[0]!;
+    expect(defaultListener).toMatchObject({ behavior: { preset: "default" }, delay: 0 });
+
+    const configuredListener = (await addSnapshotWebSocketListener(sessionPath, {
+      endpointId: endpoint.endpointId,
+      behavior: { preset: "custom response" },
+      response: { type: "send", dataType: "string", value: "default" },
+      customResponse: { type: "send", dataType: "string", value: "custom" },
+      delay: 300,
+      repeat: { interval: 500, repetitions: "Infinity" },
+    })).state.webSocket![0]!.listeners[1]!;
+    expect(configuredListener).toMatchObject({
+      behavior: { preset: "custom response" },
+      response: { value: "default" },
+      customResponse: { value: "custom" },
+      delay: 300,
+      repeat: { interval: 500, repetitions: "Infinity" },
+    });
+
+    const omittedOptionalFields = (await addSnapshotWebSocketListener(sessionPath, {
+      endpointId: endpoint.endpointId,
+    })).state.webSocket![0]!.listeners[2]!;
+    expect(omittedOptionalFields).toMatchObject({ behavior: { preset: "default" }, delay: 0 });
+    expect(omittedOptionalFields.response).toBeUndefined();
+    expect(omittedOptionalFields.customResponse).toBeUndefined();
+    expect(omittedOptionalFields.repeat).toBeUndefined();
   });
 
   it("rejects invalid WebSocket targets and preserves code-source entries", async () => {

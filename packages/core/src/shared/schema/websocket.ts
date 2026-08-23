@@ -7,7 +7,7 @@ const hexSequenceSchema = z.string().regex(
   "Binary WebSocket response must be a space-separated hexadecimal sequence",
 );
 const webSocketMetadataSchema = z.object({ type: z.string().optional() }).strict();
-export const webSocketCustomResponseSchema = z.union([
+export const webSocketResponseSchema = z.union([
   z.object({ type: z.literal("send"), dataType: z.literal("string"), value: z.string(), metadata: webSocketMetadataSchema.optional() }).strict(),
   z.object({ type: z.literal("send"), dataType: z.literal("Blob"), value: hexSequenceSchema, metadata: webSocketMetadataSchema.optional() }).strict(),
   z.object({ type: z.literal("send"), dataType: z.literal("ArrayBuffer"), value: hexSequenceSchema, metadata: webSocketMetadataSchema.optional() }).strict(),
@@ -23,6 +23,21 @@ export const webSocketCustomResponseSchema = z.union([
     ).optional(),
   }).strict(),
 ]);
+/** @deprecated Use webSocketResponseSchema. */
+export const webSocketCustomResponseSchema = webSocketResponseSchema;
+export const webSocketRepeatSchema = z.object({
+  interval: z.number().int().nonnegative(),
+  repetitions: z.union([z.number().int().positive(), z.literal("Infinity")]),
+}).strict().superRefine(({ interval, repetitions }, context) => {
+  if (repetitions === "Infinity" && interval === 0) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["interval"],
+      message: "Infinite WebSocket repetition requires a positive interval",
+    });
+  }
+});
+export const webSocketDelaySchema = z.number().int().nonnegative();
 export const webSocketSendOptionsSchema = z.object({ message: z.string() }).strict();
 export const webSocketCloseOptionsSchema = z.object({
   code: z.number().int().refine(
@@ -58,8 +73,12 @@ export const serializableWebSocketMatcherSchema = z.union([
   }),
 ]);
 export const webSocketListenerSchema = z.object({
-  info: webSocketInfoSchema, endpointId: z.string(), event: z.literal("message"), enabled: z.boolean(), behavior: webSocketBehaviorSchema,
-  customResponse: webSocketCustomResponseSchema.optional(),
+  info: webSocketInfoSchema, endpointId: z.string(), event: z.literal("message"), enabled: z.boolean(),
+  behavior: webSocketBehaviorSchema.default({ preset: "default" }),
+  response: webSocketResponseSchema.optional(),
+  customResponse: webSocketResponseSchema.optional(),
+  delay: webSocketDelaySchema.default(0),
+  repeat: webSocketRepeatSchema.optional(),
 });
 export const webSocketEndpointSchema = z.object({
   info: webSocketInfoSchema, endpointId: z.string(), matcher: serializableWebSocketMatcherSchema, enabled: z.boolean(), listeners: z.array(webSocketListenerSchema),

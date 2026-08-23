@@ -4,9 +4,13 @@ import {
   tempHandlerSchema,
   webSocketBehaviorSchema,
   webSocketCustomResponseSchema,
+  webSocketResponseSchema,
+  webSocketRepeatSchema,
   serializableWebSocketMatcherSchema,
 } from "@msw-dev-tool/core/shared";
+import { z } from "zod";
 import type { CliCommand, CliCommandContext, JsonResult } from "./types";
+import type { AddWebSocketListenerInput } from "@msw-dev-tool/core/shared";
 
 const parseBehavior = (value: string): HttpHandlerBehavior => {
   const behavior = (Object.values(HttpHandlerBehavior) as Array<string | number>)
@@ -164,14 +168,27 @@ export const commands: CliCommand[] = [
   },
   {
     name: "ws-add-listener",
-    usage: "ws-add-listener <endpointId> --json '<behaviorJson>'",
+    usage: "ws-add-listener <endpointId> --json '<listenerJson>'",
     async execute(context, { flags, positionals }) {
-      const id = positionals[1];
-      if (!id || typeof flags.json !== "string") {
-        throw new Error("Usage: ws-add-listener <endpointId> --json '<behaviorJson>'");
+      if (typeof flags.json !== "string") {
+        throw new Error("Usage: ws-add-listener <endpointId> --json '<listenerJson>'");
       }
-      const behavior = webSocketBehaviorSchema.parse(JSON.parse(flags.json) as unknown);
-      return withMetadata({ ok: true, ...(await context.session.addWebSocketListener(id, behavior)) }, context);
+      const value = JSON.parse(flags.json) as Record<string, unknown>;
+      const id = positionals[1] ?? (typeof value.endpointId === "string" ? value.endpointId : undefined);
+      if (!id) throw new Error("Usage: ws-add-listener <endpointId> --json '<listenerJson>'");
+      const legacyBehavior = webSocketBehaviorSchema.safeParse(value);
+      if (legacyBehavior.success) {
+        return withMetadata({ ok: true, ...(await context.session.addWebSocketListener(id, legacyBehavior.data)) }, context);
+      }
+      const input: AddWebSocketListenerInput = {
+        endpointId: id,
+        behavior: value.behavior === undefined ? undefined : webSocketBehaviorSchema.parse(value.behavior),
+        response: value.response === undefined ? undefined : webSocketResponseSchema.parse(value.response),
+        customResponse: value.customResponse === undefined ? undefined : webSocketResponseSchema.parse(value.customResponse),
+        delay: value.delay === undefined ? undefined : z.number().int().nonnegative().parse(value.delay),
+        repeat: value.repeat === undefined ? undefined : webSocketRepeatSchema.parse(value.repeat),
+      };
+      return withMetadata({ ok: true, ...(await context.session.addWebSocketListener(input)) }, context);
     },
   },
   {
@@ -215,6 +232,38 @@ export const commands: CliCommand[] = [
       }
       const response = webSocketCustomResponseSchema.parse(JSON.parse(flags.json) as unknown);
       return withMetadata({ ok: true, ...(await context.session.setWebSocketListenerCustomResponse(id, response)) }, context);
+    },
+  },
+  {
+    name: "ws-set-listener-response",
+    usage: "ws-set-listener-response <listenerId> --json '<responseJson>'",
+    async execute(context, { flags, positionals }) {
+      const id = positionals[1];
+      if (!id || typeof flags.json !== "string") {
+        throw new Error("Usage: ws-set-listener-response <listenerId> --json '<responseJson>'");
+      }
+      const response = webSocketResponseSchema.parse(JSON.parse(flags.json) as unknown);
+      return withMetadata({ ok: true, ...(await context.session.setWebSocketListenerResponse(id, response)) }, context);
+    },
+  },
+  {
+    name: "ws-set-listener-schedule",
+    usage: "ws-set-listener-schedule <listenerId> --json '<scheduleJson>'",
+    async execute(context, { flags, positionals }) {
+      const id = positionals[1];
+      if (!id || typeof flags.json !== "string") {
+        throw new Error("Usage: ws-set-listener-schedule <listenerId> --json '<scheduleJson>'");
+      }
+      const value = JSON.parse(flags.json) as { delay?: unknown; repeat?: unknown };
+      const input = {
+        ...(value.delay === undefined ? {} : { delay: z.number().int().nonnegative().parse(value.delay) }),
+        ...(value.repeat === undefined ? {} : {
+          repeat: value.repeat === null
+            ? undefined
+            : webSocketRepeatSchema.parse(value.repeat),
+        }),
+      };
+      return withMetadata({ ok: true, ...(await context.session.setWebSocketListenerSchedule(id, input)) }, context);
     },
   },
 ];

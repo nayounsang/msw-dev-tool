@@ -146,17 +146,37 @@ describe("browser control bridge", () => {
     const persistedBeforeInvalidBehavior = sessionStorage.getItem(STORAGE_KEY);
     expect(() => bridge.addWebSocketListener(added.endpoint.endpointId, { preset: "invalid" })).toThrow();
     expect(() => bridge.setWebSocketListenerBehavior(listener.listener.info.id, { preset: "invalid" })).toThrow();
-    expect(() => bridge.addWebSocketListener(added.endpoint.endpointId, { preset: "default" })).toThrow(
-      "Temporary WebSocket listeners require a response behavior"
-    );
-    expect(() => bridge.setWebSocketListenerBehavior(listener.listener.info.id, { preset: "default" })).toThrow(
-      "Temporary WebSocket listeners require a response behavior"
-    );
+    expect(() => bridge.setWebSocketListenerBehavior(listener.listener.info.id, { preset: "default" })).not.toThrow();
     expect(bridge.getWebSocketEndpoint(added.endpoint.endpointId)?.listeners).toEqual([
-      expect.objectContaining({ behavior: { preset: "close", options: { code: 4001 } } }),
+      expect.objectContaining({ behavior: { preset: "default" } }),
     ]);
-    expect(sessionStorage.getItem(STORAGE_KEY)).toBe(persistedBeforeInvalidBehavior);
+    expect(sessionStorage.getItem(STORAGE_KEY)).not.toBe(persistedBeforeInvalidBehavior);
     expect(bridge.removeWebSocketListener(listener.listener.info.id).endpoints[0]?.listeners).toEqual([]);
+    const configured = bridge.addWebSocketListener({
+      endpointId: added.endpoint.endpointId,
+      behavior: { preset: "default" },
+      response: { type: "send", dataType: "string", value: "default" },
+      customResponse: { type: "send", dataType: "string", value: "custom" },
+      delay: 300,
+      repeat: { interval: 500, repetitions: "Infinity" },
+    });
+    expect(configured.listener).toMatchObject({
+      behavior: { preset: "default" },
+      response: { value: "default" },
+      customResponse: { value: "custom" },
+      delay: 300,
+      repeat: { interval: 500, repetitions: "Infinity" },
+    });
+    expect(bridge.setWebSocketListenerResponse(configured.listener.info.id, { type: "send", dataType: "string", value: "updated" }).listener.response).toMatchObject({ value: "updated" });
+    expect(bridge.setWebSocketListenerSchedule(configured.listener.info.id, { delay: 100, repeat: { interval: 50, repetitions: 3 } }).listener).toMatchObject({ delay: 100, repeat: { interval: 50, repetitions: 3 } });
+    expect(bridge.setWebSocketListenerSchedule(configured.listener.info.id, { repeat: undefined }).listener.repeat).toBeUndefined();
+    const defaults = bridge.addWebSocketListener({ endpointId: added.endpoint.endpointId });
+    expect(defaults.listener).toMatchObject({ behavior: { preset: "default" }, delay: 0 });
+    expect(defaults.listener.response).toBeUndefined();
+    expect(defaults.listener.customResponse).toBeUndefined();
+    expect(defaults.listener.repeat).toBeUndefined();
+    bridge.removeWebSocketListener(defaults.listener.info.id);
+    bridge.removeWebSocketListener(configured.listener.info.id);
     expect(bridge.removeWebSocketEndpoint(added.endpoint.endpointId).endpoints).toEqual([]);
     const matcher = { kind: "string" as const, value: "ws://browser.test/load" };
     const results = await Promise.all(

@@ -4,7 +4,9 @@ import type {
   SerializableWebSocketMatcher,
   TempHandlerInput,
   WebSocketBehaviorSelection,
-  WebSocketCustomResponse,
+  WebSocketResponse,
+  WebSocketRepeat,
+  AddWebSocketListenerInput,
   WebSocketEndpointConfig,
   WebSocketListenerConfig,
 } from "./types";
@@ -34,6 +36,8 @@ export const BROWSER_CONTROL_METHOD_VERSIONS = {
   setWebSocketListenerEnabled: 1,
   setWebSocketListenerBehavior: 1,
   setWebSocketListenerCustomResponse: 1,
+  setWebSocketListenerResponse: 1,
+  setWebSocketListenerSchedule: 1,
 } as const;
 
 export type BrowserControlMethod = keyof typeof BROWSER_CONTROL_METHOD_VERSIONS;
@@ -72,9 +76,11 @@ export type BrowserControlBridge = {
   addWebSocketEndpoint: (matcher: SerializableWebSocketMatcher) => BrowserControlWebSocketEndpointResult;
   removeWebSocketEndpoint: (endpointId: string) => BrowserControlWebSocketInfo;
   setWebSocketEndpointEnabled: (endpointId: string, enabled: boolean) => BrowserControlWebSocketEndpointResult;
-  addWebSocketListener: (endpointId: string, behavior: WebSocketBehaviorSelection) => BrowserControlWebSocketListenerResult;
+  addWebSocketListener: (input: AddWebSocketListenerInput | string, behavior?: WebSocketBehaviorSelection) => BrowserControlWebSocketListenerResult;
   removeWebSocketListener: (listenerId: string) => BrowserControlWebSocketInfo;
   setWebSocketListenerEnabled: (listenerId: string, enabled: boolean) => BrowserControlWebSocketListenerResult;
   setWebSocketListenerBehavior: (listenerId: string, behavior: WebSocketBehaviorSelection) => BrowserControlWebSocketListenerResult;
-  setWebSocketListenerCustomResponse: (listenerId: string, response: WebSocketCustomResponse) => BrowserControlWebSocketListenerResult;
+  setWebSocketListenerCustomResponse: (listenerId: string, response: WebSocketResponse) => BrowserControlWebSocketListenerResult;
+  setWebSocketListenerResponse: (listenerId: string, response: WebSocketResponse) => BrowserControlWebSocketListenerResult;
+  setWebSocketListenerSchedule: (listenerId: string, input: { delay?: number; repeat?: WebSocketRepeat }) => BrowserControlWebSocketListenerResult;
 };

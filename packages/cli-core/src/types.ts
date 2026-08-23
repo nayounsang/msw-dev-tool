@@ -6,7 +6,9 @@ import type {
   WebSocketEndpointConfig,
   WebSocketListenerConfig,
   WebSocketBehaviorSelection,
-  WebSocketCustomResponse,
+  WebSocketResponse,
+  WebSocketRepeat,
+  AddWebSocketListenerInput,
   SerializableWebSocketMatcher,
 } from "@msw-dev-tool/core/shared";
 
@@ -47,11 +49,15 @@ export type CliSession = {
   addWebSocketEndpoint(matcher: SerializableWebSocketMatcher): Promise<CliWebSocketEndpointResult>;
   removeWebSocketEndpoint(endpointId: string): Promise<CliWebSocketInfo>;
   setWebSocketEndpointEnabled(endpointId: string, enabled: boolean): Promise<CliWebSocketEndpointResult>;
+  addWebSocketListener(input: AddWebSocketListenerInput): Promise<CliWebSocketListenerResult>;
+  /** @deprecated Pass AddWebSocketListenerInput instead. */
   addWebSocketListener(endpointId: string, behavior: WebSocketBehaviorSelection): Promise<CliWebSocketListenerResult>;
   removeWebSocketListener(listenerId: string): Promise<CliWebSocketInfo>;
   setWebSocketListenerEnabled(listenerId: string, enabled: boolean): Promise<CliWebSocketListenerResult>;
   setWebSocketListenerBehavior(listenerId: string, behavior: WebSocketBehaviorSelection): Promise<CliWebSocketListenerResult>;
-  setWebSocketListenerCustomResponse(listenerId: string, response: WebSocketCustomResponse): Promise<CliWebSocketListenerResult>;
+  setWebSocketListenerCustomResponse(listenerId: string, response: WebSocketResponse): Promise<CliWebSocketListenerResult>;
+  setWebSocketListenerResponse(listenerId: string, response: WebSocketResponse): Promise<CliWebSocketListenerResult>;
+  setWebSocketListenerSchedule(listenerId: string, input: { delay?: number; repeat?: WebSocketRepeat }): Promise<CliWebSocketListenerResult>;
 };
 
 export type ParsedArgs = {
