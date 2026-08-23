@@ -257,7 +257,11 @@ export const commands: CliCommand[] = [
       const value = JSON.parse(flags.json) as { delay?: unknown; repeat?: unknown };
       const input = {
         ...(value.delay === undefined ? {} : { delay: z.number().int().nonnegative().parse(value.delay) }),
-        ...(value.repeat === undefined ? {} : { repeat: webSocketRepeatSchema.parse(value.repeat) }),
+        ...(value.repeat === undefined ? {} : {
+          repeat: value.repeat === null
+            ? undefined
+            : webSocketRepeatSchema.parse(value.repeat),
+        }),
       };
       return withMetadata({ ok: true, ...(await context.session.setWebSocketListenerSchedule(id, input)) }, context);
     },

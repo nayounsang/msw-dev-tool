@@ -174,8 +174,8 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
                 listenerSchedules.add(schedule);
               };
               listenerSchedules.add(schedule);
-              if ((config.delay ?? 0) === 0) run();
-              else schedule.timer = setTimeout(run, config.delay ?? 0);
+              if (!config.delay) run();
+              else schedule.timer = setTimeout(run, config.delay);
             };
             if (defaultAction.preset === "default") {
               if (config.response) sendResponse(config.response);

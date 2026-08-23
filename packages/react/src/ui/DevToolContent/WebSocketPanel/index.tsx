@@ -268,8 +268,8 @@ const ListenerForm = ({ endpoint, listener, onClose }: { endpoint: WebSocketEndp
       setError(response.error.issues[0]?.message ?? "Invalid WebSocket response");
       return;
     }
-    if (!Number.isInteger(parsedDelay) || parsedDelay < 0 || (repeat && (!Number.isInteger(parsedInterval) || parsedInterval < 0 || (parsedRepetitions !== "Infinity" && (!Number.isInteger(parsedRepetitions) || parsedRepetitions < 1))))) {
-      setError("Delay, interval, and repetitions must be valid non-negative values");
+    if (!Number.isInteger(parsedDelay) || parsedDelay < 0 || (repeat && (!Number.isInteger(parsedInterval) || parsedInterval < 0 || (parsedRepetitions === "Infinity" ? parsedInterval === 0 : !Number.isInteger(parsedRepetitions) || parsedRepetitions < 1)))) {
+      setError("Delay and interval must be non-negative integers, repetitions must be positive, and infinite repetition requires a positive interval");
       return;
     }
     const schedule = { delay: parsedDelay, repeat: repeat ? { interval: parsedInterval, repetitions: parsedRepetitions } : undefined };

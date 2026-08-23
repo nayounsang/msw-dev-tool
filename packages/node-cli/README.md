@@ -52,7 +52,7 @@ msw-dev-tool --pid 4182 ws-set-listener-behavior '<listener-id>' --json '{"prese
 msw-dev-tool --pid 4182 ws-set-listener-schedule '<listener-id>' --json '{"delay":300,"repeat":{"interval":500,"repetitions":"Infinity"}}'
 ```
 
-Temporary listeners default to `{"preset":"default"}`. Their `response` and `customResponse` are independent; `default` uses the former and `custom response` uses the latter. Delay defaults to `0`, repetitions include the first response, and unbounded repetition is the JSON string `"Infinity"`. Use `ws-set-listener-response`, `ws-set-listener-custom-response`, and `ws-set-listener-schedule` to update each setting independently. See the [Node CLI documentation](https://msw-dev-tool-docs.vercel.app/docs/node-cli) for every HTTP and WebSocket command, JSON input, and result shape.
+Temporary listeners default to `{"preset":"default"}`. Their `response` and `customResponse` are independent; `default` uses the former and `custom response` uses the latter. Delay defaults to `0`, repetitions include the first response, and unbounded repetition is the JSON string `"Infinity"`. Infinite repetition requires a positive interval; pass `{"repeat":null}` to `ws-set-listener-schedule` to clear repetition. Use `ws-set-listener-response`, `ws-set-listener-custom-response`, and `ws-set-listener-schedule` to update each setting independently. See the [Node CLI documentation](https://msw-dev-tool-docs.vercel.app/docs/node-cli) for every HTTP and WebSocket command, JSON input, and result shape.
 
 ## Example (app)
 

@@ -28,7 +28,7 @@ After the handler connects, the WebSocket panel lists its endpoint and discovere
 
 Temporary listeners start with the **default** Behavior. Their default `response` and the separate `customResponse` are independent values: **default** uses `response`, while **custom response** uses `customResponse`. Changing Behavior never replaces either value.
 
-The listener editor exposes both response values. It also provides an optional delay (default `0` ms) and a **Repeat** checkbox. When Repeat is enabled, set the interval in milliseconds and the total number of repetitions, including the first response. Use `Infinity` for an unbounded sequence; JSON and snapshots represent it as the string `"Infinity"`.
+The temporary listener editor exposes the default Response and its optional delay (default `0` ms). Repeat is configured in the separate Schedule section; when enabled, set the interval in milliseconds and the total number of repetitions, including the first response. Configure Custom response independently from the listener row. Use `Infinity` for an unbounded sequence; JSON and snapshots represent it as the string `"Infinity"`, and its interval must be greater than zero.
 
 For example, this is the complete serializable listener configuration:
 
@@ -50,7 +50,7 @@ Code-discovered listeners keep their original Behavior when no response is confi
 
 The listener Behavior and its custom response data are separate settings. Saving configures the response only; select **custom response** in Behavior to apply it:
 
-1. Open the pencil button in the listener row and save a custom response.
+1. Open the pencil button in the **Custom response** column and save a custom response.
 2. Select **custom response** in the Behavior control.
 3. Trigger the WebSocket message or connection flow in the application.
 
@@ -104,16 +104,23 @@ Use **Close** on a listener to close the connection after that listener receives
 
 Add a temporary endpoint and listener in the WebSocket panel when you need to explore a new real-time screen without changing code. The listener defaults to **default**, so configure its Response and schedule when you want a delayed or repeated temporary payload. Configure Custom response separately, then select **custom response** to use it. Remove the temporary endpoint or listener, or reset the Dev Tool, when finished.
 
-For a reproducible end-to-end check, start the example or another Node process with `setupDevToolServer()`, run `msw-dev-tool --pid <pid> ws-add-endpoint`, then `ws-add-listener` with the JSON below. Connect a real WebSocket client, record the delayed response count, update `customResponse` and Behavior, and query `ws-list` after each mutation. The same commands work through the Browser CLI with `--cdp-url` and `--target`; use Chrome DevTools MCP to inspect the selected tab and its WebSocket client. Delete the listener at the end to verify that pending responses stop.
+For a reproducible end-to-end check, start the example or another Node process with `setupDevToolServer()`, then create the endpoint and capture its returned ID before adding the listener:
 
-```json
-{
-  "behavior": { "preset": "default" },
-  "response": { "type": "send", "dataType": "string", "value": "temp response" },
-  "customResponse": { "type": "send", "dataType": "string", "value": "custom response" },
-  "delay": 300,
-  "repeat": { "interval": 500, "repetitions": 3 }
-}
+```bash
+endpoint_id="$(
+  msw-dev-tool --pid <pid> ws-add-endpoint \
+    --json '{"kind":"string","value":"ws://localhost:8080/preview"}' \
+    | jq -r '.endpoint.endpointId'
+)"
+msw-dev-tool --pid <pid> ws-add-listener "$endpoint_id" --json '{
+  "behavior":{"preset":"default"},
+  "response":{"type":"send","dataType":"string","value":"temp response"},
+  "customResponse":{"type":"send","dataType":"string","value":"custom response"},
+  "delay":300,
+  "repeat":{"interval":500,"repetitions":3}
+}'
 ```
+
+Connect a real WebSocket client, record the delayed response count, update `customResponse` and Behavior, and query `ws-list` after each mutation. The same commands work through the Browser CLI with `--cdp-url` and `--target`; use Chrome DevTools MCP to inspect the selected tab and its WebSocket client. Delete the listener at the end to verify that pending responses stop.
 
 Endpoints and listeners discovered from code can be enabled, disabled, and given a different behavior, but they cannot be deleted. Only temporary endpoints and listeners can be deleted.

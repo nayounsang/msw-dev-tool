@@ -28,7 +28,15 @@ export const webSocketCustomResponseSchema = webSocketResponseSchema;
 export const webSocketRepeatSchema = z.object({
   interval: z.number().int().nonnegative(),
   repetitions: z.union([z.number().int().positive(), z.literal("Infinity")]),
-}).strict();
+}).strict().superRefine(({ interval, repetitions }, context) => {
+  if (repetitions === "Infinity" && interval === 0) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["interval"],
+      message: "Infinite WebSocket repetition requires a positive interval",
+    });
+  }
+});
 export const webSocketDelaySchema = z.number().int().nonnegative();
 export const webSocketSendOptionsSchema = z.object({ message: z.string() }).strict();
 export const webSocketCloseOptionsSchema = z.object({

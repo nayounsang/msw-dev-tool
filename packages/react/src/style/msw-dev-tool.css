@@ -415,7 +415,7 @@
 .msw-dt-ws-listener-toolbar { display: flex; justify-content: flex-start; margin-bottom: 0.5rem; }
 .msw-dt-ws-listener-table th, .msw-dt-ws-listener-table td { padding: 0.5rem; text-align: left; }
 .msw-dt-ws-behavior-control { display: flex; align-items: center; gap: 0.25rem; }
-.msw-dt-ws-form { display: flex; flex-direction: column; width: min(38rem, calc(100vw - 3rem)); min-width: 0; gap: 0.875rem; margin-top: 1rem; }
+.msw-dt-ws-form { display: flex; flex-direction: column; width: 100%; max-width: 38rem; min-width: 0; gap: 0.875rem; margin-top: 1rem; }
 .msw-dt-ws-form > .msw-dt-ws-section { border: 1px solid #d1d5db; border-radius: 0.5rem; padding: 0.875rem; background: #f9fafb; }
 .msw-dt-ws-section h3 { margin: 0 0 0.75rem; font-size: 0.875rem; font-weight: 700; color: #111827; }
 .msw-dt-ws-response-fields { display: grid; gap: 0.75rem; }
