@@ -20,6 +20,7 @@ import { bindWebSocketHandler, type ManagedWebSocketClient, type WebSocketMessag
 import { createTemporaryWebSocketHandler } from "../../msw/websocket";
 import { webSocketEndpointsSchema } from "../schema/websocket";
 import { webSocketCloseOptionsSchema, webSocketSendOptionsSchema } from "../schema/websocket";
+import { CUSTOM_WEBSOCKET_RESPONSE_ERROR, toWebSocketSendData } from "../websocket/response";
 import { createHandlerRegistry } from "./commonSlice";
 import {
   createWebSocketSlice,
@@ -167,6 +168,15 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
                 }, delay);
                 timers.add(timer);
               });
+            }
+            if (defaultAction.preset === "custom response") {
+              const response = config.customResponse;
+              if (!response) throw new Error(CUSTOM_WEBSOCKET_RESPONSE_ERROR);
+              if (response.type === "send") {
+                client.send(toWebSocketSendData(response));
+              } else {
+                client.close(response.code, response.reason);
+              }
             }
           });
         },
@@ -344,6 +354,10 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
               behavior
             ),
           });
+        },
+        setWebSocketListenerCustomResponse: (listenerId, response) => {
+          webSocketSlice.setListenerCustomResponse(listenerId, response);
+          syncWebSocketState();
         },
         getHandlerCustomResponse: (id) => lookupCustomResponse(id),
         setHandlerCustomResponse: (id, response) => {

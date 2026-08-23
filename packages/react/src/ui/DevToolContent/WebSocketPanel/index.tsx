@@ -1,17 +1,20 @@
 import React, { useState } from "react";
 import { Dialog } from "@base-ui-components/react/dialog";
-import { Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import {
   SerializableWebSocketMatcher,
   WebSocketBehaviorSelection,
+  WebSocketCustomResponse,
   WebSocketEndpointConfig,
   WebSocketListenerConfig,
   useHandlerStore,
 } from "@msw-dev-tool/core/browser";
+import { webSocketCustomResponseSchema } from "@msw-dev-tool/core/shared";
 import { Button } from "../../Components/Button";
 import { CloseButton } from "../../Components/CloseButton";
 import { Input } from "../../Components/Input";
 import { Select } from "../../Components/Select";
+import { TextArea } from "../../Components/TextArea";
 
 type EndpointFormValues = { matcherType: "string" | "regexp"; value: string; flags: string };
 type FormErrors = Record<string, string | undefined>;
@@ -26,6 +29,7 @@ const behaviorOptions = [
   { label: "Send test message", value: "send", behavior: { preset: "send", options: { message: TEST_MESSAGE } } },
   { label: "Echo message", value: "echo", behavior: { preset: "echo" } },
   { label: "Repeat message (3 times, every 1 sec)", value: "send-sequence", behavior: { preset: "send-sequence" } },
+  { label: "Custom response", value: "custom response", behavior: { preset: "custom response" } },
   { label: "Close (1000 — Normal)", value: "close-1000", behavior: { preset: "close", options: { code: 1000, reason: "Normal closure" } } },
   { label: "Close (4001 — Unauthorized)", value: "close-4001", behavior: { preset: "close", options: { code: 4001, reason: "Unauthorized" } } },
   { label: "Close (4008 — Rate limited)", value: "close-4008", behavior: { preset: "close", options: { code: 4008, reason: "Rate limited" } } },
@@ -141,6 +145,100 @@ const ListenerBehaviorSelect = ({ listener }: { listener: WebSocketListenerConfi
   />;
 };
 
+type CustomResponseFormState = {
+  type: "send" | "close";
+  dataType: "string" | "Blob" | "ArrayBuffer";
+  value: string;
+  metadataType: string;
+  code: string;
+  reason: string;
+};
+
+const customResponseFormValues = (response?: WebSocketCustomResponse): CustomResponseFormState => ({
+  type: response?.type ?? "send",
+  dataType: response?.type === "send" ? response.dataType : "string",
+  value: response?.type === "send" ? response.value : "",
+  metadataType: response?.type === "send" ? response.metadata?.type ?? "" : "",
+  code: response?.type === "close" && response.code !== undefined ? String(response.code) : "",
+  reason: response?.type === "close" ? response.reason ?? "" : "",
+});
+
+const CustomResponseDialog = ({ listener }: { listener: WebSocketListenerConfig }) => {
+  const setCustomResponse = useHandlerStore((state) => state.setWebSocketListenerCustomResponse);
+  const [open, setOpen] = useState(false);
+  const [values, setValues] = useState<CustomResponseFormState>(customResponseFormValues(listener.customResponse));
+  const [error, setError] = useState<string>();
+
+  const openDialog = () => {
+    setValues(customResponseFormValues(listener.customResponse));
+    setError(undefined);
+    setOpen(true);
+  };
+  const update = <K extends keyof CustomResponseFormState>(key: K, value: CustomResponseFormState[K]) =>
+    setValues((current) => ({ ...current, [key]: value }));
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const response: WebSocketCustomResponse = values.type === "send"
+      ? {
+          type: "send",
+          dataType: values.dataType,
+          value: values.value,
+          ...(values.metadataType.trim() ? { metadata: { type: values.metadataType.trim() } } : {}),
+        }
+      : {
+          type: "close",
+          ...(values.code.trim() ? { code: Number(values.code) } : {}),
+          ...(values.reason ? { reason: values.reason } : {}),
+        };
+    const parsed = webSocketCustomResponseSchema.safeParse(response);
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Invalid custom response");
+      return;
+    }
+    setCustomResponse(listener.info.id, parsed.data);
+    setOpen(false);
+  };
+
+  return <>
+    <Button variant="ghost" color="gray" title="Configure custom response" aria-label="Configure custom response" onClick={openDialog}><Pencil size={16} /></Button>
+    <Dialog.Root open={open} onOpenChange={setOpen}>
+      <Dialog.Portal>
+        <Dialog.Backdrop className="msw-dt-dialog-backdrop" forceRender />
+        <Dialog.Popup className="msw-dt-dialog-popup-viewport">
+          <div className="msw-dt-dialog-inner-center">
+            <div className="msw-dt-ws-dialog-header"><Dialog.Title className="msw-dt-dialog-title-sm">Custom WebSocket Response</Dialog.Title><Dialog.Close render={<CloseButton />} /></div>
+            <form onSubmit={submit} className="msw-dt-ws-form">
+              <fieldset>
+                <legend className="msw-dt-label">Response type</legend>
+                <label><input type="radio" name={`ws-response-type-${listener.info.id}`} checked={values.type === "send"} onChange={() => update("type", "send")} /> Send</label>
+                <label><input type="radio" name={`ws-response-type-${listener.info.id}`} checked={values.type === "close"} onChange={() => update("type", "close")} /> Close</label>
+              </fieldset>
+              {values.type === "send" ? <>
+                <fieldset>
+                  <legend className="msw-dt-label">Data type</legend>
+                  {(["string", "Blob", "ArrayBuffer"] as const).map((dataType) => <label key={dataType}><input type="radio" name={`ws-data-type-${listener.info.id}`} checked={values.dataType === dataType} onChange={() => update("dataType", dataType)} /> {dataType}</label>)}
+                </fieldset>
+                <label className="msw-dt-label" htmlFor={`ws-response-value-${listener.info.id}`}>Value</label>
+                <TextArea id={`ws-response-value-${listener.info.id}`} value={values.value} onChange={(event) => update("value", event.target.value)} required />
+                <label className="msw-dt-label" htmlFor={`ws-response-metadata-${listener.info.id}`}>Metadata type (optional)</label>
+                <Input id={`ws-response-metadata-${listener.info.id}`} value={values.metadataType} onChange={(event) => update("metadataType", event.target.value)} />
+                {values.dataType !== "string" && <p className="msw-dt-dialog-description">Enter bytes as space-separated hexadecimal values.</p>}
+              </> : <>
+                <label className="msw-dt-label" htmlFor={`ws-close-code-${listener.info.id}`}>Close code (optional)</label>
+                <Input id={`ws-close-code-${listener.info.id}`} inputMode="numeric" value={values.code} onChange={(event) => update("code", event.target.value)} />
+                <label className="msw-dt-label" htmlFor={`ws-close-reason-${listener.info.id}`}>Reason (optional)</label>
+                <Input id={`ws-close-reason-${listener.info.id}`} value={values.reason} onChange={(event) => update("reason", event.target.value)} />
+              </>}
+              {error && <p className="msw-dt-error-text">{error}</p>}
+              <Button type="submit">Save custom response</Button>
+            </form>
+          </div>
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
+  </>;
+};
+
 const EndpointRow = ({ endpoint }: { endpoint: WebSocketEndpointConfig }) => {
   const [expanded, setExpanded] = useState(false);
   const removeEndpoint = useHandlerStore((state) => state.removeWebSocketEndpoint);
@@ -154,10 +252,10 @@ const EndpointRow = ({ endpoint }: { endpoint: WebSocketEndpointConfig }) => {
       <td><Toggle checked={endpoint.enabled} label={`Enable mock for ${matcherLabel(endpoint.matcher)}`} onChange={(enabled) => setEndpointEnabled(endpoint.endpointId, enabled)} /></td>
       <td onClick={(event) => event.stopPropagation()}><Button variant="ghost" color="danger" disabled={!isTemp} title={isTemp ? "Delete endpoint" : "Endpoints generated from codebase cannot be deleted"} aria-label={isTemp ? `Delete endpoint ${matcherLabel(endpoint.matcher)}` : "Endpoints generated from codebase cannot be deleted"} className={isTemp ? "msw-dt-danger-text" : "msw-dt-disabled-text"} onClick={() => removeEndpoint(endpoint.endpointId)}><Trash2 size={16} /></Button></td>
     </tr>
-    {expanded && <tr className="msw-dt-ws-detail-row"><td colSpan={4}><div className="msw-dt-ws-listeners">
+    {expanded && <tr className="msw-dt-ws-detail-row"><td colSpan={5}><div className="msw-dt-ws-listeners">
       <div className="msw-dt-ws-listener-toolbar"><ListenerDialog endpoint={endpoint} /></div>
-      <table className="msw-dt-table msw-dt-ws-listener-table"><thead><tr><th>Listener</th><th>Behavior</th><th>Delete</th></tr></thead><tbody>
-      {endpoint.listeners.map((listener) => { const listenerIsTemp = listener.info.source === "temp"; return <tr key={listener.info.id}><td>message</td><td><div className="msw-dt-ws-behavior-control"><ListenerBehaviorSelect listener={listener} /></div></td><td><Button variant="ghost" color="danger" disabled={!listenerIsTemp} title={listenerIsTemp ? "Delete listener" : "Listeners generated from codebase cannot be deleted"} aria-label={listenerIsTemp ? `Delete listener ${listener.info.id}` : "Listeners generated from codebase cannot be deleted"} className={listenerIsTemp ? "msw-dt-danger-text" : "msw-dt-disabled-text"} onClick={() => removeListener(listener.info.id)}><Trash2 size={16} /></Button></td></tr>; })}
+      <table className="msw-dt-table msw-dt-ws-listener-table"><thead><tr><th>Listener</th><th>Behavior</th><th>Custom response</th><th>Delete</th></tr></thead><tbody>
+      {endpoint.listeners.map((listener) => { const listenerIsTemp = listener.info.source === "temp"; return <tr key={listener.info.id}><td>message</td><td><div className="msw-dt-ws-behavior-control"><ListenerBehaviorSelect listener={listener} />{listener.behavior.preset === "custom response" && !listener.customResponse && <p className="msw-dt-error-text">Please configure a custom response before using this behavior.</p>}</div></td><td><CustomResponseDialog listener={listener} /></td><td><Button variant="ghost" color="danger" disabled={!listenerIsTemp} title={listenerIsTemp ? "Delete listener" : "Listeners generated from codebase cannot be deleted"} aria-label={listenerIsTemp ? `Delete listener ${listener.info.id}` : "Listeners generated from codebase cannot be deleted"} className={listenerIsTemp ? "msw-dt-danger-text" : "msw-dt-disabled-text"} onClick={() => removeListener(listener.info.id)}><Trash2 size={16} /></Button></td></tr>; })}
       </tbody></table>
     </div></td></tr>}
   </>;

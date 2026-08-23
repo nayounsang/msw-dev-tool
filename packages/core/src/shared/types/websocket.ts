@@ -21,6 +21,21 @@ export type ManagedWebSocketRegistration = {
   endpoint: ManagedWebSocketEndpoint;
 };
 
+export type WebSocketSendDataType = "string" | "Blob" | "ArrayBuffer";
+
+export type WebSocketCustomResponse =
+  | {
+      type: "send";
+      dataType: WebSocketSendDataType;
+      value: string;
+      metadata?: { type?: string };
+    }
+  | {
+      type: "close";
+      code?: number;
+      reason?: string;
+    };
+
 export type DevToolHandlerInfo = {
   id: string;
   kind: "http" | "websocket";
@@ -36,7 +51,8 @@ export type WebSocketBehaviorSelection =
   | { preset: "echo" }
   | { preset: "send-null" }
   | { preset: "no-reply" }
-  | { preset: "send-sequence" };
+  | { preset: "send-sequence" }
+  | { preset: "custom response" };
 
 export type WebSocketHandlerInfo = Omit<DevToolHandlerInfo, "kind"> & { kind: "websocket" };
 
@@ -46,6 +62,7 @@ export type WebSocketListenerConfig = {
   event: "message";
   enabled: boolean;
   behavior: WebSocketBehaviorSelection;
+  customResponse?: WebSocketCustomResponse;
 };
 
 export type WebSocketEndpointConfig = {

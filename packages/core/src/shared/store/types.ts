@@ -7,6 +7,7 @@ import {
   ManagedWebSocketListener,
   DevToolHandlerInfo,
   WebSocketBehaviorSelection,
+  WebSocketCustomResponse,
   WebSocketEndpointConfig,
   TempHandlerInput,
 } from "../types";
@@ -50,6 +51,7 @@ export type HandlerStoreBaseState = {
   setWebSocketEndpointEnabled: (endpointId: string, enabled: boolean) => void;
   setWebSocketListenerEnabled: (listenerId: string, enabled: boolean) => void;
   setWebSocketListenerBehavior: (listenerId: string, behavior: WebSocketBehaviorSelection) => void;
+  setWebSocketListenerCustomResponse: (listenerId: string, response: WebSocketCustomResponse) => void;
   hydrateWebSocket: (endpoints: WebSocketEndpointConfig[]) => void;
   getWebSocketEndpoint: (endpointId: string) => WebSocketEndpointConfig | undefined;
   getWebSocketListener: (listenerId: string) => WebSocketEndpointConfig["listeners"][number] | undefined;
