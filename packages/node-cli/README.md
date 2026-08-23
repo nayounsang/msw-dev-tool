@@ -47,11 +47,12 @@ WebSocket commands use the same machine-readable JSON interface:
 ```bash
 msw-dev-tool --pid 4182 ws-list
 msw-dev-tool --pid 4182 ws-add-endpoint --json '{"kind":"string","value":"ws://localhost:8080/preview"}'
-msw-dev-tool --pid 4182 ws-add-listener '<endpoint-id>' --json '{"preset":"send","options":{"message":"hello"}}'
+msw-dev-tool --pid 4182 ws-add-listener '<endpoint-id>' --json '{"behavior":{"preset":"default"},"response":{"type":"send","dataType":"string","value":"temp response"},"customResponse":{"type":"send","dataType":"string","value":"custom response"},"delay":300,"repeat":{"interval":500,"repetitions":3}}'
 msw-dev-tool --pid 4182 ws-set-listener-behavior '<listener-id>' --json '{"preset":"close"}'
+msw-dev-tool --pid 4182 ws-set-listener-schedule '<listener-id>' --json '{"delay":300,"repeat":{"interval":500,"repetitions":"Infinity"}}'
 ```
 
-See the [Node CLI documentation](https://msw-dev-tool-docs.vercel.app/docs/node-cli) for every HTTP and WebSocket command, JSON input, and result shape.
+Temporary listeners default to `{"preset":"default"}`. Their `response` and `customResponse` are independent; `default` uses the former and `custom response` uses the latter. Delay defaults to `0`, repetitions include the first response, and unbounded repetition is the JSON string `"Infinity"`. Use `ws-set-listener-response`, `ws-set-listener-custom-response`, and `ws-set-listener-schedule` to update each setting independently. See the [Node CLI documentation](https://msw-dev-tool-docs.vercel.app/docs/node-cli) for every HTTP and WebSocket command, JSON input, and result shape.
 
 ## Example (app)
 
