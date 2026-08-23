@@ -1,7 +1,7 @@
 import { getRowId } from "../../shared/utils/store";
 import {
   CustomResponse,
-  HttpHandlerBehavior, TempHandlerInput, WebSocketCustomResponse, WebSocketEndpointConfig,
+  HttpHandlerBehavior, TempHandlerInput, AddWebSocketListenerInput, WebSocketResponse, WebSocketRepeat, WebSocketEndpointConfig,
 } from "../../shared/types";
 import {
   addTemporaryWebSocketEndpoint,
@@ -11,12 +11,17 @@ import {
   setWebSocketEndpointEnabled,
   setWebSocketListenerBehavior,
   setWebSocketListenerCustomResponse,
+  setWebSocketListenerResponse,
+  setWebSocketListenerSchedule,
   setWebSocketListenerEnabled,
 } from "../../shared/websocket/state";
 import {
   serializableWebSocketMatcherSchema,
   webSocketBehaviorSchema,
   webSocketEndpointsSchema,
+  webSocketResponseSchema,
+  webSocketRepeatSchema,
+  webSocketDelaySchema,
 } from "../../shared/schema/websocket";
 import { bumpSnapshot } from "./serialize";
 import { readSnapshotOrEmpty, withLockedMutation } from "./file";
@@ -76,16 +81,28 @@ export const setSnapshotWebSocketEndpointEnabled = (
 
 export const addSnapshotWebSocketListener = (
   sessionPath: string,
-  endpointId: string,
-  behavior: WebSocketEndpointConfig["listeners"][number]["behavior"]
+  endpointIdOrInput: string | AddWebSocketListenerInput,
+  behaviorOrInput?: WebSocketEndpointConfig["listeners"][number]["behavior"] | Omit<AddWebSocketListenerInput, "endpointId">
 ): Promise<SessionSnapshot> => withLockedMutation(sessionPath, (prev) => {
+  const endpointId = typeof endpointIdOrInput === "string" ? endpointIdOrInput : endpointIdOrInput.endpointId;
+  const suppliedInput = (typeof endpointIdOrInput === "string" ? behaviorOrInput : endpointIdOrInput) ?? {};
   if (!snapshotWebSocketEndpoints(prev).some((endpoint) => endpoint.endpointId === endpointId)) {
     throw new Error(`WebSocket endpoint not found: ${endpointId}`);
   }
+  const input = "preset" in suppliedInput
+    ? { behavior: webSocketBehaviorSchema.parse(suppliedInput) }
+    : {
+        ...suppliedInput,
+        behavior: suppliedInput.behavior ? webSocketBehaviorSchema.parse(suppliedInput.behavior) : undefined,
+        response: suppliedInput.response === undefined ? undefined : webSocketResponseSchema.parse(suppliedInput.response),
+        customResponse: suppliedInput.customResponse === undefined ? undefined : webSocketResponseSchema.parse(suppliedInput.customResponse),
+        delay: suppliedInput.delay === undefined ? undefined : webSocketDelaySchema.parse(suppliedInput.delay),
+        repeat: suppliedInput.repeat === undefined ? undefined : webSocketRepeatSchema.parse(suppliedInput.repeat),
+      };
   const next = addTemporaryWebSocketListener(
     snapshotWebSocketEndpoints(prev),
     endpointId,
-    webSocketBehaviorSchema.parse(behavior)
+    input
   );
   return bumpSnapshot(prev, { webSocket: webSocketEndpointsSchema.parse(next.endpoints) });
 });
@@ -128,12 +145,40 @@ export const setSnapshotWebSocketListenerBehavior = (
 export const setSnapshotWebSocketListenerCustomResponse = (
   sessionPath: string,
   listenerId: string,
-  customResponse: WebSocketCustomResponse,
+  customResponse: WebSocketResponse,
 ): Promise<SessionSnapshot> => withLockedMutation(sessionPath, (prev) => {
   const next = setWebSocketListenerCustomResponse(
     snapshotWebSocketEndpoints(prev),
     listenerId,
     customResponse,
+  );
+  return bumpSnapshot(prev, { webSocket: webSocketEndpointsSchema.parse(next.endpoints) });
+});
+
+export const setSnapshotWebSocketListenerResponse = (
+  sessionPath: string,
+  listenerId: string,
+  response: WebSocketResponse,
+): Promise<SessionSnapshot> => withLockedMutation(sessionPath, (prev) => {
+  const next = setWebSocketListenerResponse(
+    snapshotWebSocketEndpoints(prev),
+    listenerId,
+    response,
+  );
+  return bumpSnapshot(prev, { webSocket: webSocketEndpointsSchema.parse(next.endpoints) });
+});
+
+export const setSnapshotWebSocketListenerSchedule = (
+  sessionPath: string,
+  listenerId: string,
+  input: { delay?: number; repeat?: WebSocketRepeat },
+): Promise<SessionSnapshot> => withLockedMutation(sessionPath, (prev) => {
+  const next = setWebSocketListenerSchedule(
+    snapshotWebSocketEndpoints(prev),
+    listenerId,
+    "repeat" in input && input.repeat !== undefined
+      ? { ...input, repeat: webSocketRepeatSchema.parse(input.repeat) }
+      : input,
   );
   return bumpSnapshot(prev, { webSocket: webSocketEndpointsSchema.parse(next.endpoints) });
 });

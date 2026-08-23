@@ -14,7 +14,7 @@ import {
   BrowserControlBridge,
 } from "../shared/controlProtocol";
 import { HandlerSchema } from "./schema";
-import { tempHandlerSchema, webSocketBehaviorSchema, webSocketCustomResponseSchema } from "../shared/schema";
+import { tempHandlerSchema, webSocketBehaviorSchema, webSocketResponseSchema, webSocketRepeatSchema, webSocketDelaySchema } from "../shared/schema";
 import { webSocketEndpointFromMatcher } from "../shared/websocket/state";
 import { getBrowserStorageSnapshot, mergeStorageData } from "./storage";
 
@@ -72,6 +72,8 @@ const mapState = (
   setWebSocketListenerEnabled: base.setWebSocketListenerEnabled,
   setWebSocketListenerBehavior: base.setWebSocketListenerBehavior,
   setWebSocketListenerCustomResponse: base.setWebSocketListenerCustomResponse,
+  setWebSocketListenerResponse: base.setWebSocketListenerResponse,
+  setWebSocketListenerSchedule: base.setWebSocketListenerSchedule,
   hydrateWebSocket: base.hydrateWebSocket,
   getWebSocketEndpoint: base.getWebSocketEndpoint,
   getWebSocketListener: base.getWebSocketListener,
@@ -239,12 +241,19 @@ const registerBrowserControlBridge = () => {
       handlerStore.getState().setWebSocketEndpointEnabled(endpointId, enabled);
       return { endpoint: requireWebSocketEndpoint(endpointId) };
     },
-    addWebSocketListener: (endpointId, behavior) => {
-      const listenerId = handlerStore.getState().addTempWebSocketListener({
-        endpointId,
-        behavior: webSocketBehaviorSchema.parse(behavior),
-      });
-      return { endpoint: requireWebSocketEndpoint(endpointId), listener: requireWebSocketListener(listenerId) };
+    addWebSocketListener: (inputOrEndpointId, legacyBehavior) => {
+      const input = typeof inputOrEndpointId === "string"
+        ? { endpointId: inputOrEndpointId, behavior: webSocketBehaviorSchema.parse(legacyBehavior) }
+        : {
+            ...inputOrEndpointId,
+            behavior: inputOrEndpointId.behavior ? webSocketBehaviorSchema.parse(inputOrEndpointId.behavior) : undefined,
+            response: inputOrEndpointId.response === undefined ? undefined : webSocketResponseSchema.parse(inputOrEndpointId.response),
+            customResponse: inputOrEndpointId.customResponse === undefined ? undefined : webSocketResponseSchema.parse(inputOrEndpointId.customResponse),
+            delay: inputOrEndpointId.delay === undefined ? undefined : webSocketDelaySchema.parse(inputOrEndpointId.delay),
+            repeat: inputOrEndpointId.repeat === undefined ? undefined : webSocketRepeatSchema.parse(inputOrEndpointId.repeat),
+          };
+      const listenerId = handlerStore.getState().addTempWebSocketListener(input);
+      return { endpoint: requireWebSocketEndpoint(input.endpointId), listener: requireWebSocketListener(listenerId) };
     },
     removeWebSocketListener: (listenerId) => {
       handlerStore.getState().removeWebSocketListener(listenerId);
@@ -266,8 +275,20 @@ const registerBrowserControlBridge = () => {
     setWebSocketListenerCustomResponse: (listenerId, response) => {
       handlerStore.getState().setWebSocketListenerCustomResponse(
         listenerId,
-        webSocketCustomResponseSchema.parse(response),
+        webSocketResponseSchema.parse(response),
       );
+      const listener = requireWebSocketListener(listenerId);
+      return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener };
+    },
+    setWebSocketListenerResponse: (listenerId, response) => {
+      handlerStore.getState().setWebSocketListenerResponse(listenerId, webSocketResponseSchema.parse(response));
+      const listener = requireWebSocketListener(listenerId);
+      return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener };
+    },
+    setWebSocketListenerSchedule: (listenerId, input) => {
+      const schedule = { ...input };
+      if ("repeat" in input && input.repeat !== undefined) schedule.repeat = webSocketRepeatSchema.parse(input.repeat);
+      handlerStore.getState().setWebSocketListenerSchedule(listenerId, schedule);
       const listener = requireWebSocketListener(listenerId);
       return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener };
     },

@@ -23,7 +23,7 @@ export type ManagedWebSocketRegistration = {
 
 export type WebSocketSendDataType = "string" | "Blob" | "ArrayBuffer";
 
-export type WebSocketCustomResponse =
+export type WebSocketResponse =
   | {
       type: "send";
       dataType: WebSocketSendDataType;
@@ -34,7 +34,15 @@ export type WebSocketCustomResponse =
       type: "close";
       code?: number;
       reason?: string;
-    };
+  };
+
+/** @deprecated Use WebSocketResponse. */
+export type WebSocketCustomResponse = WebSocketResponse;
+
+export type WebSocketRepeat = {
+  interval: number;
+  repetitions: number | "Infinity";
+};
 
 export type DevToolHandlerInfo = {
   id: string;
@@ -62,7 +70,19 @@ export type WebSocketListenerConfig = {
   event: "message";
   enabled: boolean;
   behavior: WebSocketBehaviorSelection;
-  customResponse?: WebSocketCustomResponse;
+  response?: WebSocketResponse;
+  customResponse?: WebSocketResponse;
+  delay?: number;
+  repeat?: WebSocketRepeat;
+};
+
+export type AddWebSocketListenerInput = {
+  endpointId: string;
+  behavior?: WebSocketBehaviorSelection;
+  response?: WebSocketResponse;
+  customResponse?: WebSocketResponse;
+  delay?: number;
+  repeat?: WebSocketRepeat;
 };
 
 export type WebSocketEndpointConfig = {

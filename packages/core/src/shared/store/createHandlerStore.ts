@@ -65,9 +65,26 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
       const connections = new Map<string, Set<ManagedWebSocketClient>>();
       const reconnectors = new Map<string, Set<WebSocketMessageListenerRegistration>>();
       const sequenceTimers = new WeakMap<object, Set<ReturnType<typeof setTimeout>>>();
+      type ResponseSchedule = { timer?: ReturnType<typeof setTimeout>; cancelled: boolean };
+      const responseSchedules = new WeakMap<object, Map<string, Set<ResponseSchedule>>>();
+      const clearResponseTimers = (client: object, listenerId?: string) => {
+        const schedules = responseSchedules.get(client);
+        if (!schedules) return;
+        const entries = listenerId ? [schedules.get(listenerId)] : [...schedules.values()];
+        entries.forEach((set) => set?.forEach((schedule) => {
+          schedule.cancelled = true;
+          if (schedule.timer) clearTimeout(schedule.timer);
+        }));
+        if (listenerId) schedules.delete(listenerId);
+        else responseSchedules.delete(client);
+      };
       const clearSequenceTimers = (client: object) => {
         sequenceTimers.get(client)?.forEach((timer) => clearTimeout(timer));
         sequenceTimers.delete(client);
+        clearResponseTimers(client);
+      };
+      const clearListenerTimers = (listenerId: string) => {
+        connections.forEach((clients) => clients.forEach((client) => clearResponseTimers(client, listenerId)));
       };
       const closeConnections = (id: string) => {
         connections.get(id)?.forEach((client) => {
@@ -134,7 +151,37 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
           listeners.forEach((config) => {
             if (!config?.enabled) return;
             const defaultAction = config.behavior;
-            if (defaultAction.preset === "default") { original?.(event); return; }
+            const sendResponse = (response: import("../types").WebSocketResponse) => {
+              const schedules = responseSchedules.get(client) ?? new Map<string, Set<ResponseSchedule>>();
+              responseSchedules.set(client, schedules);
+              const listenerSchedules = schedules.get(config.info.id) ?? new Set<ResponseSchedule>();
+              schedules.set(config.info.id, listenerSchedules);
+              const repetitions = config.repeat?.repetitions ?? 1;
+              const interval = config.repeat?.interval ?? 0;
+              let count = 0;
+              const schedule: ResponseSchedule = { cancelled: false };
+              const run = () => {
+                if (schedule.cancelled) return;
+                if (response.type === "send") client.send(toWebSocketSendData(response));
+                else client.close(response.code, response.reason);
+                count += 1;
+                listenerSchedules.delete(schedule);
+                if (response.type === "close" || (repetitions !== "Infinity" && count >= repetitions) || schedule.cancelled) {
+                  if (listenerSchedules.size === 0) schedules.delete(config.info.id);
+                  return;
+                }
+                schedule.timer = setTimeout(run, interval);
+                listenerSchedules.add(schedule);
+              };
+              listenerSchedules.add(schedule);
+              if ((config.delay ?? 0) === 0) run();
+              else schedule.timer = setTimeout(run, config.delay ?? 0);
+            };
+            if (defaultAction.preset === "default") {
+              if (config.response) sendResponse(config.response);
+              else original?.(event);
+              return;
+            }
             if (defaultAction.preset === "send") {
               const options = webSocketSendOptionsSchema.safeParse(defaultAction.options);
               if (options.success) client.send(options.data.message);
@@ -172,11 +219,7 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
             if (defaultAction.preset === "custom response") {
               const response = config.customResponse;
               if (!response) throw new Error(CUSTOM_WEBSOCKET_RESPONSE_ERROR);
-              if (response.type === "send") {
-                client.send(toWebSocketSendData(response));
-              } else {
-                client.close(response.code, response.reason);
-              }
+              sendResponse(response);
             }
           });
         },
@@ -356,7 +399,18 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
           });
         },
         setWebSocketListenerCustomResponse: (listenerId, response) => {
+          clearListenerTimers(listenerId);
           webSocketSlice.setListenerCustomResponse(listenerId, response);
+          syncWebSocketState();
+        },
+        setWebSocketListenerResponse: (listenerId, response) => {
+          clearListenerTimers(listenerId);
+          webSocketSlice.setListenerResponse(listenerId, response);
+          syncWebSocketState();
+        },
+        setWebSocketListenerSchedule: (listenerId, input) => {
+          clearListenerTimers(listenerId);
+          webSocketSlice.setListenerSchedule(listenerId, input);
           syncWebSocketState();
         },
         getHandlerCustomResponse: (id) => lookupCustomResponse(id),
@@ -400,6 +454,7 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
         addTempWebSocketListener: (input) => { const id = webSocketSlice.addTempListener(input); const info = webSocketSlice.getState().listeners.find((entry) => entry.info.id === id)?.info; if (info) registry.registerHandler(info); syncWebSocketState(); return id; },
         removeWebSocketEndpoint: (id) => {
           const endpoint = webSocketSlice.getState().endpoints.find((entry) => entry.endpointId === id);
+          closeConnections(id);
           webSocketSlice.removeEndpoint(id);
           if (endpoint) {
             registry.unregisterHandler(id);
@@ -409,11 +464,12 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
           if (runtime) rebuildRuntimeWebSocketHandlers(runtime);
           syncWebSocketState();
         },
-        removeWebSocketListener: (id) => { webSocketSlice.removeListener(id); registry.unregisterHandler(id); syncWebSocketState(); },
-        setWebSocketEndpointEnabled: (id, enabled) => { webSocketSlice.setEndpointEnabled(id, enabled); syncWebSocketState(); },
-        setWebSocketListenerEnabled: (id, enabled) => { webSocketSlice.setListenerEnabled(id, enabled); syncWebSocketState(); },
-        setWebSocketListenerBehavior: (id, behavior) => { webSocketSlice.setListenerBehavior(id, behavior); syncWebSocketState(); },
+        removeWebSocketListener: (id) => { clearListenerTimers(id); webSocketSlice.removeListener(id); registry.unregisterHandler(id); syncWebSocketState(); },
+        setWebSocketEndpointEnabled: (id, enabled) => { if (!enabled) closeConnections(id); webSocketSlice.setEndpointEnabled(id, enabled); syncWebSocketState(); },
+        setWebSocketListenerEnabled: (id, enabled) => { if (!enabled) clearListenerTimers(id); webSocketSlice.setListenerEnabled(id, enabled); syncWebSocketState(); },
+        setWebSocketListenerBehavior: (id, behavior) => { clearListenerTimers(id); webSocketSlice.setListenerBehavior(id, behavior); syncWebSocketState(); },
         hydrateWebSocket: (endpoints) => {
+          connections.forEach((clients) => clients.forEach(clearSequenceTimers));
           registry.clearTempHandlers("websocket");
           webSocketSlice.hydrate(endpoints);
           const hydrated = webSocketSlice.getState();

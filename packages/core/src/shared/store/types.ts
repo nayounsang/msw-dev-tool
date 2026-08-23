@@ -7,7 +7,9 @@ import {
   ManagedWebSocketListener,
   DevToolHandlerInfo,
   WebSocketBehaviorSelection,
-  WebSocketCustomResponse,
+  WebSocketResponse,
+  WebSocketRepeat,
+  AddWebSocketListenerInput,
   WebSocketEndpointConfig,
   TempHandlerInput,
 } from "../types";
@@ -45,13 +47,15 @@ export type HandlerStoreBaseState = {
   getHandlerInfo: (id: string) => DevToolHandlerInfo | undefined;
   listHandlerInfo: (kind?: "http" | "websocket") => DevToolHandlerInfo[];
   addTempWebSocketEndpoint: (input: { matcher: WebSocketEndpointConfig["matcher"]; endpoint: string }) => string;
-  addTempWebSocketListener: (input: { endpointId: string; behavior: WebSocketBehaviorSelection }) => string;
+  addTempWebSocketListener: (input: AddWebSocketListenerInput) => string;
   removeWebSocketEndpoint: (endpointId: string) => void;
   removeWebSocketListener: (listenerId: string) => void;
   setWebSocketEndpointEnabled: (endpointId: string, enabled: boolean) => void;
   setWebSocketListenerEnabled: (listenerId: string, enabled: boolean) => void;
   setWebSocketListenerBehavior: (listenerId: string, behavior: WebSocketBehaviorSelection) => void;
-  setWebSocketListenerCustomResponse: (listenerId: string, response: WebSocketCustomResponse) => void;
+  setWebSocketListenerCustomResponse: (listenerId: string, response: WebSocketResponse) => void;
+  setWebSocketListenerResponse: (listenerId: string, response: WebSocketResponse) => void;
+  setWebSocketListenerSchedule: (listenerId: string, input: { delay?: number; repeat?: WebSocketRepeat }) => void;
   hydrateWebSocket: (endpoints: WebSocketEndpointConfig[]) => void;
   getWebSocketEndpoint: (endpointId: string) => WebSocketEndpointConfig | undefined;
   getWebSocketListener: (listenerId: string) => WebSocketEndpointConfig["listeners"][number] | undefined;

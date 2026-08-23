@@ -1,5 +1,5 @@
 import type { WebSocketData } from "msw";
-import type { WebSocketCustomResponse } from "../types";
+import type { WebSocketResponse } from "../types";
 
 export const CUSTOM_WEBSOCKET_RESPONSE_ERROR =
   "Please configure a custom response before using this behavior.";
@@ -13,7 +13,7 @@ export const parseWebSocketHex = (value: string): Uint8Array => {
 };
 
 export const toWebSocketSendData = (
-  response: Extract<WebSocketCustomResponse, { type: "send" }>,
+  response: Extract<WebSocketResponse, { type: "send" }>,
 ): WebSocketData => {
   if (response.dataType === "string") return response.value;
   const bytes = parseWebSocketHex(response.value);
