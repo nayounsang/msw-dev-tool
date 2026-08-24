@@ -1,6 +1,6 @@
 {
   "name": "@msw-dev-tool/core",
-  "version": "1.7.1",
+  "version": "1.8.0",
   "exports": {
     "./browser": {
       "types": "./dist/types/browser/index.d.ts",
