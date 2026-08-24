@@ -1,5 +1,13 @@
 # @msw-dev-tool/core
 
+## 1.8.0
+
+### Minor Changes
+
+- f4f152c: Add configurable WebSocket custom responses for sending strings, Blobs, or ArrayBuffers and closing connections with optional code and reason. Expose the configuration through the React WebSocket panel and both browser and Node CLI interfaces.
+- e66b95c: Extend temporary WebSocket listeners with independent default and custom responses, delayed/repeated response scheduling, and matching React, snapshot, Node CLI, and Browser CLI controls.
+- 70ba84c: Unify temporary and custom response configuration across HTTP and WebSocket APIs, CLIs, persistence, and React controls. HTTP custom responses now support the full temporary response settings, while WebSocket default and custom responses each own their delay and repeat schedule.
+
 ## 1.7.1
 
 ### Patch Changes
