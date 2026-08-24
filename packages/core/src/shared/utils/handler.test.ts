@@ -7,7 +7,7 @@ import {
   STANDARD_HTTP_STATUS_TEXT,
   StringHttpStatusCode,
 } from "../types";
-import { getHandlerResponseByBehavior } from "./handler";
+import { createHttpResponseFromConfig, getHandlerResponseByBehavior } from "./handler";
 
 vi.mock("msw", async (importOriginal) => {
   const actual = await importOriginal<typeof import("msw")>();
@@ -18,6 +18,18 @@ vi.mock("msw", async (importOriginal) => {
 });
 
 describe("getHandlerResponseByBehavior", () => {
+  it("creates an empty JSON response with its default metadata", async () => {
+    const result = await createHttpResponseFromConfig({
+      contentType: MimeType.APPLICATION_JSON,
+      status: "299",
+    });
+
+    expect(result.status).toBe(299);
+    expect(result.statusText).toBe("");
+    expect(result.headers.get("Content-Length")).toBe("0");
+    expect(await result.text()).toBe("");
+  });
+
   it("calls original resolver when behavior is undefined or DEFAULT", async () => {
     const original = vi.fn(async () => HttpResponse.json({ ok: true }));
 
