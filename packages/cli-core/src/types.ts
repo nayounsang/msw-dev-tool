@@ -1,13 +1,12 @@
 import type {
-  CustomResponse,
+  HttpResponseConfig,
   HttpHandlerBehavior,
   PersistedFlattenHandler,
   TempHandlerInput,
   WebSocketEndpointConfig,
   WebSocketListenerConfig,
   WebSocketBehaviorSelection,
-  WebSocketResponse,
-  WebSocketRepeat,
+  WebSocketResponseConfig,
   AddWebSocketListenerInput,
   SerializableWebSocketMatcher,
 } from "@msw-dev-tool/core/shared";
@@ -40,7 +39,7 @@ export type CliSession = {
   list(): Promise<CliHandler[]>;
   get(id: string): Promise<CliHandler | undefined>;
   setBehavior(id: string, behavior: HttpHandlerBehavior): Promise<CliMutationResult>;
-  setCustomResponse(id: string, response: CustomResponse): Promise<CliMutationResult>;
+  setCustomResponse(id: string, response: HttpResponseConfig): Promise<CliMutationResult>;
   addTemp(data: TempHandlerInput): Promise<CliMutationResult>;
   removeTemp(id: string): Promise<CliSessionInfo>;
   reset(): Promise<CliSessionInfo>;
@@ -69,15 +68,11 @@ export type CliSession = {
   ): Promise<CliWebSocketListenerResult>;
   setWebSocketListenerCustomResponse(
     listenerId: string,
-    response: WebSocketResponse,
+    response: WebSocketResponseConfig,
   ): Promise<CliWebSocketListenerResult>;
   setWebSocketListenerResponse(
     listenerId: string,
-    response: WebSocketResponse,
-  ): Promise<CliWebSocketListenerResult>;
-  setWebSocketListenerSchedule(
-    listenerId: string,
-    input: { delay?: number; repeat?: WebSocketRepeat },
+    response: WebSocketResponseConfig,
   ): Promise<CliWebSocketListenerResult>;
 };
 

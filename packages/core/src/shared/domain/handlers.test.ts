@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { CustomBehavior, HttpHandlerBehavior, HttpMethod } from "../types";
+import {
+  CustomBehavior,
+  HttpHandlerBehavior,
+  HttpMethod,
+  MimeType,
+  StringHttpStatusCode,
+} from "../types";
 import { getRowId } from "../utils/store";
 import { createFlattenHandler } from "../testing/createHttpHandler";
 import {
@@ -57,10 +63,19 @@ describe("setHandlerCustomResponse", () => {
       createFlattenHandler({ id: otherId, path: "/b", method: HttpMethod.GET }),
     ];
 
-    const first = setHandlerCustomResponse(handlers, id, { body: "first" });
-    const next = setHandlerCustomResponse(first, id, { body: "latest", status: 202 });
+    const first = setHandlerCustomResponse(handlers, id, {
+      response: "first",
+      contentType: MimeType.TEXT_PLAIN,
+      status: StringHttpStatusCode.OK,
+    });
+    const nextResponse = {
+      response: "latest",
+      contentType: MimeType.TEXT_PLAIN,
+      status: StringHttpStatusCode.ACCEPTED,
+    } as const;
+    const next = setHandlerCustomResponse(first, id, nextResponse);
 
-    expect(getHandlerCustomResponse(next, id)).toEqual({ body: "latest", status: 202 });
+    expect(getHandlerCustomResponse(next, id)).toEqual(nextResponse);
     expect(getHandlerCustomResponse(next, otherId)).toBeUndefined();
     expect(getHandlerCustomResponse(handlers, id)).toBeUndefined();
   });

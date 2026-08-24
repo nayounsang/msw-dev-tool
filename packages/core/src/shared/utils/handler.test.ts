@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import { HttpResponse, passthrough } from "msw";
-import { CustomBehavior, HttpErrorStatusCode, STANDARD_HTTP_STATUS_TEXT } from "../types";
-import { getHandlerResponseByBehavior } from "./handler";
+import {
+  CustomBehavior,
+  HttpErrorStatusCode,
+  MimeType,
+  STANDARD_HTTP_STATUS_TEXT,
+  StringHttpStatusCode,
+} from "../types";
+import { createHttpResponseFromConfig, getHandlerResponseByBehavior } from "./handler";
 
 vi.mock("msw", async (importOriginal) => {
   const actual = await importOriginal<typeof import("msw")>();
@@ -12,6 +18,18 @@ vi.mock("msw", async (importOriginal) => {
 });
 
 describe("getHandlerResponseByBehavior", () => {
+  it("creates an empty JSON response with its default metadata", async () => {
+    const result = await createHttpResponseFromConfig({
+      contentType: MimeType.APPLICATION_JSON,
+      status: "299",
+    });
+
+    expect(result.status).toBe(299);
+    expect(result.statusText).toBe("");
+    expect(result.headers.get("Content-Length")).toBe("0");
+    expect(await result.text()).toBe("");
+  });
+
   it("calls original resolver when behavior is undefined or DEFAULT", async () => {
     const original = vi.fn(async () => HttpResponse.json({ ok: true }));
 
@@ -63,9 +81,10 @@ describe("getHandlerResponseByBehavior", () => {
       CustomBehavior.CUSTOM_RESPONSE,
       async () => HttpResponse.json({ original: true }),
       {
-        body: '{"custom":true}',
-        headers: { "Content-Type": "application/json", "X-Source": "dev-tool" },
-        status: 201,
+        response: '{"custom":true}',
+        header: '{"X-Source":"dev-tool"}',
+        contentType: MimeType.APPLICATION_JSON,
+        status: StringHttpStatusCode.CREATED,
       },
     );
 
@@ -77,17 +96,22 @@ describe("getHandlerResponseByBehavior", () => {
     expect(await result.text()).toBe('{"custom":true}');
   });
 
-  it("uses 200 OK when a custom response has no status configuration", async () => {
+  it("uses configured status text when provided", async () => {
     const result = await getHandlerResponseByBehavior(
       CustomBehavior.CUSTOM_RESPONSE,
       async () => HttpResponse.json({ original: true }),
-      { body: "default status" },
+      {
+        response: "custom status",
+        contentType: MimeType.TEXT_PLAIN,
+        status: StringHttpStatusCode.OK,
+        statusText: "Custom OK",
+      },
     );
 
     expect(result).toBeInstanceOf(Response);
     if (!(result instanceof Response)) throw new Error("Expected Response");
     expect(result.status).toBe(200);
-    expect(result.statusText).toBe("OK");
+    expect(result.statusText).toBe("Custom OK");
   });
 
   it("throws when CUSTOM_RESPONSE has not been configured", async () => {

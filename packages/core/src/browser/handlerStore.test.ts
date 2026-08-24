@@ -18,6 +18,7 @@ import {
 } from "./handlerStore";
 import { STORAGE_KEY } from "../shared/const";
 import { BROWSER_CONTROL_METHOD_VERSIONS } from "../shared/controlProtocol";
+import { MimeType, StringHttpStatusCode } from "../shared/types";
 
 const getBridge = (): BrowserControlBridge => {
   const bridge = window[BROWSER_CONTROL_KEY];
@@ -85,9 +86,10 @@ describe("browser control bridge", () => {
     await setupDevToolWorker(http.get("/custom", () => HttpResponse.json({ original: true })));
     const handler = handlerStore.getState().flattenHandlers[0]!;
     const customResponse = {
-      body: "custom body",
-      headers: { "X-Custom": "yes" },
-      status: 202,
+      response: "custom body",
+      header: '{"X-Custom":"yes"}',
+      contentType: MimeType.TEXT_PLAIN,
+      status: StringHttpStatusCode.ACCEPTED,
     };
 
     const changed = getBridge().setCustomResponse(handler.id, customResponse);
@@ -188,40 +190,37 @@ describe("browser control bridge", () => {
     const configured = bridge.addWebSocketListener({
       endpointId: added.endpoint.endpointId,
       behavior: { preset: "default" },
-      response: { type: "send", dataType: "string", value: "default" },
-      customResponse: { type: "send", dataType: "string", value: "custom" },
-      delay: 300,
-      repeat: { interval: 500, repetitions: "Infinity" },
+      response: {
+        type: "send",
+        dataType: "string",
+        value: "default",
+        delay: 300,
+        repeat: { interval: 500, repetitions: "Infinity" },
+      },
+      customResponse: { type: "send", dataType: "string", value: "custom", delay: 25 },
     });
     expect(configured.listener).toMatchObject({
       behavior: { preset: "default" },
-      response: { value: "default" },
-      customResponse: { value: "custom" },
-      delay: 300,
-      repeat: { interval: 500, repetitions: "Infinity" },
+      response: {
+        value: "default",
+        delay: 300,
+        repeat: { interval: 500, repetitions: "Infinity" },
+      },
+      customResponse: { value: "custom", delay: 25 },
     });
     expect(
       bridge.setWebSocketListenerResponse(configured.listener.info.id, {
         type: "send",
         dataType: "string",
         value: "updated",
-      }).listener.response,
-    ).toMatchObject({ value: "updated" });
-    expect(
-      bridge.setWebSocketListenerSchedule(configured.listener.info.id, {
         delay: 100,
         repeat: { interval: 50, repetitions: 3 },
-      }).listener,
-    ).toMatchObject({ delay: 100, repeat: { interval: 50, repetitions: 3 } });
-    expect(
-      bridge.setWebSocketListenerSchedule(configured.listener.info.id, { repeat: undefined })
-        .listener.repeat,
-    ).toBeUndefined();
+      }).listener.response,
+    ).toMatchObject({ value: "updated", delay: 100, repeat: { interval: 50, repetitions: 3 } });
     const defaults = bridge.addWebSocketListener({ endpointId: added.endpoint.endpointId });
-    expect(defaults.listener).toMatchObject({ behavior: { preset: "default" }, delay: 0 });
+    expect(defaults.listener).toMatchObject({ behavior: { preset: "default" } });
     expect(defaults.listener.response).toBeUndefined();
     expect(defaults.listener.customResponse).toBeUndefined();
-    expect(defaults.listener.repeat).toBeUndefined();
     bridge.removeWebSocketListener(defaults.listener.info.id);
     bridge.removeWebSocketListener(configured.listener.info.id);
     expect(bridge.removeWebSocketEndpoint(added.endpoint.endpointId).endpoints).toEqual([]);

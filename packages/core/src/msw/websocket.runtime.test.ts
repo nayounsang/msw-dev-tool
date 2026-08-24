@@ -195,8 +195,8 @@ describe("closeWebSocketConnections", () => {
         type: "send",
         dataType: "string",
         value: "default",
+        delay: 100,
       });
-      store.getState().setWebSocketListenerSchedule(listenerId, { delay: 100 });
       adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
       expect(client.send).not.toHaveBeenCalled();
       await vi.advanceTimersByTimeAsync(49);
@@ -221,10 +221,8 @@ describe("closeWebSocketConnections", () => {
         type: "send",
         dataType: "string",
         value: "default",
+        repeat: { interval: 50, repetitions: 3 },
       });
-      store
-        .getState()
-        .setWebSocketListenerSchedule(listenerId, { repeat: { interval: 50, repetitions: 3 } });
       adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
       expect(client.send).toHaveBeenCalledTimes(1);
       await vi.advanceTimersByTimeAsync(49);
@@ -248,8 +246,8 @@ describe("closeWebSocketConnections", () => {
         type: "send",
         dataType: "string",
         value: "old",
+        delay: 100,
       });
-      store.getState().setWebSocketListenerSchedule(listenerId, { delay: 100 });
       adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
       store.getState().setWebSocketListenerResponse(listenerId, {
         type: "send",
@@ -276,8 +274,8 @@ describe("closeWebSocketConnections", () => {
         type: "send",
         dataType: "string",
         value: "late",
+        delay: 100,
       });
-      store.getState().setWebSocketListenerSchedule(listenerId, { delay: 100 });
       adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
 
       adapter.unregisterWebSocketConnection(endpointId, client);
@@ -293,10 +291,12 @@ describe("closeWebSocketConnections", () => {
     const { adapter, endpointId, listenerId, client, store } =
       await setupCustomResponseHarness("cancelled-callback");
     store.getState().setWebSocketListenerBehavior(listenerId, { preset: "default" });
-    store
-      .getState()
-      .setWebSocketListenerResponse(listenerId, { type: "send", dataType: "string", value: "old" });
-    store.getState().setWebSocketListenerSchedule(listenerId, { delay: 100 });
+    store.getState().setWebSocketListenerResponse(listenerId, {
+      type: "send",
+      dataType: "string",
+      value: "old",
+      delay: 100,
+    });
     let delayedCallback: (() => void) | undefined;
     const timeout = vi.spyOn(globalThis, "setTimeout").mockImplementationOnce((callback) => {
       delayedCallback = callback as () => void;
@@ -328,8 +328,8 @@ describe("closeWebSocketConnections", () => {
         type: "send",
         dataType: "string",
         value: "delayed",
+        delay: 100,
       });
-      store.getState().setWebSocketListenerSchedule(listenerId, { delay: 100 });
 
       adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
       adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
@@ -351,15 +351,17 @@ describe("closeWebSocketConnections", () => {
         type: "send",
         dataType: "string",
         value: "repeat",
-      });
-      store.getState().setWebSocketListenerSchedule(listenerId, {
         repeat: { interval: 50, repetitions: "Infinity" },
       });
       adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
       await vi.advanceTimersByTimeAsync(50);
       expect(client.send).toHaveBeenCalledTimes(2);
 
-      store.getState().setWebSocketListenerSchedule(listenerId, { repeat: undefined });
+      store.getState().setWebSocketListenerResponse(listenerId, {
+        type: "send",
+        dataType: "string",
+        value: "repeat",
+      });
       await vi.advanceTimersByTimeAsync(100);
 
       expect(client.send).toHaveBeenCalledTimes(2);
@@ -378,8 +380,6 @@ describe("closeWebSocketConnections", () => {
         type: "send",
         dataType: "string",
         value: "once",
-      });
-      store.getState().setWebSocketListenerSchedule(listenerId, {
         repeat: { interval: 0, repetitions: 3 },
       });
       client.send.mockImplementationOnce(() => {
@@ -422,8 +422,6 @@ describe("closeWebSocketConnections", () => {
         type: "close",
         code: 4001,
         reason: "Unauthorized",
-      });
-      store.getState().setWebSocketListenerSchedule(listenerId, {
         delay: 50,
         repeat: { interval: 50, repetitions: 3 },
       });

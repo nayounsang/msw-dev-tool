@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { CustomBehavior, HttpMethod, MimeType, StringHttpStatusCode } from "../types";
 import { getRowId } from "../utils/store";
+import * as handlerValidate from "../utils/validate";
 import { createFlattenHandler } from "../testing/createHttpHandler";
 import { buildTempHandler, rehydrateTempHandlers } from "./tempHandler";
 
@@ -28,6 +29,12 @@ describe("buildTempHandler", () => {
     });
     expect(flattenHandler.handler).toBe(handler);
     expect(handler.info.path).toBe("/temp");
+  });
+
+  it("rejects an unexpected MSW handler type", () => {
+    vi.spyOn(handlerValidate, "isHttpHandler").mockReturnValueOnce(false);
+
+    expect(() => buildTempHandler(baseInput, vi.fn())).toThrow("Expected MSW http handler");
   });
 
   it("returns a fresh response body on each resolver call", async () => {
@@ -63,7 +70,12 @@ describe("buildTempHandler", () => {
     const { handler } = buildTempHandler(
       baseInput,
       () => CustomBehavior.CUSTOM_RESPONSE,
-      () => ({ body: "temporary custom", headers: { "X-Temp": "yes" }, status: 202 }),
+      () => ({
+        contentType: MimeType.TEXT_PLAIN,
+        response: "temporary custom",
+        header: '{"X-Temp":"yes"}',
+        status: StringHttpStatusCode.ACCEPTED,
+      }),
     );
 
     const result = await handler.resolver({

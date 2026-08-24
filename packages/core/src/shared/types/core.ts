@@ -19,23 +19,20 @@ export const HttpHandlerBehavior = {
 } as const;
 export type HttpHandlerBehavior = ValueUnion<typeof HttpHandlerBehavior>;
 
-/** Serializable response data returned by the custom response behavior. */
-export type CustomResponse = {
-  body?: string;
-  headers?: Record<string, string>;
-  status?: number;
-};
-
-/** Serializable input for rebuilding temporary handlers after persistence. */
-export type TempHandlerInput = {
-  path: string;
+/** Serializable HTTP response settings shared by temporary and custom responses. */
+export type HttpResponseConfig = {
   delay?: number;
   contentType: MimeType;
   status: StringHttpStatusCode;
   statusText?: string;
   response?: string;
-  method: HttpMethod;
   header?: string;
+};
+
+/** Serializable input for rebuilding temporary handlers after persistence. */
+export type TempHandlerInput = HttpResponseConfig & {
+  path: string;
+  method: HttpMethod;
 };
 
 export type FlattenHandler = {
@@ -45,7 +42,7 @@ export type FlattenHandler = {
   handler: HttpHandler;
   behavior: HttpHandlerBehavior;
   /** Response data used when the custom response behavior is selected. */
-  customResponse?: CustomResponse;
+  customResponse?: HttpResponseConfig;
   type: "temp" | "default";
   /** Present on temp handlers so they can be rebuilt after JSON persistence. */
   tempInput?: TempHandlerInput;

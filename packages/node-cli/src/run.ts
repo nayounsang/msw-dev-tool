@@ -23,7 +23,7 @@ the session after a development-server/HMR reload.
 Examples:
   msw-dev-tool list
   msw-dev-tool set-behavior '{"path":"/api","method":"get"}' delay
-  msw-dev-tool set-custom-response '{"path":"/api","method":"get"}' --json '{"status":201,"body":"created"}'
+  msw-dev-tool set-custom-response '{"path":"/api","method":"get"}' --json '{"status":"201","contentType":"application/json","response":"{\\"created\\":true}","delay":100}'
   msw-dev-tool add-temp --json '{"path":"/api/tmp","method":"get","contentType":"application/json","status":"200","response":"{\\"ok\\":true}"}'
 
 set-custom-response stores response data only. Run set-behavior <id> "custom response"

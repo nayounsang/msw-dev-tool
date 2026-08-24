@@ -1,14 +1,11 @@
 import {
-  customResponseSchema,
+  httpResponseConfigSchema,
   HttpHandlerBehavior,
   tempHandlerSchema,
   webSocketBehaviorSchema,
-  webSocketCustomResponseSchema,
-  webSocketResponseSchema,
-  webSocketRepeatSchema,
+  webSocketResponseConfigSchema,
   serializableWebSocketMatcherSchema,
 } from "@msw-dev-tool/core/shared";
-import { z } from "zod";
 import type { CliCommand, CliCommandContext, JsonResult } from "./types";
 import type { AddWebSocketListenerInput } from "@msw-dev-tool/core/shared";
 
@@ -31,7 +28,7 @@ const withMetadata = (result: JsonResult, context: CliCommandContext): JsonResul
 
 const parseCustomResponse = (value: string) => {
   try {
-    return customResponseSchema.parse(JSON.parse(value) as unknown);
+    return httpResponseConfigSchema.parse(JSON.parse(value) as unknown);
   } catch (error) {
     if (error instanceof SyntaxError) {
       throw new Error("Custom response must be valid JSON");
@@ -207,14 +204,13 @@ export const commands: CliCommand[] = [
         behavior:
           value.behavior === undefined ? undefined : webSocketBehaviorSchema.parse(value.behavior),
         response:
-          value.response === undefined ? undefined : webSocketResponseSchema.parse(value.response),
+          value.response === undefined
+            ? undefined
+            : webSocketResponseConfigSchema.parse(value.response),
         customResponse:
           value.customResponse === undefined
             ? undefined
-            : webSocketResponseSchema.parse(value.customResponse),
-        delay:
-          value.delay === undefined ? undefined : z.number().int().nonnegative().parse(value.delay),
-        repeat: value.repeat === undefined ? undefined : webSocketRepeatSchema.parse(value.repeat),
+            : webSocketResponseConfigSchema.parse(value.customResponse),
       };
       return withMetadata(
         { ok: true, ...(await context.session.addWebSocketListener(input)) },
@@ -277,7 +273,7 @@ export const commands: CliCommand[] = [
           "Usage: ws-set-listener-custom-response <listenerId> --json '<customResponseJson>'",
         );
       }
-      const response = webSocketCustomResponseSchema.parse(JSON.parse(flags.json) as unknown);
+      const response = webSocketResponseConfigSchema.parse(JSON.parse(flags.json) as unknown);
       return withMetadata(
         { ok: true, ...(await context.session.setWebSocketListenerCustomResponse(id, response)) },
         context,
@@ -292,34 +288,9 @@ export const commands: CliCommand[] = [
       if (!id || typeof flags.json !== "string") {
         throw new Error("Usage: ws-set-listener-response <listenerId> --json '<responseJson>'");
       }
-      const response = webSocketResponseSchema.parse(JSON.parse(flags.json) as unknown);
+      const response = webSocketResponseConfigSchema.parse(JSON.parse(flags.json) as unknown);
       return withMetadata(
         { ok: true, ...(await context.session.setWebSocketListenerResponse(id, response)) },
-        context,
-      );
-    },
-  },
-  {
-    name: "ws-set-listener-schedule",
-    usage: "ws-set-listener-schedule <listenerId> --json '<scheduleJson>'",
-    async execute(context, { flags, positionals }) {
-      const id = positionals[1];
-      if (!id || typeof flags.json !== "string") {
-        throw new Error("Usage: ws-set-listener-schedule <listenerId> --json '<scheduleJson>'");
-      }
-      const value = JSON.parse(flags.json) as { delay?: unknown; repeat?: unknown };
-      const input = {
-        ...(value.delay === undefined
-          ? {}
-          : { delay: z.number().int().nonnegative().parse(value.delay) }),
-        ...(value.repeat === undefined
-          ? {}
-          : {
-              repeat: value.repeat === null ? undefined : webSocketRepeatSchema.parse(value.repeat),
-            }),
-      };
-      return withMetadata(
-        { ok: true, ...(await context.session.setWebSocketListenerSchedule(id, input)) },
         context,
       );
     },

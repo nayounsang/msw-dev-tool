@@ -1,11 +1,10 @@
 import { getRowId } from "../../shared/utils/store";
 import {
-  CustomResponse,
+  HttpResponseConfig,
   HttpHandlerBehavior,
   TempHandlerInput,
   AddWebSocketListenerInput,
-  WebSocketResponse,
-  WebSocketRepeat,
+  WebSocketResponseConfig,
   WebSocketEndpointConfig,
 } from "../../shared/types";
 import {
@@ -17,16 +16,13 @@ import {
   setWebSocketListenerBehavior,
   setWebSocketListenerCustomResponse,
   setWebSocketListenerResponse,
-  setWebSocketListenerSchedule,
   setWebSocketListenerEnabled,
 } from "../../shared/websocket/state";
 import {
   serializableWebSocketMatcherSchema,
   webSocketBehaviorSchema,
   webSocketEndpointsSchema,
-  webSocketResponseSchema,
-  webSocketRepeatSchema,
-  webSocketDelaySchema,
+  webSocketResponseConfigSchema,
 } from "../../shared/schema/websocket";
 import { bumpSnapshot } from "./serialize";
 import { readSnapshotOrEmpty, withLockedMutation } from "./file";
@@ -118,19 +114,11 @@ export const addSnapshotWebSocketListener = (
             response:
               suppliedInput.response === undefined
                 ? undefined
-                : webSocketResponseSchema.parse(suppliedInput.response),
+                : webSocketResponseConfigSchema.parse(suppliedInput.response),
             customResponse:
               suppliedInput.customResponse === undefined
                 ? undefined
-                : webSocketResponseSchema.parse(suppliedInput.customResponse),
-            delay:
-              suppliedInput.delay === undefined
-                ? undefined
-                : webSocketDelaySchema.parse(suppliedInput.delay),
-            repeat:
-              suppliedInput.repeat === undefined
-                ? undefined
-                : webSocketRepeatSchema.parse(suppliedInput.repeat),
+                : webSocketResponseConfigSchema.parse(suppliedInput.customResponse),
           };
     const next = addTemporaryWebSocketListener(snapshotWebSocketEndpoints(prev), endpointId, input);
     return bumpSnapshot(prev, { webSocket: webSocketEndpointsSchema.parse(next.endpoints) });
@@ -179,7 +167,7 @@ export const setSnapshotWebSocketListenerBehavior = (
 export const setSnapshotWebSocketListenerCustomResponse = (
   sessionPath: string,
   listenerId: string,
-  customResponse: WebSocketResponse,
+  customResponse: WebSocketResponseConfig,
 ): Promise<SessionSnapshot> =>
   withLockedMutation(sessionPath, (prev) => {
     const next = setWebSocketListenerCustomResponse(
@@ -193,29 +181,13 @@ export const setSnapshotWebSocketListenerCustomResponse = (
 export const setSnapshotWebSocketListenerResponse = (
   sessionPath: string,
   listenerId: string,
-  response: WebSocketResponse,
+  response: WebSocketResponseConfig,
 ): Promise<SessionSnapshot> =>
   withLockedMutation(sessionPath, (prev) => {
     const next = setWebSocketListenerResponse(
       snapshotWebSocketEndpoints(prev),
       listenerId,
       response,
-    );
-    return bumpSnapshot(prev, { webSocket: webSocketEndpointsSchema.parse(next.endpoints) });
-  });
-
-export const setSnapshotWebSocketListenerSchedule = (
-  sessionPath: string,
-  listenerId: string,
-  input: { delay?: number; repeat?: WebSocketRepeat },
-): Promise<SessionSnapshot> =>
-  withLockedMutation(sessionPath, (prev) => {
-    const next = setWebSocketListenerSchedule(
-      snapshotWebSocketEndpoints(prev),
-      listenerId,
-      "repeat" in input && input.repeat !== undefined
-        ? { ...input, repeat: webSocketRepeatSchema.parse(input.repeat) }
-        : input,
     );
     return bumpSnapshot(prev, { webSocket: webSocketEndpointsSchema.parse(next.endpoints) });
   });
@@ -238,7 +210,7 @@ export const setSnapshotBehavior = (
 export const setSnapshotCustomResponse = (
   sessionPath: string,
   id: string,
-  customResponse: CustomResponse,
+  customResponse: HttpResponseConfig,
 ): Promise<SessionSnapshot> =>
   withLockedMutation(sessionPath, (prev) => {
     if (!prev.state.flattenHandlers.some((handler) => handler.id === id))

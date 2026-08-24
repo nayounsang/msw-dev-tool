@@ -4,18 +4,22 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import {
   SerializableWebSocketMatcher,
   WebSocketBehaviorSelection,
-  WebSocketResponse,
   WebSocketEndpointConfig,
   WebSocketListenerConfig,
   useHandlerStore,
 } from "@msw-dev-tool/core/browser";
-import { webSocketCustomResponseSchema } from "@msw-dev-tool/core/shared";
+import { webSocketResponseConfigSchema } from "@msw-dev-tool/core/shared";
 import { Button } from "../../Components/Button";
 import { CloseButton } from "../../Components/CloseButton";
 import { Input } from "../../Components/Input";
 import { Select } from "../../Components/Select";
-import { TextArea } from "../../Components/TextArea";
 import { CUSTOM_RESPONSE_DESCRIPTION } from "../constants";
+import {
+  WebSocketResponseFields,
+  WebSocketResponseFormState,
+  webSocketResponseFormValues,
+  webSocketResponseFromFormValues,
+} from "../Form/WebSocketResponseFields";
 
 type EndpointFormValues = { matcherType: "string" | "regexp"; value: string; flags: string };
 type FormErrors = Record<string, string | undefined>;
@@ -215,137 +219,6 @@ const ListenerBehaviorSelect = ({ listener }: { listener: WebSocketListenerConfi
   );
 };
 
-type CustomResponseFormState = {
-  type: "send" | "close";
-  dataType: "string" | "Blob" | "ArrayBuffer";
-  value: string;
-  metadataType: string;
-  code: string;
-  reason: string;
-};
-
-const customResponseFormValues = (response?: WebSocketResponse): CustomResponseFormState => ({
-  type: response?.type ?? "send",
-  dataType: response?.type === "send" ? response.dataType : "string",
-  value: response?.type === "send" ? response.value : "",
-  metadataType: response?.type === "send" ? (response.metadata?.type ?? "") : "",
-  code: response?.type === "close" && response.code !== undefined ? String(response.code) : "",
-  reason: response?.type === "close" ? (response.reason ?? "") : "",
-});
-
-const responseFromFormValues = (values: CustomResponseFormState): WebSocketResponse =>
-  values.type === "send"
-    ? {
-        type: "send",
-        dataType: values.dataType,
-        value: values.value,
-        ...(values.metadataType.trim() ? { metadata: { type: values.metadataType.trim() } } : {}),
-      }
-    : {
-        type: "close",
-        ...(values.code.trim() ? { code: Number(values.code) } : {}),
-        ...(values.reason ? { reason: values.reason } : {}),
-      };
-
-const ResponseFields = ({
-  values,
-  update,
-  fieldId,
-  required = false,
-}: {
-  values: CustomResponseFormState;
-  update: <K extends keyof CustomResponseFormState>(
-    key: K,
-    value: CustomResponseFormState[K],
-  ) => void;
-  fieldId: string;
-  required?: boolean;
-}) => (
-  <div className="msw-dt-ws-response-fields">
-    <fieldset>
-      <legend className="msw-dt-label">Response type</legend>
-      <label>
-        <input
-          type="radio"
-          name={`ws-response-type-${fieldId}`}
-          checked={values.type === "send"}
-          onChange={() => update("type", "send")}
-        />{" "}
-        Send
-      </label>
-      <label>
-        <input
-          type="radio"
-          name={`ws-response-type-${fieldId}`}
-          checked={values.type === "close"}
-          onChange={() => update("type", "close")}
-        />{" "}
-        Close
-      </label>
-    </fieldset>
-    {values.type === "send" ? (
-      <>
-        <fieldset>
-          <legend className="msw-dt-label">Data type</legend>
-          {(["string", "Blob", "ArrayBuffer"] as const).map((dataType) => (
-            <label key={dataType}>
-              <input
-                type="radio"
-                name={`ws-data-type-${fieldId}`}
-                checked={values.dataType === dataType}
-                onChange={() => update("dataType", dataType)}
-              />{" "}
-              {dataType}
-            </label>
-          ))}
-        </fieldset>
-        <label className="msw-dt-label" htmlFor={`ws-response-value-${fieldId}`}>
-          Value{required ? " *" : ""}
-        </label>
-        <TextArea
-          id={`ws-response-value-${fieldId}`}
-          value={values.value}
-          placeholder={
-            values.dataType === "string"
-              ? undefined
-              : "Enter bytes as space-separated hexadecimal values."
-          }
-          onChange={(event) => update("value", event.target.value)}
-          required={required}
-        />
-        <label className="msw-dt-label" htmlFor={`ws-response-metadata-${fieldId}`}>
-          Metadata type
-        </label>
-        <Input
-          id={`ws-response-metadata-${fieldId}`}
-          value={values.metadataType}
-          onChange={(event) => update("metadataType", event.target.value)}
-        />
-      </>
-    ) : (
-      <>
-        <label className="msw-dt-label" htmlFor={`ws-close-code-${fieldId}`}>
-          Close code
-        </label>
-        <Input
-          id={`ws-close-code-${fieldId}`}
-          inputMode="numeric"
-          value={values.code}
-          onChange={(event) => update("code", event.target.value)}
-        />
-        <label className="msw-dt-label" htmlFor={`ws-close-reason-${fieldId}`}>
-          Reason
-        </label>
-        <Input
-          id={`ws-close-reason-${fieldId}`}
-          value={values.reason}
-          onChange={(event) => update("reason", event.target.value)}
-        />
-      </>
-    )}
-  </div>
-);
-
 const ResponseDialog = ({
   listener,
   field,
@@ -363,24 +236,24 @@ const ResponseDialog = ({
       : CUSTOM_RESPONSE_DESCRIPTION;
   const fieldId = `${field}-${listener.info.id}`;
   const [open, setOpen] = useState(false);
-  const [values, setValues] = useState<CustomResponseFormState>(
-    customResponseFormValues(currentResponse),
+  const [values, setValues] = useState<WebSocketResponseFormState>(
+    webSocketResponseFormValues(currentResponse),
   );
   const [error, setError] = useState<string>();
 
   const openDialog = () => {
-    setValues(customResponseFormValues(currentResponse));
+    setValues(webSocketResponseFormValues(currentResponse));
     setError(undefined);
     setOpen(true);
   };
-  const update = <K extends keyof CustomResponseFormState>(
+  const update = <K extends keyof WebSocketResponseFormState>(
     key: K,
-    value: CustomResponseFormState[K],
+    value: WebSocketResponseFormState[K],
   ) => setValues((current) => ({ ...current, [key]: value }));
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
-    const response = responseFromFormValues(values);
-    const parsed = webSocketCustomResponseSchema.safeParse(response);
+    const response = webSocketResponseFromFormValues(values);
+    const parsed = webSocketResponseConfigSchema.safeParse(response);
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "Invalid custom response");
       return;
@@ -414,7 +287,7 @@ const ResponseDialog = ({
                 {description}
               </Dialog.Description>
               <form onSubmit={submit} className="msw-dt-ws-form">
-                <ResponseFields values={values} update={update} fieldId={fieldId} />
+                <WebSocketResponseFields values={values} update={update} fieldId={fieldId} />
                 {error && <p className="msw-dt-error-text">{error}</p>}
                 <Button type="submit">
                   Save {field === "response" ? "response" : "custom response"}
@@ -440,19 +313,14 @@ const ListenerForm = ({
   const addListener = useHandlerStore((state) => state.addTempWebSocketListener);
   const setBehavior = useHandlerStore((state) => state.setWebSocketListenerBehavior);
   const setResponse = useHandlerStore((state) => state.setWebSocketListenerResponse);
-  const setSchedule = useHandlerStore((state) => state.setWebSocketListenerSchedule);
   const [preset, setPreset] = useState(behaviorValue(listener?.behavior ?? { preset: "default" }));
   const [responseValues, setResponseValues] = useState(
-    customResponseFormValues(listener?.response),
+    webSocketResponseFormValues(listener?.response),
   );
-  const [delay, setDelay] = useState(listener?.delay ?? 0);
-  const [repeat, setRepeat] = useState(Boolean(listener?.repeat));
-  const [interval, setInterval] = useState(listener?.repeat?.interval ?? 1000);
-  const [repetitions, setRepetitions] = useState(String(listener?.repeat?.repetitions ?? 3));
   const [error, setError] = useState<string>();
-  const updateResponse = <K extends keyof CustomResponseFormState>(
+  const updateResponse = <K extends keyof WebSocketResponseFormState>(
     key: K,
-    value: CustomResponseFormState[K],
+    value: WebSocketResponseFormState[K],
   ) => setResponseValues((current) => ({ ...current, [key]: value }));
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -461,46 +329,21 @@ const ListenerForm = ({
       (option) => option.value === preset,
     )?.behavior;
     if (!behavior) return;
-    const response = webSocketCustomResponseSchema.safeParse(
-      responseFromFormValues(responseValues),
+    const response = webSocketResponseConfigSchema.safeParse(
+      webSocketResponseFromFormValues(responseValues),
     );
-    const parsedDelay = Number(delay);
-    const parsedInterval = Number(interval);
-    const parsedRepetitions: number | "Infinity" =
-      repetitions === "Infinity" ? "Infinity" : Number(repetitions);
     if (!response.success) {
       setError(response.error.issues[0]?.message ?? "Invalid WebSocket response");
       return;
     }
-    if (
-      !Number.isInteger(parsedDelay) ||
-      parsedDelay < 0 ||
-      (repeat &&
-        (!Number.isInteger(parsedInterval) ||
-          parsedInterval < 0 ||
-          (parsedRepetitions === "Infinity"
-            ? parsedInterval === 0
-            : !Number.isInteger(parsedRepetitions) || parsedRepetitions < 1)))
-    ) {
-      setError(
-        "Delay and interval must be non-negative integers, repetitions must be positive, and infinite repetition requires a positive interval",
-      );
-      return;
-    }
-    const schedule = {
-      delay: parsedDelay,
-      repeat: repeat ? { interval: parsedInterval, repetitions: parsedRepetitions } : undefined,
-    };
     if (listener) {
       setBehavior(listener.info.id, behavior);
       setResponse(listener.info.id, response.data);
-      setSchedule(listener.info.id, schedule);
     } else {
       addListener({
         endpointId: endpoint.endpointId,
         behavior,
         response: response.data,
-        ...schedule,
       });
     }
     onClose();
@@ -518,77 +361,14 @@ const ListenerForm = ({
         onValueChange={(value) => setPreset(value ?? "default")}
         options={selectableBehaviorOptions().map(({ label, value }) => ({ label, value }))}
       />
-      <section
-        className="msw-dt-ws-section"
-        aria-labelledby={`listener-response-title-${fieldKey}`}
-      >
-        <h3 id={`listener-response-title-${fieldKey}`}>Response</h3>
-        <ResponseFields
-          values={responseValues}
-          update={updateResponse}
-          fieldId={`listener-response-${fieldKey}`}
-          required={preset === "default"}
-        />
-        <label
-          className="msw-dt-ws-field msw-dt-ws-response-delay"
-          htmlFor={`ws-delay-${fieldKey}`}
-        >
-          <span>Delay (ms)</span>
-          <Input
-            id={`ws-delay-${fieldKey}`}
-            inputMode="numeric"
-            min={0}
-            type="number"
-            value={delay}
-            onChange={(event) => setDelay(Math.max(0, Number(event.target.value)))}
-          />
-        </label>
-      </section>
-      <section
-        className="msw-dt-ws-section"
-        aria-labelledby={`listener-schedule-title-${fieldKey}`}
-      >
-        <h3 id={`listener-schedule-title-${fieldKey}`}>Schedule</h3>
-        <div className="msw-dt-ws-schedule-grid">
-          <div className="msw-dt-ws-repeat-row">
-            <label className="msw-dt-ws-checkbox">
-              <input
-                type="checkbox"
-                checked={repeat}
-                onChange={(event) => setRepeat(event.target.checked)}
-              />{" "}
-              Repeat
-            </label>
-          </div>
-          {repeat && (
-            <>
-              <label className="msw-dt-ws-field" htmlFor={`ws-interval-${fieldKey}`}>
-                <span>Interval (ms)</span>
-                <Input
-                  id={`ws-interval-${fieldKey}`}
-                  inputMode="numeric"
-                  min={0}
-                  type="number"
-                  value={interval}
-                  onChange={(event) => setInterval(Math.max(0, Number(event.target.value)))}
-                />
-              </label>
-              <label className="msw-dt-ws-field" htmlFor={`ws-repetitions-${fieldKey}`}>
-                <span>Repetitions</span>
-                <Input
-                  id={`ws-repetitions-${fieldKey}`}
-                  inputMode="numeric"
-                  value={repetitions}
-                  onChange={(event) => setRepetitions(event.target.value)}
-                  placeholder="Infinity"
-                />
-              </label>
-            </>
-          )}
-        </div>
-      </section>
+      <WebSocketResponseFields
+        values={responseValues}
+        update={updateResponse}
+        fieldId={`listener-response-${fieldKey}`}
+        required={preset === "default"}
+      />
       {error && <p className="msw-dt-error-text">{error}</p>}
-      <Button type="submit">{listener ? "Save listener" : "Add listener"}</Button>
+      <Button type="submit">{listener ? "Save listener" : "Add temp listener"}</Button>
     </form>
   );
 };
@@ -607,15 +387,15 @@ const ListenerDialog = ({
         render={
           <Button
             variant={listener ? "ghost" : undefined}
-            title={listener ? "Configure listener" : "Add message listener"}
-            aria-label={listener ? "Configure listener" : "Add message listener"}
+            title={listener ? "Configure temp listener" : "Add temp message listener"}
+            aria-label={listener ? "Configure temp listener" : "Add temp message listener"}
           >
             {listener ? (
               <Pencil size={16} />
             ) : (
               <>
                 <Plus size={16} />
-                Add listener
+                Add Temp Listener
               </>
             )}
           </Button>
@@ -627,7 +407,7 @@ const ListenerDialog = ({
           <div className="msw-dt-dialog-inner-center">
             <div className="msw-dt-ws-dialog-header">
               <Dialog.Title className="msw-dt-dialog-title-sm">
-                {listener ? "Configure WebSocket listener" : "Add WebSocket listener"}
+                {listener ? "Configure Temp WebSocket Listener" : "Add Temp WebSocket Listener"}
               </Dialog.Title>
               <Dialog.Close render={<CloseButton />} />
             </div>

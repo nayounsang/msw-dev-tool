@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { HttpMethod, MimeType, StringHttpStatusCode } from "../types";
-import { customResponseSchema, isValidHandlerPath, tempHandlerSchema } from "./handler";
+import { httpResponseConfigSchema, isValidHandlerPath, tempHandlerSchema } from "./handler";
 
 const validBase = {
   path: "/api/items",
@@ -34,36 +34,53 @@ describe("tempHandlerSchema", () => {
   });
 });
 
-describe("customResponseSchema", () => {
-  it("accepts an optional response body, headers, and valid HTTP status", () => {
+describe("httpResponseConfigSchema", () => {
+  it("accepts body, headers, delay, content type, and status", () => {
     expect(
-      customResponseSchema.safeParse({
-        body: '{"ok":true}',
-        headers: { "Content-Type": "application/json" },
-        status: 599,
+      httpResponseConfigSchema.safeParse({
+        response: '{"ok":true}',
+        header: '{"X-Test":"yes"}',
+        contentType: MimeType.APPLICATION_JSON,
+        status: StringHttpStatusCode.ACCEPTED,
+        delay: 10,
       }).success,
     ).toBe(true);
   });
 
-  it("rejects statuses outside the HTTP response range", () => {
-    expect(customResponseSchema.safeParse({ status: 199 }).success).toBe(false);
-    expect(customResponseSchema.safeParse({ status: 600 }).success).toBe(false);
-    expect(customResponseSchema.safeParse({ status: 200.5 }).success).toBe(false);
+  it("rejects unsupported statuses", () => {
+    expect(
+      httpResponseConfigSchema.safeParse({
+        ...validBase,
+        path: undefined,
+        method: undefined,
+        status: "599",
+      }).success,
+    ).toBe(false);
   });
 
-  it.each([204, 205, 304])("rejects a body for HTTP %i", (status) => {
-    expect(customResponseSchema.safeParse({ status, body: "" }).success).toBe(false);
+  it("rejects a body for HTTP 204", () => {
+    expect(
+      httpResponseConfigSchema.safeParse({
+        contentType: MimeType.TEXT_PLAIN,
+        status: StringHttpStatusCode.NO_CONTENT,
+        response: "",
+      }).success,
+    ).toBe(false);
   });
 
   it("rejects headers that HttpResponse cannot construct", () => {
     expect(
-      customResponseSchema.safeParse({
-        headers: { "invalid header": "value" },
+      httpResponseConfigSchema.safeParse({
+        contentType: MimeType.TEXT_PLAIN,
+        status: StringHttpStatusCode.OK,
+        header: '{"invalid header":"value"}',
       }).success,
     ).toBe(false);
     expect(
-      customResponseSchema.safeParse({
-        headers: { "X-Test": "line\nbreak" },
+      httpResponseConfigSchema.safeParse({
+        contentType: MimeType.TEXT_PLAIN,
+        status: StringHttpStatusCode.OK,
+        header: '{"X-Test":"line\\nbreak"}',
       }).success,
     ).toBe(false);
   });

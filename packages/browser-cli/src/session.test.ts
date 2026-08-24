@@ -61,7 +61,11 @@ describe("CdpBrowserCliSession", () => {
     const session = new CdpBrowserCliSession({ call } as unknown as CdpClient);
 
     await expect(
-      session.setCustomResponse("handler-a", { status: 201, body: "created" }),
+      session.setCustomResponse("handler-a", {
+        status: "201",
+        contentType: "text/plain",
+        response: "created",
+      }),
     ).resolves.toEqual({ revision: 3, handlerCount: 1 });
     expect(call).toHaveBeenCalledWith(
       "Runtime.evaluate",
@@ -107,8 +111,8 @@ describe("CdpBrowserCliSession", () => {
 
   it.each([
     ["the capability manifest is missing", {}, true],
-    ["the method version is incompatible", { methods: { setCustomResponse: 2 } }, true],
-    ["the method implementation is missing", { methods: { setCustomResponse: 1 } }, false],
+    ["the method version is incompatible", { methods: { setCustomResponse: 1 } }, true],
+    ["the method implementation is missing", { methods: { setCustomResponse: 2 } }, false],
   ])("rejects before invocation when %s", async (_scenario, bridge, includeImplementation) => {
     const setCustomResponse = vi.fn();
     const { client } = createEvaluatingClient({
@@ -119,7 +123,7 @@ describe("CdpBrowserCliSession", () => {
     await expect(
       new CdpBrowserCliSession(client).setCustomResponse("handler-a", {}),
     ).rejects.toThrow(
-      'MSW Dev Tool browser control method "setCustomResponse" version 1 is unavailable. Update @msw-dev-tool/core.',
+      'MSW Dev Tool browser control method "setCustomResponse" version 2 is unavailable. Update @msw-dev-tool/core.',
     );
     expect(setCustomResponse).not.toHaveBeenCalled();
   });
@@ -196,10 +200,6 @@ describe("CdpBrowserCliSession", () => {
       endpoint: { endpointId: "endpoint-a" },
       listener: { info: { id: "listener-a" } },
     }));
-    const setWebSocketListenerSchedule = vi.fn(() => ({
-      endpoint: { endpointId: "endpoint-a" },
-      listener: { info: { id: "listener-a" } },
-    }));
     const { client, call } = createEvaluatingClient({
       methods: {
         listWebSocket: 1,
@@ -211,8 +211,7 @@ describe("CdpBrowserCliSession", () => {
         removeWebSocketListener: 1,
         setWebSocketListenerEnabled: 1,
         setWebSocketListenerBehavior: 1,
-        setWebSocketListenerResponse: 1,
-        setWebSocketListenerSchedule: 1,
+        setWebSocketListenerResponse: 2,
       },
       listWebSocket,
       getWebSocketEndpoint,
@@ -224,7 +223,6 @@ describe("CdpBrowserCliSession", () => {
       setWebSocketListenerEnabled,
       setWebSocketListenerBehavior,
       setWebSocketListenerResponse,
-      setWebSocketListenerSchedule,
     });
     const session = new CdpBrowserCliSession(client);
     const matcher = { kind: "regexp" as const, source: "browser\\.example", flags: "i" };
@@ -245,17 +243,19 @@ describe("CdpBrowserCliSession", () => {
     await session.addWebSocketListener({
       endpointId: "endpoint-a",
       behavior: { preset: "default" },
-      response: { type: "send", dataType: "string", value: "default" },
-      customResponse: { type: "send", dataType: "string", value: "custom" },
-      delay: 300,
-      repeat: { interval: 500, repetitions: 3 },
+      response: {
+        type: "send",
+        dataType: "string",
+        value: "default",
+        delay: 300,
+        repeat: { interval: 500, repetitions: 3 },
+      },
+      customResponse: { type: "send", dataType: "string", value: "custom", delay: 100 },
     });
     await session.setWebSocketListenerResponse("listener-a", {
       type: "send",
       dataType: "string",
       value: "default",
-    });
-    await session.setWebSocketListenerSchedule("listener-a", {
       delay: 300,
       repeat: { interval: 500, repetitions: "Infinity" },
     });
@@ -265,21 +265,23 @@ describe("CdpBrowserCliSession", () => {
     expect(addWebSocketListener).toHaveBeenLastCalledWith({
       endpointId: "endpoint-a",
       behavior: { preset: "default" },
-      response: { type: "send", dataType: "string", value: "default" },
-      customResponse: { type: "send", dataType: "string", value: "custom" },
-      delay: 300,
-      repeat: { interval: 500, repetitions: 3 },
+      response: {
+        type: "send",
+        dataType: "string",
+        value: "default",
+        delay: 300,
+        repeat: { interval: 500, repetitions: 3 },
+      },
+      customResponse: { type: "send", dataType: "string", value: "custom", delay: 100 },
     });
     expect(setWebSocketListenerResponse).toHaveBeenCalledWith("listener-a", {
       type: "send",
       dataType: "string",
       value: "default",
-    });
-    expect(setWebSocketListenerSchedule).toHaveBeenCalledWith("listener-a", {
       delay: 300,
       repeat: { interval: 500, repetitions: "Infinity" },
     });
-    expect(call).toHaveBeenCalledTimes(12);
+    expect(call).toHaveBeenCalledTimes(11);
     expect(call.mock.calls[2]?.[1].expression).toContain('"source":"browser\\\\.example"');
     expect(call.mock.calls[4]?.[1].expression).toContain("false");
   });

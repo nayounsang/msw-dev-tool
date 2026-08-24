@@ -26,7 +26,6 @@ import {
   setSnapshotWebSocketListenerBehavior,
   setSnapshotWebSocketListenerCustomResponse,
   setSnapshotWebSocketListenerResponse,
-  setSnapshotWebSocketListenerSchedule,
   setSnapshotWebSocketListenerEnabled,
   readSnapshotOrEmpty,
   getSessionPathForPid,
@@ -137,9 +136,10 @@ describe("snapshot file protocol", () => {
     );
 
     const next = await setSnapshotCustomResponse(sessionPath, "a", {
-      status: 201,
-      body: "created",
-      headers: { "X-Created": "yes" },
+      status: StringHttpStatusCode.CREATED,
+      response: "created",
+      header: '{"X-Created":"yes"}',
+      contentType: MimeType.TEXT_PLAIN,
     });
 
     expect(next).toMatchObject({
@@ -148,7 +148,11 @@ describe("snapshot file protocol", () => {
         flattenHandlers: [
           {
             behavior: HttpHandlerBehavior.DEFAULT,
-            customResponse: { status: 201, body: "created" },
+            customResponse: {
+              status: StringHttpStatusCode.CREATED,
+              response: "created",
+              contentType: MimeType.TEXT_PLAIN,
+            },
           },
         ],
       },
@@ -217,8 +221,6 @@ describe("snapshot file protocol", () => {
       type: "send",
       dataType: "string",
       value: "default websocket response",
-    });
-    await setSnapshotWebSocketListenerSchedule(sessionPath, listener.info.id, {
       delay: 300,
       repeat: { interval: 500, repetitions: 3 },
     });
@@ -239,24 +241,27 @@ describe("snapshot file protocol", () => {
             type: "send",
             dataType: "string",
             value: "default websocket response",
+            delay: 300,
+            repeat: { interval: 500, repetitions: 3 },
           },
-          delay: 300,
-          repeat: { interval: 500, repetitions: 3 },
         },
       ],
     });
 
-    await setSnapshotWebSocketListenerSchedule(sessionPath, listener.info.id, { delay: 100 });
-    await setSnapshotWebSocketListenerSchedule(sessionPath, listener.info.id, {
-      repeat: undefined,
+    await setSnapshotWebSocketListenerResponse(sessionPath, listener.info.id, {
+      type: "send",
+      dataType: "string",
+      value: "updated",
+      delay: 100,
     });
     await expect(
       getSnapshotWebSocketEndpoint(sessionPath, endpoint.endpointId),
     ).resolves.toMatchObject({
-      listeners: [{ delay: 100 }],
+      listeners: [{ response: { value: "updated", delay: 100 } }],
     });
     expect(
-      (await getSnapshotWebSocketEndpoint(sessionPath, endpoint.endpointId))?.listeners[0]?.repeat,
+      (await getSnapshotWebSocketEndpoint(sessionPath, endpoint.endpointId))?.listeners[0]?.response
+        ?.repeat,
     ).toBeUndefined();
 
     await removeSnapshotWebSocketListener(sessionPath, listener.info.id);
@@ -277,24 +282,30 @@ describe("snapshot file protocol", () => {
 
     const defaultListener = (await addSnapshotWebSocketListener(sessionPath, endpoint.endpointId))
       .state.webSocket![0]!.listeners[0]!;
-    expect(defaultListener).toMatchObject({ behavior: { preset: "default" }, delay: 0 });
+    expect(defaultListener).toMatchObject({ behavior: { preset: "default" } });
 
     const configuredListener = (
       await addSnapshotWebSocketListener(sessionPath, {
         endpointId: endpoint.endpointId,
         behavior: { preset: "custom response" },
-        response: { type: "send", dataType: "string", value: "default" },
-        customResponse: { type: "send", dataType: "string", value: "custom" },
-        delay: 300,
-        repeat: { interval: 500, repetitions: "Infinity" },
+        response: {
+          type: "send",
+          dataType: "string",
+          value: "default",
+          delay: 300,
+          repeat: { interval: 500, repetitions: "Infinity" },
+        },
+        customResponse: { type: "send", dataType: "string", value: "custom", delay: 100 },
       })
     ).state.webSocket![0]!.listeners[1]!;
     expect(configuredListener).toMatchObject({
       behavior: { preset: "custom response" },
-      response: { value: "default" },
-      customResponse: { value: "custom" },
-      delay: 300,
-      repeat: { interval: 500, repetitions: "Infinity" },
+      response: {
+        value: "default",
+        delay: 300,
+        repeat: { interval: 500, repetitions: "Infinity" },
+      },
+      customResponse: { value: "custom", delay: 100 },
     });
 
     const omittedOptionalFields = (
@@ -302,10 +313,9 @@ describe("snapshot file protocol", () => {
         endpointId: endpoint.endpointId,
       })
     ).state.webSocket![0]!.listeners[2]!;
-    expect(omittedOptionalFields).toMatchObject({ behavior: { preset: "default" }, delay: 0 });
+    expect(omittedOptionalFields).toMatchObject({ behavior: { preset: "default" } });
     expect(omittedOptionalFields.response).toBeUndefined();
     expect(omittedOptionalFields.customResponse).toBeUndefined();
-    expect(omittedOptionalFields.repeat).toBeUndefined();
   });
 
   it("rejects invalid WebSocket targets and preserves code-source entries", async () => {
@@ -663,7 +673,10 @@ try {
       setSnapshotBehavior(sessionPath, "missing", HttpHandlerBehavior.DELAY),
     ).rejects.toThrow("Handler not found");
     await expect(
-      setSnapshotCustomResponse(sessionPath, "missing", { status: 200 }),
+      setSnapshotCustomResponse(sessionPath, "missing", {
+        status: StringHttpStatusCode.OK,
+        contentType: MimeType.TEXT_PLAIN,
+      }),
     ).rejects.toThrow("Handler not found");
     await expect(removeSnapshotTempHandler(sessionPath, "missing")).rejects.toThrow(
       "Handler not found",
@@ -750,9 +763,10 @@ try {
               behavior: HttpHandlerBehavior.CUSTOM_RESPONSE,
               type: "default",
               customResponse: {
-                body: "snapshot custom",
-                headers: { "X-Source": "snapshot" },
-                status: 202,
+                response: "snapshot custom",
+                header: '{"X-Source":"snapshot"}',
+                contentType: MimeType.TEXT_PLAIN,
+                status: StringHttpStatusCode.ACCEPTED,
               },
             },
           ],
@@ -764,9 +778,10 @@ try {
     expect(next.map((h) => h.id).sort()).toEqual(["a", "b"]);
     expect(next.find((h) => h.id === "a")?.behavior).toBe(HttpHandlerBehavior.CUSTOM_RESPONSE);
     expect(next.find((h) => h.id === "a")?.customResponse).toEqual({
-      body: "snapshot custom",
-      headers: { "X-Source": "snapshot" },
-      status: 202,
+      response: "snapshot custom",
+      header: '{"X-Source":"snapshot"}',
+      contentType: MimeType.TEXT_PLAIN,
+      status: StringHttpStatusCode.ACCEPTED,
     });
   });
 
@@ -801,9 +816,10 @@ try {
                 response: '{"original":true}',
               },
               customResponse: {
-                body: "restored custom response",
-                headers: { "X-Source": "snapshot" },
-                status: 202,
+                response: "restored custom response",
+                header: '{"X-Source":"snapshot"}',
+                contentType: MimeType.TEXT_PLAIN,
+                status: StringHttpStatusCode.ACCEPTED,
               },
             },
           ],

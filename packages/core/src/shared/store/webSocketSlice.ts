@@ -6,8 +6,7 @@ import type {
   WebSocketEndpointConfig,
   WebSocketListenerConfig,
   WebSocketHandlerInfo,
-  WebSocketResponse,
-  WebSocketRepeat,
+  WebSocketResponseConfig,
   AddWebSocketListenerInput,
 } from "../types";
 import {
@@ -20,7 +19,6 @@ import {
   setWebSocketListenerBehavior,
   setWebSocketListenerCustomResponse,
   setWebSocketListenerResponse,
-  setWebSocketListenerSchedule,
   setWebSocketListenerEnabled,
 } from "../websocket/state";
 import { webSocketEndpointsSchema } from "../schema/websocket";
@@ -91,7 +89,7 @@ export const createWebSocketSlice = (runtime?: WebSocketRuntimeAdapter) => {
       endpointId: string;
       event: "message";
     }) => {
-      registerListener({ ...input, enabled: true, behavior: defaultBehavior, delay: 0 });
+      registerListener({ ...input, enabled: true, behavior: defaultBehavior });
     },
     addTempEndpoint: (input: { matcher: SerializableWebSocketMatcher; endpoint: string }) => {
       const next = addTemporaryWebSocketEndpoint(state.endpoints, input.matcher, input.endpoint);
@@ -144,7 +142,7 @@ export const createWebSocketSlice = (runtime?: WebSocketRuntimeAdapter) => {
         ),
       });
     },
-    setListenerCustomResponse: (listenerId: string, customResponse: WebSocketResponse) => {
+    setListenerCustomResponse: (listenerId: string, customResponse: WebSocketResponseConfig) => {
       const next = setWebSocketListenerCustomResponse(state.endpoints, listenerId, customResponse);
       set({
         endpoints: next.endpoints,
@@ -153,20 +151,8 @@ export const createWebSocketSlice = (runtime?: WebSocketRuntimeAdapter) => {
         ),
       });
     },
-    setListenerResponse: (listenerId: string, response: WebSocketResponse) => {
+    setListenerResponse: (listenerId: string, response: WebSocketResponseConfig) => {
       const next = setWebSocketListenerResponse(state.endpoints, listenerId, response);
-      set({
-        endpoints: next.endpoints,
-        listeners: state.listeners.map((entry) =>
-          entry.info.id === listenerId ? next.listener : entry,
-        ),
-      });
-    },
-    setListenerSchedule: (
-      listenerId: string,
-      input: { delay?: number; repeat?: WebSocketRepeat },
-    ) => {
-      const next = setWebSocketListenerSchedule(state.endpoints, listenerId, input);
       set({
         endpoints: next.endpoints,
         listeners: state.listeners.map((entry) =>

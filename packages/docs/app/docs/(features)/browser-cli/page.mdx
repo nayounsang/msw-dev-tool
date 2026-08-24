@@ -59,7 +59,7 @@ All commands print machine-readable JSON. Replace `<cdp>` with `--cdp-url http:/
 msw-dev-tool-browser list <cdp>
 msw-dev-tool-browser get '{"path":"/api/items","method":"get"}' <cdp>
 msw-dev-tool-browser set-behavior '{"path":"/api/items","method":"get"}' delay <cdp>
-msw-dev-tool-browser set-custom-response '{"path":"/api/items","method":"get"}' --json '{"status":200,"body":"[]"}' <cdp>
+msw-dev-tool-browser set-custom-response '{"path":"/api/items","method":"get"}' --json '{"status":"200","contentType":"application/json","response":"[]","delay":100}' <cdp>
 msw-dev-tool-browser set-behavior '{"path":"/api/items","method":"get"}' 'custom response' <cdp>
 msw-dev-tool-browser add-temp --json '{"path":"/api/preview","method":"get","contentType":"application/json","status":"200","response":"{\\"ok\\":true}"}' <cdp>
 msw-dev-tool-browser remove-temp '{"path":"/api/preview","method":"get"}' <cdp>
@@ -77,12 +77,12 @@ msw-dev-tool-browser ws-list <cdp>
 msw-dev-tool-browser ws-get-endpoint 'websocket:endpoint:ws://localhost:8080/chat' <cdp>
 msw-dev-tool-browser ws-add-endpoint --json '{"kind":"string","value":"ws://localhost:8080/preview"}' <cdp>
 msw-dev-tool-browser ws-set-endpoint-enabled 'websocket:endpoint:ws://localhost:8080/chat' false <cdp>
-msw-dev-tool-browser ws-add-listener 'websocket:endpoint:ws://localhost:8080/preview:0' --json '{"behavior":{"preset":"default"},"response":{"type":"send","dataType":"string","value":"temp response"},"customResponse":{"type":"send","dataType":"string","value":"custom response"},"delay":300,"repeat":{"interval":500,"repetitions":3}}' <cdp>
+msw-dev-tool-browser ws-add-listener 'websocket:endpoint:ws://localhost:8080/preview:0' --json '{"behavior":{"preset":"default"},"response":{"type":"send","dataType":"string","value":"temp response","delay":300,"repeat":{"interval":500,"repetitions":3}},"customResponse":{"type":"send","dataType":"string","value":"custom response","delay":100}}' <cdp>
 msw-dev-tool-browser ws-set-listener-behavior '<listener-id>' --json '{"preset":"close"}' <cdp>
 msw-dev-tool-browser ws-set-listener-response '<listener-id>' --json '{"type":"send","dataType":"string","value":"temp response"}' <cdp>
 msw-dev-tool-browser ws-set-listener-custom-response '<listener-id>' --json '{"type":"send","dataType":"Blob","value":"68 69","metadata":{"type":"text/plain"}}' <cdp>
 msw-dev-tool-browser ws-set-listener-behavior '<listener-id>' --json '{"preset":"custom response"}' <cdp>
-msw-dev-tool-browser ws-set-listener-schedule '<listener-id>' --json '{"delay":300,"repeat":{"interval":500,"repetitions":"Infinity"}}' <cdp>
+msw-dev-tool-browser ws-set-listener-response '<listener-id>' --json '{"type":"send","dataType":"string","value":"scheduled","delay":300,"repeat":{"interval":500,"repetitions":"Infinity"}}' <cdp>
 msw-dev-tool-browser ws-set-listener-enabled '<listener-id>' false <cdp>
 msw-dev-tool-browser ws-remove-listener '<temporary-listener-id>' <cdp>
 msw-dev-tool-browser ws-remove-endpoint 'websocket:endpoint:ws://localhost:8080/preview:0' <cdp>
@@ -92,4 +92,4 @@ msw-dev-tool-browser ws-remove-endpoint 'websocket:endpoint:ws://localhost:8080/
 {"ok":true,"endpoint":{"endpointId":"websocket:endpoint:ws://localhost:8080/chat","enabled":false,"listeners":[]}}
 ```
 
-`ws-add-endpoint`, `ws-add-listener`, and `ws-set-listener-behavior` use JSON input. Temporary listeners default to `{ "preset": "default" }`. `response` and `customResponse` are independent: default uses `response`, and custom response uses `customResponse`. Delay defaults to `0`; repeat interval is in milliseconds and repetitions include the first response. Use the string `"Infinity"` for unbounded repetition with an interval greater than zero. Pass `{ "repeat": null }` to `ws-set-listener-schedule` to clear repetition. Use `ws-set-listener-response` and `ws-set-listener-custom-response` to update the two response fields independently, and `ws-set-listener-schedule` for delay/repeat changes. Send responses use `dataType: "string"`, `"Blob"`, or `"ArrayBuffer"`; binary values are space-separated hexadecimal bytes. Close responses accept optional `code` and `reason`. Browser changes apply immediately to the in-memory store and persist to the selected tab's `sessionStorage`; refresh only to confirm persistence. Code-discovered WebSocket endpoints and listeners cannot be deleted, while temporary ones can.
+`ws-add-endpoint`, `ws-add-listener`, and `ws-set-listener-behavior` use JSON input. Temporary listeners default to `{ "preset": "default" }`. `response` and `customResponse` are independent configurations containing payload, delay, and repeat; the selected behavior chooses which one runs. Repetitions include the first response, and `"Infinity"` requires a positive interval. Use `ws-set-listener-response` and `ws-set-listener-custom-response` to replace each complete configuration. Send responses use `dataType: "string"`, `"Blob"`, or `"ArrayBuffer"`; binary values are space-separated hexadecimal bytes. Close responses accept optional `code` and `reason`. Browser changes apply immediately to the in-memory store and persist to the selected tab's `sessionStorage`; refresh only to confirm persistence. Code-discovered WebSocket endpoints and listeners cannot be deleted, while temporary ones can.
