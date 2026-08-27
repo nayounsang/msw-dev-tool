@@ -98,6 +98,52 @@ describe("WebSocket state model", () => {
     ]);
   });
 
+  it("uses the latest code declaration when a listener changes routing mode", () => {
+    const slice = createWebSocketSlice();
+    const endpointId = "code-routing-transition";
+    const info = {
+      id: endpointId,
+      kind: "websocket" as const,
+      endpoint: "ws://example.test/routing-transition",
+      operation: "endpoint",
+      source: "code" as const,
+    };
+    const listenerInfo = { ...info, id: `${endpointId}:message:0`, operation: "message" };
+    slice.registerCodeEndpoint({
+      info,
+      matcher: { kind: "string", value: info.endpoint },
+    });
+    slice.registerCodeListener({
+      info: listenerInfo,
+      endpointId,
+      event: "message",
+    });
+    slice.setListenerEnabled(listenerInfo.id, false);
+
+    slice.registerCodeListener({
+      info: listenerInfo,
+      endpointId,
+      event: "message",
+      eventTypes: ["chat/message"],
+    });
+
+    expect(slice.getState().listeners[0]).toMatchObject({
+      enabled: true,
+      eventBranches: [
+        { eventType: "chat/message", enabled: true, behavior: { preset: "default" } },
+      ],
+    });
+
+    slice.registerCodeListener({
+      info: listenerInfo,
+      endpointId,
+      event: "message",
+    });
+
+    expect(slice.getState().listeners[0]).toMatchObject({ enabled: true });
+    expect(slice.getState().listeners[0]?.eventBranches).toBeUndefined();
+  });
+
   it("manages temporary lifecycle, behavior, enabled state, and runtime cleanup", () => {
     const runtime = {
       addTempEndpoint: vi.fn(),

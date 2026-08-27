@@ -114,10 +114,32 @@ describe("setupDevToolServer", () => {
     expect((await readSnapshot(sessionPath))?.state.pendingReset).toBeUndefined();
   });
 
-  it("registers wrapped WebSocket endpoints in the Node Core store", async () => {
-    makeSession();
+  it("publishes runtime-discovered WebSocket listeners to the Node snapshot", async () => {
+    const sessionPath = makeSession();
     const chat = ws.link("ws://node.test/chat");
-    const server = await setupDevToolServer(chat.addEventListener("connection", () => undefined));
+    const handler = chat.addEventListener("connection", ({ client }) => {
+      client.addEventListener("message", () => undefined, {
+        mswDevTool: {
+          eventTypes: ["chat/message"],
+          resolveEventType: () => "chat/message",
+        },
+      });
+    });
+    const server = await setupDevToolServer(
+      http.get("https://node.test/items", () => HttpResponse.json({ ok: true })),
+      handler,
+    );
+    const httpId = nodeHandlerStore.getState().flattenHandlers[0]!.id;
+    await setSnapshotBehavior(sessionPath, httpId, HttpHandlerBehavior.DELAY);
+    server.listen();
+    const socket = new WebSocket("ws://node.test/chat");
+    await new Promise<void>((resolve, reject) => {
+      socket.addEventListener("open", () => resolve(), { once: true });
+      socket.addEventListener("error", () => reject(new Error("WebSocket open failed")), {
+        once: true,
+      });
+    });
+    await syncNodeSession();
 
     expect(nodeHandlerStore.getState().webSocketEndpoints).toEqual([
       expect.objectContaining({
@@ -125,6 +147,24 @@ describe("setupDevToolServer", () => {
         source: "code",
       }),
     ]);
+    expect((await readSnapshot(sessionPath))?.state.webSocket?.[0]?.listeners[0]).toMatchObject({
+      eventBranches: [
+        { eventType: "chat/message", enabled: true, behavior: { preset: "default" } },
+      ],
+    });
+    expect(nodeHandlerStore.getState().getHandlerBehavior(httpId)).toBe(HttpHandlerBehavior.DELAY);
+
+    const secondSocket = new WebSocket("ws://node.test/chat");
+    await new Promise<void>((resolve, reject) => {
+      secondSocket.addEventListener("open", () => resolve(), { once: true });
+      secondSocket.addEventListener("error", () => reject(new Error("WebSocket open failed")), {
+        once: true,
+      });
+    });
+    await syncNodeSession();
+
+    secondSocket.close();
+    socket.close();
     server.close();
   });
 });

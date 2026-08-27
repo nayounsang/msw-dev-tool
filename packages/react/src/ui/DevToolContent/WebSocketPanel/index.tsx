@@ -9,7 +9,10 @@ import {
   WebSocketEventBranchConfig,
   useHandlerStore,
 } from "@msw-dev-tool/core/browser";
-import { webSocketResponseConfigSchema } from "@msw-dev-tool/core/shared";
+import {
+  getWebSocketControlledResponse,
+  webSocketResponseConfigSchema,
+} from "@msw-dev-tool/core/shared";
 import { Button } from "../../Components/Button";
 import { CloseButton } from "../../Components/CloseButton";
 import { Input } from "../../Components/Input";
@@ -272,10 +275,7 @@ const ResponseDialog = ({
     (state) => state.setWebSocketListenerEventCustomResponse,
   );
   const setEventResponse = useHandlerStore((state) => state.setWebSocketListenerEventResponse);
-  const currentResponse =
-    field === "response"
-      ? (branch?.response ?? listener.response)
-      : (branch?.customResponse ?? listener.customResponse);
+  const currentResponse = getWebSocketControlledResponse(listener, field, branch);
   const title = field === "response" ? "WebSocket Response" : "Custom WebSocket Response";
   const description =
     field === "response"

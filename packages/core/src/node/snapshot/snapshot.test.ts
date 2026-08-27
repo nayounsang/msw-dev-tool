@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { afterEach, describe, expect, it } from "vitest";
+import { http } from "msw";
 import {
   bumpSnapshot,
   createEmptySnapshot,
@@ -794,10 +795,8 @@ try {
       listHandlers: () => [],
     };
 
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions, @typescript-eslint/no-explicit-any
-    const handlerA = { info: { method: "GET", path: "/a" } } as any;
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions, @typescript-eslint/no-explicit-any
-    const handlerB = { info: { method: "GET", path: "/b" } } as any;
+    const handlerA = http.get("https://snapshot.test/a", () => new Response());
+    const handlerB = http.get("https://snapshot.test/b", () => new Response());
 
     const current: FlattenHandler[] = [
       {

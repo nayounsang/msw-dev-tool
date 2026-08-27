@@ -24,6 +24,7 @@ import {
   setWebSocketListenerEventEnabled,
   setWebSocketListenerEventCustomResponse,
   setWebSocketListenerEventResponse,
+  reconcileCodeWebSocketListener,
 } from "../websocket/state";
 import { webSocketEndpointsSchema } from "../schema/websocket";
 
@@ -56,12 +57,7 @@ export const createWebSocketSlice = (runtime?: WebSocketRuntimeAdapter) => {
   const registerListener = (listener: WebSocketListenerConfig) => {
     const existing = getListener(listener.info.id);
     if (existing) {
-      if (!listener.eventBranches) return;
-      const eventBranches = listener.eventBranches.map(
-        (branch) =>
-          existing.eventBranches?.find((saved) => saved.eventType === branch.eventType) ?? branch,
-      );
-      const updated = { ...existing, eventBranches };
+      const updated = reconcileCodeWebSocketListener(existing, listener);
       set({
         endpoints: state.endpoints.map((endpoint) => ({
           ...endpoint,
