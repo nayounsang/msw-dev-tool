@@ -249,6 +249,96 @@ export const commands: CliCommand[] = [
     },
   },
   {
+    name: "ws-set-listener-event-enabled",
+    usage: "ws-set-listener-event-enabled <listenerId> <eventType> <true|false>",
+    async execute(context, { positionals }) {
+      const [listenerId, eventType, enabledStr] = [positionals[1], positionals[2], positionals[3]];
+      if (!listenerId || !eventType || enabledStr === undefined)
+        throw new Error(
+          "Usage: ws-set-listener-event-enabled <listenerId> <eventType> <true|false>",
+        );
+      if (enabledStr !== "true" && enabledStr !== "false")
+        throw new Error("enabled must be true or false");
+      return withMetadata(
+        {
+          ok: true,
+          ...(await context.session.setWebSocketListenerEventEnabled(
+            listenerId,
+            eventType,
+            enabledStr === "true",
+          )),
+        },
+        context,
+      );
+    },
+  },
+  {
+    name: "ws-set-listener-event-behavior",
+    usage: "ws-set-listener-event-behavior <listenerId> <eventType> --json '<behaviorJson>'",
+    async execute(context, { flags, positionals }) {
+      const [listenerId, eventType] = [positionals[1], positionals[2]];
+      if (!listenerId || !eventType || typeof flags.json !== "string")
+        throw new Error(
+          "Usage: ws-set-listener-event-behavior <listenerId> <eventType> --json '<behaviorJson>'",
+        );
+      return withMetadata(
+        {
+          ok: true,
+          ...(await context.session.setWebSocketListenerEventBehavior(
+            listenerId,
+            eventType,
+            webSocketBehaviorSchema.parse(JSON.parse(flags.json)),
+          )),
+        },
+        context,
+      );
+    },
+  },
+  {
+    name: "ws-set-listener-event-custom-response",
+    usage: "ws-set-listener-event-custom-response <listenerId> <eventType> --json '<responseJson>'",
+    async execute(context, { flags, positionals }) {
+      const [listenerId, eventType] = [positionals[1], positionals[2]];
+      if (!listenerId || !eventType || typeof flags.json !== "string")
+        throw new Error(
+          "Usage: ws-set-listener-event-custom-response <listenerId> <eventType> --json '<responseJson>'",
+        );
+      return withMetadata(
+        {
+          ok: true,
+          ...(await context.session.setWebSocketListenerEventCustomResponse(
+            listenerId,
+            eventType,
+            webSocketResponseConfigSchema.parse(JSON.parse(flags.json)),
+          )),
+        },
+        context,
+      );
+    },
+  },
+  {
+    name: "ws-set-listener-event-response",
+    usage: "ws-set-listener-event-response <listenerId> <eventType> --json '<responseJson>'",
+    async execute(context, { flags, positionals }) {
+      const [listenerId, eventType] = [positionals[1], positionals[2]];
+      if (!listenerId || !eventType || typeof flags.json !== "string")
+        throw new Error(
+          "Usage: ws-set-listener-event-response <listenerId> <eventType> --json '<responseJson>'",
+        );
+      return withMetadata(
+        {
+          ok: true,
+          ...(await context.session.setWebSocketListenerEventResponse(
+            listenerId,
+            eventType,
+            webSocketResponseConfigSchema.parse(JSON.parse(flags.json)),
+          )),
+        },
+        context,
+      );
+    },
+  },
+  {
     name: "ws-set-listener-behavior",
     usage: "ws-set-listener-behavior <listenerId> --json '<behaviorJson>'",
     async execute(context, { flags, positionals }) {

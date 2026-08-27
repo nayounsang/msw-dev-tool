@@ -5,6 +5,7 @@ import {
   setWebSocketListenerBehavior,
   setWebSocketListenerCustomResponse,
   setWebSocketListenerResponse,
+  mergeDiscoveredWebSocketState,
 } from "./state";
 import type { WebSocketEndpointConfig } from "../types";
 
@@ -15,6 +16,101 @@ const endpoint = (value = "ws://state.test/chat"): WebSocketEndpointConfig =>
   }).endpoint;
 
 describe("temporary WebSocket listener state", () => {
+  it("merges code discovery without replacing saved controls or temporary state", () => {
+    const codeInfo = {
+      id: "code-endpoint",
+      kind: "websocket" as const,
+      endpoint: "ws://state.test/code",
+      operation: "endpoint",
+      source: "code" as const,
+    };
+    const listenerInfo = { ...codeInfo, id: "code-listener", operation: "message" };
+    const saved: WebSocketEndpointConfig = {
+      info: codeInfo,
+      endpointId: codeInfo.id,
+      matcher: { kind: "string", value: codeInfo.endpoint },
+      enabled: false,
+      listeners: [
+        {
+          info: listenerInfo,
+          endpointId: codeInfo.id,
+          event: "message",
+          enabled: false,
+          behavior: { preset: "default" },
+          eventBranches: [
+            { eventType: "chat/message", enabled: false, behavior: { preset: "echo" } },
+          ],
+        },
+        {
+          info: { ...listenerInfo, id: "temp-listener", source: "temp" },
+          endpointId: codeInfo.id,
+          event: "message",
+          enabled: true,
+          behavior: { preset: "default" },
+        },
+      ],
+    };
+    const temporary = endpoint("ws://state.test/temp");
+    const declaration: WebSocketEndpointConfig = {
+      ...saved,
+      info: { ...codeInfo, endpoint: "ws://state.test/current-code" },
+      matcher: { kind: "regexp", source: "current-code$", flags: "i" },
+      enabled: true,
+      listeners: [
+        {
+          ...saved.listeners[0]!,
+          enabled: true,
+          eventBranches: [
+            { eventType: "chat/message", enabled: true, behavior: { preset: "default" } },
+            { eventType: "chat/leave", enabled: true, behavior: { preset: "default" } },
+          ],
+        },
+        {
+          info: { ...listenerInfo, id: "new-code-listener" },
+          endpointId: codeInfo.id,
+          event: "message",
+          enabled: true,
+          behavior: { preset: "default" },
+        },
+        saved.listeners[1]!,
+      ],
+    };
+    const newCodeEndpoint: WebSocketEndpointConfig = {
+      info: { ...codeInfo, id: "new-code-endpoint" },
+      endpointId: "new-code-endpoint",
+      matcher: { kind: "string", value: "ws://state.test/new-code" },
+      enabled: true,
+      listeners: [],
+    };
+
+    const merged = mergeDiscoveredWebSocketState(
+      [saved, temporary],
+      [declaration, newCodeEndpoint, temporary],
+    );
+
+    expect(merged).toHaveLength(3);
+    expect(merged[0]).toMatchObject({
+      info: { endpoint: "ws://state.test/current-code" },
+      matcher: { kind: "regexp", source: "current-code$", flags: "i" },
+      enabled: false,
+      listeners: [
+        {
+          info: { id: "code-listener" },
+          enabled: true,
+          eventBranches: [
+            { eventType: "chat/message", enabled: false, behavior: { preset: "echo" } },
+            { eventType: "chat/leave", enabled: true, behavior: { preset: "default" } },
+          ],
+        },
+        { info: { id: "temp-listener" } },
+        { info: { id: "new-code-listener" } },
+      ],
+    });
+    expect(merged[1]).toBe(temporary);
+    expect(merged[2]).toBe(newCodeEndpoint);
+    expect(mergeDiscoveredWebSocketState(merged, merged)).toBe(merged);
+  });
+
   it("defaults temporary listeners to default behavior", () => {
     const created = addTemporaryWebSocketListener([endpoint()], endpoint().endpointId, {});
     expect(created.listener).toMatchObject({ behavior: { preset: "default" } });

@@ -6,6 +6,7 @@ import type {
   WebSocketEndpointConfig,
   WebSocketListenerConfig,
   WebSocketResponseConfig,
+  WebSocketEventBranchConfig,
 } from "../types";
 
 export const canonicalWebSocketMatcher = (matcher: SerializableWebSocketMatcher): string =>
@@ -40,6 +41,61 @@ const findListener = (endpoints: WebSocketEndpointConfig[], listenerId: string) 
   const listener = endpoint?.listeners.find((entry) => entry.info.id === listenerId);
   if (!endpoint || !listener) throw new Error(`WebSocket listener not found: ${listenerId}`);
   return { endpoint, listener };
+};
+
+const findEventBranch = (
+  endpoints: WebSocketEndpointConfig[],
+  listenerId: string,
+  eventType: string,
+) => {
+  const { endpoint, listener } = findListener(endpoints, listenerId);
+  const eventBranch = listener.eventBranches?.find((entry) => entry.eventType === eventType);
+  if (!eventBranch)
+    throw new Error(`WebSocket listener event not found: ${listenerId}/${eventType}`);
+  return { endpoint, listener, eventBranch };
+};
+
+export const reconcileCodeWebSocketListener = (
+  existing: WebSocketListenerConfig,
+  declaration: WebSocketListenerConfig,
+): WebSocketListenerConfig => {
+  const eventBranches = declaration.eventBranches?.map(
+    (branch) =>
+      existing.eventBranches?.find((saved) => saved.eventType === branch.eventType) ?? branch,
+  );
+  return {
+    ...existing,
+    enabled: eventBranches ? true : existing.enabled,
+    eventBranches,
+  };
+};
+
+export const mergeDiscoveredWebSocketState = (
+  current: WebSocketEndpointConfig[],
+  discovered: WebSocketEndpointConfig[],
+): WebSocketEndpointConfig[] => {
+  if (JSON.stringify(current) === JSON.stringify(discovered)) return current;
+  const discoveredCode = discovered.filter((endpoint) => endpoint.info.source === "code");
+  return discoveredCode.reduce<WebSocketEndpointConfig[]>((endpoints, declaration) => {
+    const existing = endpoints.find((endpoint) => endpoint.endpointId === declaration.endpointId);
+    if (!existing) return [...endpoints, declaration];
+    const listeners = declaration.listeners
+      .filter((listener) => listener.info.source === "code")
+      .reduce<WebSocketListenerConfig[]>((entries, listener) => {
+        const saved = entries.find((entry) => entry.info.id === listener.info.id);
+        if (!saved) return [...entries, listener];
+        return entries.map((entry) =>
+          entry.info.id === listener.info.id
+            ? reconcileCodeWebSocketListener(saved, listener)
+            : entry,
+        );
+      }, existing.listeners);
+    return endpoints.map((endpoint) =>
+      endpoint.endpointId === declaration.endpointId
+        ? { ...endpoint, info: declaration.info, matcher: declaration.matcher, listeners }
+        : endpoint,
+    );
+  }, current);
 };
 
 export const addTemporaryWebSocketEndpoint = (
@@ -214,6 +270,69 @@ export const setWebSocketListenerResponse = (
   }));
   const { endpoint, listener } = findListener(nextEndpoints, listenerId);
   return { endpoints: nextEndpoints, endpoint, listener };
+};
+
+const updateEventBranch = (
+  endpoints: WebSocketEndpointConfig[],
+  listenerId: string,
+  eventType: string,
+  update: (branch: WebSocketEventBranchConfig) => WebSocketEventBranchConfig,
+) => {
+  findEventBranch(endpoints, listenerId, eventType);
+  const nextEndpoints = endpoints.map((endpoint) => ({
+    ...endpoint,
+    listeners: endpoint.listeners.map((listener) =>
+      listener.info.id !== listenerId
+        ? listener
+        : {
+            ...listener,
+            eventBranches: listener.eventBranches?.map((branch) =>
+              branch.eventType === eventType ? update(branch) : branch,
+            ),
+          },
+    ),
+  }));
+  return { endpoints: nextEndpoints, ...findEventBranch(nextEndpoints, listenerId, eventType) };
+};
+
+export const setWebSocketListenerEventBehavior = (
+  endpoints: WebSocketEndpointConfig[],
+  listenerId: string,
+  eventType: string,
+  behavior: WebSocketBehaviorSelection,
+) => updateEventBranch(endpoints, listenerId, eventType, (branch) => ({ ...branch, behavior }));
+
+export const setWebSocketListenerEventEnabled = (
+  endpoints: WebSocketEndpointConfig[],
+  listenerId: string,
+  eventType: string,
+  enabled: boolean,
+) => updateEventBranch(endpoints, listenerId, eventType, (branch) => ({ ...branch, enabled }));
+
+export const setWebSocketListenerEventCustomResponse = (
+  endpoints: WebSocketEndpointConfig[],
+  listenerId: string,
+  eventType: string,
+  customResponse: WebSocketResponseConfig,
+) => {
+  const parsed = webSocketResponseConfigSchema.parse(customResponse);
+  return updateEventBranch(endpoints, listenerId, eventType, (branch) => ({
+    ...branch,
+    customResponse: parsed,
+  }));
+};
+
+export const setWebSocketListenerEventResponse = (
+  endpoints: WebSocketEndpointConfig[],
+  listenerId: string,
+  eventType: string,
+  response: WebSocketResponseConfig,
+) => {
+  const parsed = webSocketResponseConfigSchema.parse(response);
+  return updateEventBranch(endpoints, listenerId, eventType, (branch) => ({
+    ...branch,
+    response: parsed,
+  }));
 };
 
 export const resetWebSocketEndpoints = (endpoints: WebSocketEndpointConfig[]) =>

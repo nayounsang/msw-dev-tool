@@ -6,9 +6,13 @@ import {
   WebSocketBehaviorSelection,
   WebSocketEndpointConfig,
   WebSocketListenerConfig,
+  WebSocketEventBranchConfig,
   useHandlerStore,
 } from "@msw-dev-tool/core/browser";
-import { webSocketResponseConfigSchema } from "@msw-dev-tool/core/shared";
+import {
+  getWebSocketControlledResponse,
+  webSocketResponseConfigSchema,
+} from "@msw-dev-tool/core/shared";
 import { Button } from "../../Components/Button";
 import { CloseButton } from "../../Components/CloseButton";
 import { Input } from "../../Components/Input";
@@ -219,22 +223,68 @@ const ListenerBehaviorSelect = ({ listener }: { listener: WebSocketListenerConfi
   );
 };
 
+const EventBranchBehaviorSelect = ({
+  listener,
+  branch,
+}: {
+  listener: WebSocketListenerConfig;
+  branch: WebSocketEventBranchConfig;
+}) => {
+  const setBehavior = useHandlerStore((state) => state.setWebSocketListenerEventBehavior);
+  const setEnabled = useHandlerStore((state) => state.setWebSocketListenerEventEnabled);
+  const currentValue = behaviorValue(branch.behavior);
+  const options = [
+    { label: "Disable mock", value: "disable" },
+    ...selectableBehaviorOptions().map(({ label, value }) => ({ label, value })),
+    ...(selectableBehaviorOptions().some((option) => option.value === currentValue)
+      ? []
+      : [{ label: behaviorLabel(branch.behavior), value: currentValue }]),
+  ];
+  return (
+    <Select
+      label={`Behavior for ${branch.eventType}`}
+      value={branch.enabled ? currentValue : "disable"}
+      options={options}
+      className="msw-dt-w-behavior-select"
+      onValueChange={(value) => {
+        if (value === "disable") {
+          setEnabled(listener.info.id, branch.eventType, false);
+          return;
+        }
+        const behavior = selectableBehaviorOptions().find(
+          (option) => option.value === value,
+        )?.behavior;
+        if (behavior) {
+          setBehavior(listener.info.id, branch.eventType, behavior);
+          setEnabled(listener.info.id, branch.eventType, true);
+        }
+      }}
+    />
+  );
+};
+
 const ResponseDialog = ({
   listener,
   field,
+  branch,
 }: {
   listener: WebSocketListenerConfig;
   field: "response" | "customResponse";
+  branch?: WebSocketEventBranchConfig;
 }) => {
   const setCustomResponse = useHandlerStore((state) => state.setWebSocketListenerCustomResponse);
   const setResponse = useHandlerStore((state) => state.setWebSocketListenerResponse);
-  const currentResponse = field === "response" ? listener.response : listener.customResponse;
+  const setEventCustomResponse = useHandlerStore(
+    (state) => state.setWebSocketListenerEventCustomResponse,
+  );
+  const setEventResponse = useHandlerStore((state) => state.setWebSocketListenerEventResponse);
+  const currentResponse = getWebSocketControlledResponse(listener, field, branch);
   const title = field === "response" ? "WebSocket Response" : "Custom WebSocket Response";
   const description =
     field === "response"
       ? "Saving updates the temporary listener response used by the default Behavior."
       : CUSTOM_RESPONSE_DESCRIPTION;
-  const fieldId = `${field}-${listener.info.id}`;
+  const fieldId = `${field}-${listener.info.id}${branch ? `-${branch.eventType}` : ""}`;
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState<WebSocketResponseFormState>(
     webSocketResponseFormValues(currentResponse),
@@ -258,7 +308,10 @@ const ResponseDialog = ({
       setError(parsed.error.issues[0]?.message ?? "Invalid custom response");
       return;
     }
-    if (field === "response") setResponse(listener.info.id, parsed.data);
+    if (branch) {
+      if (field === "response") setEventResponse(listener.info.id, branch.eventType, parsed.data);
+      else setEventCustomResponse(listener.info.id, branch.eventType, parsed.data);
+    } else if (field === "response") setResponse(listener.info.id, parsed.data);
     else setCustomResponse(listener.info.id, parsed.data);
     setOpen(false);
   };
@@ -301,22 +354,10 @@ const ResponseDialog = ({
   );
 };
 
-const ListenerForm = ({
-  endpoint,
-  listener,
-  onClose,
-}: {
-  endpoint: WebSocketEndpointConfig;
-  listener?: WebSocketListenerConfig;
-  onClose: () => void;
-}) => {
+const ListenerForm = ({ endpointId, onClose }: { endpointId: string; onClose: () => void }) => {
   const addListener = useHandlerStore((state) => state.addTempWebSocketListener);
-  const setBehavior = useHandlerStore((state) => state.setWebSocketListenerBehavior);
-  const setResponse = useHandlerStore((state) => state.setWebSocketListenerResponse);
-  const [preset, setPreset] = useState(behaviorValue(listener?.behavior ?? { preset: "default" }));
-  const [responseValues, setResponseValues] = useState(
-    webSocketResponseFormValues(listener?.response),
-  );
+  const [preset, setPreset] = useState(behaviorValue({ preset: "default" }));
+  const [responseValues, setResponseValues] = useState(webSocketResponseFormValues());
   const [error, setError] = useState<string>();
   const updateResponse = <K extends keyof WebSocketResponseFormState>(
     key: K,
@@ -336,19 +377,14 @@ const ListenerForm = ({
       setError(response.error.issues[0]?.message ?? "Invalid WebSocket response");
       return;
     }
-    if (listener) {
-      setBehavior(listener.info.id, behavior);
-      setResponse(listener.info.id, response.data);
-    } else {
-      addListener({
-        endpointId: endpoint.endpointId,
-        behavior,
-        response: response.data,
-      });
-    }
+    addListener({
+      endpointId,
+      behavior,
+      response: response.data,
+    });
     onClose();
   };
-  const fieldKey = listener?.info.id ?? endpoint.endpointId;
+  const fieldKey = endpointId;
   return (
     <form onSubmit={submit} className="msw-dt-ws-form">
       <label className="msw-dt-label" htmlFor={`ws-action-${fieldKey}`}>
@@ -368,36 +404,20 @@ const ListenerForm = ({
         required={preset === "default"}
       />
       {error && <p className="msw-dt-error-text">{error}</p>}
-      <Button type="submit">{listener ? "Save listener" : "Add temp listener"}</Button>
+      <Button type="submit">Add temp listener</Button>
     </form>
   );
 };
 
-const ListenerDialog = ({
-  endpoint,
-  listener,
-}: {
-  endpoint: WebSocketEndpointConfig;
-  listener?: WebSocketListenerConfig;
-}) => {
+const ListenerDialog = ({ endpoint }: { endpoint: WebSocketEndpointConfig }) => {
   const [open, setOpen] = useState(false);
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger
         render={
-          <Button
-            variant={listener ? "ghost" : undefined}
-            title={listener ? "Configure temp listener" : "Add temp message listener"}
-            aria-label={listener ? "Configure temp listener" : "Add temp message listener"}
-          >
-            {listener ? (
-              <Pencil size={16} />
-            ) : (
-              <>
-                <Plus size={16} />
-                Add Temp Listener
-              </>
-            )}
+          <Button title="Add temp message listener" aria-label="Add temp message listener">
+            <Plus size={16} />
+            Add Temp Listener
           </Button>
         }
       />
@@ -407,15 +427,83 @@ const ListenerDialog = ({
           <div className="msw-dt-dialog-inner-center">
             <div className="msw-dt-ws-dialog-header">
               <Dialog.Title className="msw-dt-dialog-title-sm">
-                {listener ? "Configure Temp WebSocket Listener" : "Add Temp WebSocket Listener"}
+                Add Temp WebSocket Listener
               </Dialog.Title>
               <Dialog.Close render={<CloseButton />} />
             </div>
-            <ListenerForm endpoint={endpoint} listener={listener} onClose={() => setOpen(false)} />
+            <ListenerForm endpointId={endpoint.endpointId} onClose={() => setOpen(false)} />
           </div>
         </Dialog.Popup>
       </Dialog.Portal>
     </Dialog.Root>
+  );
+};
+
+const ListenerGroup = ({
+  listener,
+  onRemove,
+}: {
+  listener: WebSocketListenerConfig;
+  onRemove: (listenerId: string) => void;
+}) => {
+  const branches = listener.eventBranches ?? [];
+  const isEventRouted = listener.eventBranches !== undefined;
+  const isTemp = listener.info.source === "temp";
+  const titleId = `ws-listener-${listener.info.id}`;
+  return (
+    <section className="msw-dt-ws-listener-group" aria-labelledby={titleId}>
+      <div className="msw-dt-ws-listener-heading">
+        <h3 id={titleId}>Listener: {listener.info.operation}</h3>
+        {isTemp && (
+          <div className="msw-dt-ws-listener-actions">
+            <Button
+              variant="ghost"
+              color="danger"
+              title="Delete listener"
+              aria-label={`Delete listener ${listener.info.id}`}
+              className="msw-dt-danger-text"
+              onClick={() => onRemove(listener.info.id)}
+            >
+              <Trash2 size={16} />
+            </Button>
+          </div>
+        )}
+      </div>
+      {isEventRouted && branches.length === 0 ? (
+        <p className="msw-dt-ws-listener-empty">No logical event branches are declared.</p>
+      ) : (
+        <div className="msw-dt-ws-listener-controls">
+          <div
+            className={`msw-dt-ws-listener-control-header${
+              isEventRouted ? "" : " msw-dt-ws-listener-control-header-standard"
+            }`}
+          >
+            {isEventRouted && <span>Event type</span>}
+            <span>Behavior</span>
+            <span>Custom response</span>
+          </div>
+          {isEventRouted
+            ? branches.map((branch) => (
+                <div className="msw-dt-ws-listener-control-row" key={branch.eventType}>
+                  <span className="msw-dt-ws-event-name">{branch.eventType}</span>
+                  <EventBranchBehaviorSelect listener={listener} branch={branch} />
+                  <ResponseDialog listener={listener} branch={branch} field="customResponse" />
+                </div>
+              ))
+            : [
+                <div className="msw-dt-ws-listener-control-row" key="default">
+                  <ListenerBehaviorSelect listener={listener} />
+                  <ResponseDialog listener={listener} field="customResponse" />
+                  {listener.behavior.preset === "custom response" && !listener.customResponse && (
+                    <p className="msw-dt-error-text">
+                      Please configure a custom response before using this behavior.
+                    </p>
+                  )}
+                </div>,
+              ]}
+        </div>
+      )}
+    </section>
   );
 };
 
@@ -468,68 +556,15 @@ const EndpointRow = ({ endpoint }: { endpoint: WebSocketEndpointConfig }) => {
               <div className="msw-dt-ws-listener-toolbar">
                 <ListenerDialog endpoint={endpoint} />
               </div>
-              <table className="msw-dt-table msw-dt-ws-listener-table">
-                <thead>
-                  <tr>
-                    <th>Listener</th>
-                    <th>Behavior</th>
-                    <th>Custom response</th>
-                    <th>Delete</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {endpoint.listeners.map((listener) => {
-                    const listenerIsTemp = listener.info.source === "temp";
-                    return (
-                      <tr key={listener.info.id}>
-                        <td onClick={(event) => event.stopPropagation()}>
-                          <span>message</span>
-                          {listenerIsTemp && (
-                            <ListenerDialog endpoint={endpoint} listener={listener} />
-                          )}
-                        </td>
-                        <td>
-                          <div className="msw-dt-ws-behavior-control">
-                            <ListenerBehaviorSelect listener={listener} />
-                            {listener.behavior.preset === "custom response" &&
-                              !listener.customResponse && (
-                                <p className="msw-dt-error-text">
-                                  Please configure a custom response before using this behavior.
-                                </p>
-                              )}
-                          </div>
-                        </td>
-                        <td>
-                          <ResponseDialog listener={listener} field="customResponse" />
-                        </td>
-                        <td>
-                          <Button
-                            variant="ghost"
-                            color="danger"
-                            disabled={!listenerIsTemp}
-                            title={
-                              listenerIsTemp
-                                ? "Delete listener"
-                                : "Listeners generated from codebase cannot be deleted"
-                            }
-                            aria-label={
-                              listenerIsTemp
-                                ? `Delete listener ${listener.info.id}`
-                                : "Listeners generated from codebase cannot be deleted"
-                            }
-                            className={
-                              listenerIsTemp ? "msw-dt-danger-text" : "msw-dt-disabled-text"
-                            }
-                            onClick={() => removeListener(listener.info.id)}
-                          >
-                            <Trash2 size={16} />
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <div className="msw-dt-ws-listener-groups">
+                {endpoint.listeners.map((listener) => (
+                  <ListenerGroup
+                    key={listener.info.id}
+                    listener={listener}
+                    onRemove={removeListener}
+                  />
+                ))}
+              </div>
             </div>
           </td>
         </tr>

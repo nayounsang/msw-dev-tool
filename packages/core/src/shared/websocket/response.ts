@@ -1,8 +1,18 @@
 import type { WebSocketData } from "msw";
-import type { WebSocketResponseConfig } from "../types";
+import type {
+  WebSocketEventBranchConfig,
+  WebSocketListenerConfig,
+  WebSocketResponseConfig,
+} from "../types";
 
 export const CUSTOM_WEBSOCKET_RESPONSE_ERROR =
   "Please configure a custom response before using this behavior.";
+
+export const getWebSocketControlledResponse = (
+  listener: WebSocketListenerConfig,
+  field: "response" | "customResponse",
+  branch?: WebSocketEventBranchConfig,
+): WebSocketResponseConfig | undefined => (branch ? branch[field] : listener[field]);
 
 export const parseWebSocketHex = (value: string): Uint8Array => {
   const tokens = value.trim().split(/\s+/);

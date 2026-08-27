@@ -2,11 +2,20 @@ import { setupServer, SetupServer } from "msw/node";
 import { createHandlerStore, HandlerStoreInternalState, StoreApi } from "../shared/store";
 import { FlattenHandler, Handler } from "../shared/types";
 import { applySnapshotToRuntime, SessionController, SessionSnapshot } from "./snapshot";
+import { mergeDiscoveredWebSocketState } from "../shared/websocket/state";
 
 type NodeStore = StoreApi<HandlerStoreInternalState<SetupServer>>;
 
 const baseStore: NodeStore = createHandlerStore<SetupServer>({
   createRuntime: (handlers) => setupServer(...handlers),
+  onWebSocketStateChange: (discovered) => {
+    void activeSession?.publishWebSocket(() => {
+      const current = baseStore.getState().webSocket.endpoints;
+      const merged = mergeDiscoveredWebSocketState(current, discovered);
+      if (merged !== current) baseStore.getState().hydrateWebSocket(merged);
+      return merged;
+    });
+  },
 });
 
 let activeSession: SessionController | null = null;

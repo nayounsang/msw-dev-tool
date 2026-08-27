@@ -138,6 +138,17 @@ export const webSocketListenerSchema = z.object({
   behavior: webSocketBehaviorSchema.default({ preset: "default" }),
   response: webSocketResponseConfigSchema.optional(),
   customResponse: webSocketResponseConfigSchema.optional(),
+  eventBranches: z
+    .array(
+      z.object({
+        eventType: z.string(),
+        enabled: z.boolean(),
+        behavior: webSocketBehaviorSchema.default({ preset: "default" }),
+        response: webSocketResponseConfigSchema.optional(),
+        customResponse: webSocketResponseConfigSchema.optional(),
+      }),
+    )
+    .optional(),
 });
 export const webSocketEndpointSchema = z.object({
   info: webSocketInfoSchema,

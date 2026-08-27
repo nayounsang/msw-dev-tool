@@ -6,6 +6,7 @@ import {
   CliWebSocketEndpointResult,
   CliWebSocketInfo,
   CliWebSocketListenerResult,
+  CliWebSocketEventResult,
 } from "@msw-dev-tool/cli-core";
 import {
   BROWSER_CONTROL_KEY,
@@ -42,9 +43,13 @@ const REQUIRED_BROWSER_CONTROL_METHOD_VERSIONS = {
   addWebSocketListener: 1,
   removeWebSocketListener: 1,
   setWebSocketListenerEnabled: 1,
+  setWebSocketListenerEventEnabled: 1,
   setWebSocketListenerBehavior: 1,
   setWebSocketListenerCustomResponse: 2,
   setWebSocketListenerResponse: 2,
+  setWebSocketListenerEventBehavior: 1,
+  setWebSocketListenerEventCustomResponse: 1,
+  setWebSocketListenerEventResponse: 1,
 } as const;
 
 type BrowserControlMethod = keyof typeof REQUIRED_BROWSER_CONTROL_METHOD_VERSIONS;
@@ -143,6 +148,13 @@ export class CdpBrowserCliSession implements CliSession {
   ): Promise<CliWebSocketListenerResult> {
     return this.invoke("setWebSocketListenerBehavior", [listenerId, behavior]);
   }
+  public setWebSocketListenerEventEnabled(
+    listenerId: string,
+    eventType: string,
+    enabled: boolean,
+  ): Promise<CliWebSocketEventResult> {
+    return this.invoke("setWebSocketListenerEventEnabled", [listenerId, eventType, enabled]);
+  }
   public setWebSocketListenerCustomResponse(
     listenerId: string,
     response: WebSocketResponseConfig,
@@ -154,5 +166,30 @@ export class CdpBrowserCliSession implements CliSession {
     response: WebSocketResponseConfig,
   ): Promise<CliWebSocketListenerResult> {
     return this.invoke("setWebSocketListenerResponse", [listenerId, response]);
+  }
+  public setWebSocketListenerEventBehavior(
+    listenerId: string,
+    eventType: string,
+    behavior: WebSocketBehaviorSelection,
+  ): Promise<CliWebSocketEventResult> {
+    return this.invoke("setWebSocketListenerEventBehavior", [listenerId, eventType, behavior]);
+  }
+  public setWebSocketListenerEventCustomResponse(
+    listenerId: string,
+    eventType: string,
+    response: WebSocketResponseConfig,
+  ): Promise<CliWebSocketEventResult> {
+    return this.invoke("setWebSocketListenerEventCustomResponse", [
+      listenerId,
+      eventType,
+      response,
+    ]);
+  }
+  public setWebSocketListenerEventResponse(
+    listenerId: string,
+    eventType: string,
+    response: WebSocketResponseConfig,
+  ): Promise<CliWebSocketEventResult> {
+    return this.invoke("setWebSocketListenerEventResponse", [listenerId, eventType, response]);
   }
 }

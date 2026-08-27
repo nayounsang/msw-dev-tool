@@ -7,9 +7,19 @@ let serverPromise: ReturnType<typeof setupDevToolServer> | null = null;
 const chat = ws.link("ws://node.example.local/chat");
 const nodeWebSocketHandlers = [
   chat.addEventListener("connection", ({ client }) => {
-    client.addEventListener("message", (event) => {
-      client.send(`echo:${String(event.data)}`);
-    });
+    client.addEventListener(
+      "message",
+      (event) => {
+        client.send(`echo:${String(event.data)}`);
+      },
+      {
+        mswDevTool: {
+          eventTypes: ["chat/join", "chat/message"],
+          resolveEventType: (data: unknown) => JSON.parse(String(data)).type,
+        },
+      },
+    );
+    client.addEventListener("message", (event) => client.send(`audit:${String(event.data)}`));
   }),
 ];
 

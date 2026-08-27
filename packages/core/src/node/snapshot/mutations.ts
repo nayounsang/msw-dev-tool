@@ -17,6 +17,10 @@ import {
   setWebSocketListenerCustomResponse,
   setWebSocketListenerResponse,
   setWebSocketListenerEnabled,
+  setWebSocketListenerEventEnabled,
+  setWebSocketListenerEventBehavior,
+  setWebSocketListenerEventCustomResponse,
+  setWebSocketListenerEventResponse,
 } from "../../shared/websocket/state";
 import {
   serializableWebSocketMatcherSchema,
@@ -164,6 +168,22 @@ export const setSnapshotWebSocketListenerBehavior = (
     return bumpSnapshot(prev, { webSocket: webSocketEndpointsSchema.parse(next.endpoints) });
   });
 
+export const setSnapshotWebSocketListenerEventEnabled = (
+  sessionPath: string,
+  listenerId: string,
+  eventType: string,
+  enabled: boolean,
+): Promise<SessionSnapshot> =>
+  withLockedMutation(sessionPath, (prev) => {
+    const next = setWebSocketListenerEventEnabled(
+      snapshotWebSocketEndpoints(prev),
+      listenerId,
+      eventType,
+      enabled,
+    );
+    return bumpSnapshot(prev, { webSocket: webSocketEndpointsSchema.parse(next.endpoints) });
+  });
+
 export const setSnapshotWebSocketListenerCustomResponse = (
   sessionPath: string,
   listenerId: string,
@@ -187,6 +207,52 @@ export const setSnapshotWebSocketListenerResponse = (
     const next = setWebSocketListenerResponse(
       snapshotWebSocketEndpoints(prev),
       listenerId,
+      response,
+    );
+    return bumpSnapshot(prev, { webSocket: webSocketEndpointsSchema.parse(next.endpoints) });
+  });
+
+export const setSnapshotWebSocketListenerEventBehavior = (
+  sessionPath: string,
+  listenerId: string,
+  eventType: string,
+  behavior: WebSocketEndpointConfig["listeners"][number]["behavior"],
+): Promise<SessionSnapshot> =>
+  withLockedMutation(sessionPath, (prev) => {
+    const next = setWebSocketListenerEventBehavior(
+      snapshotWebSocketEndpoints(prev),
+      listenerId,
+      eventType,
+      webSocketBehaviorSchema.parse(behavior),
+    );
+    return bumpSnapshot(prev, { webSocket: webSocketEndpointsSchema.parse(next.endpoints) });
+  });
+export const setSnapshotWebSocketListenerEventCustomResponse = (
+  sessionPath: string,
+  listenerId: string,
+  eventType: string,
+  response: WebSocketResponseConfig,
+): Promise<SessionSnapshot> =>
+  withLockedMutation(sessionPath, (prev) => {
+    const next = setWebSocketListenerEventCustomResponse(
+      snapshotWebSocketEndpoints(prev),
+      listenerId,
+      eventType,
+      response,
+    );
+    return bumpSnapshot(prev, { webSocket: webSocketEndpointsSchema.parse(next.endpoints) });
+  });
+export const setSnapshotWebSocketListenerEventResponse = (
+  sessionPath: string,
+  listenerId: string,
+  eventType: string,
+  response: WebSocketResponseConfig,
+): Promise<SessionSnapshot> =>
+  withLockedMutation(sessionPath, (prev) => {
+    const next = setWebSocketListenerEventResponse(
+      snapshotWebSocketEndpoints(prev),
+      listenerId,
+      eventType,
       response,
     );
     return bumpSnapshot(prev, { webSocket: webSocketEndpointsSchema.parse(next.endpoints) });

@@ -28,6 +28,17 @@ export const worker = setupDevToolWorker(...handlers);
 
 Import `ws` from `@msw-dev-tool/core/msw` to make code-defined WebSocket endpoints and `message` listeners available to MSW Dev Tool.
 
+A message listener can optionally declare logical payload events. Each declared event gets an independent behavior and response configuration; unknown event types and resolver errors run the original listener.
+
+```ts
+client.addEventListener("message", onMessage, {
+  mswDevTool: {
+    eventTypes: ["chat/join", "chat/message"],
+    resolveEventType: (data: string) => JSON.parse(data).type,
+  },
+});
+```
+
 ```ts
 import { ws } from "@msw-dev-tool/core/msw";
 

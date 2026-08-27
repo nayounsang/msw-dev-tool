@@ -76,6 +76,10 @@ const mapState = (base: HandlerStoreInternalState<SetupWorker>): HandlerStoreSta
   setWebSocketListenerBehavior: base.setWebSocketListenerBehavior,
   setWebSocketListenerCustomResponse: base.setWebSocketListenerCustomResponse,
   setWebSocketListenerResponse: base.setWebSocketListenerResponse,
+  setWebSocketListenerEventBehavior: base.setWebSocketListenerEventBehavior,
+  setWebSocketListenerEventEnabled: base.setWebSocketListenerEventEnabled,
+  setWebSocketListenerEventCustomResponse: base.setWebSocketListenerEventCustomResponse,
+  setWebSocketListenerEventResponse: base.setWebSocketListenerEventResponse,
   hydrateWebSocket: base.hydrateWebSocket,
   getWebSocketEndpoint: base.getWebSocketEndpoint,
   getWebSocketListener: base.getWebSocketListener,
@@ -283,6 +287,14 @@ const registerBrowserControlBridge = () => {
       const listener = requireWebSocketListener(listenerId);
       return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener };
     },
+    setWebSocketListenerEventEnabled: (listenerId, eventType, enabled) => {
+      handlerStore.getState().setWebSocketListenerEventEnabled(listenerId, eventType, enabled);
+      const listener = requireWebSocketListener(listenerId);
+      const eventBranch = listener.eventBranches?.find((entry) => entry.eventType === eventType);
+      if (!eventBranch)
+        throw new Error(`WebSocket listener event not found: ${listenerId}/${eventType}`);
+      return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener, eventBranch };
+    },
     setWebSocketListenerBehavior: (listenerId, behavior) => {
       handlerStore
         .getState()
@@ -306,6 +318,48 @@ const registerBrowserControlBridge = () => {
         .setWebSocketListenerResponse(listenerId, webSocketResponseConfigSchema.parse(response));
       const listener = requireWebSocketListener(listenerId);
       return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener };
+    },
+    setWebSocketListenerEventBehavior: (listenerId, eventType, behavior) => {
+      handlerStore
+        .getState()
+        .setWebSocketListenerEventBehavior(
+          listenerId,
+          eventType,
+          webSocketBehaviorSchema.parse(behavior),
+        );
+      const listener = requireWebSocketListener(listenerId);
+      const eventBranch = listener.eventBranches?.find((entry) => entry.eventType === eventType);
+      if (!eventBranch)
+        throw new Error(`WebSocket listener event not found: ${listenerId}/${eventType}`);
+      return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener, eventBranch };
+    },
+    setWebSocketListenerEventCustomResponse: (listenerId, eventType, response) => {
+      handlerStore
+        .getState()
+        .setWebSocketListenerEventCustomResponse(
+          listenerId,
+          eventType,
+          webSocketResponseConfigSchema.parse(response),
+        );
+      const listener = requireWebSocketListener(listenerId);
+      const eventBranch = listener.eventBranches?.find((entry) => entry.eventType === eventType);
+      if (!eventBranch)
+        throw new Error(`WebSocket listener event not found: ${listenerId}/${eventType}`);
+      return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener, eventBranch };
+    },
+    setWebSocketListenerEventResponse: (listenerId, eventType, response) => {
+      handlerStore
+        .getState()
+        .setWebSocketListenerEventResponse(
+          listenerId,
+          eventType,
+          webSocketResponseConfigSchema.parse(response),
+        );
+      const listener = requireWebSocketListener(listenerId);
+      const eventBranch = listener.eventBranches?.find((entry) => entry.eventType === eventType);
+      if (!eventBranch)
+        throw new Error(`WebSocket listener event not found: ${listenerId}/${eventType}`);
+      return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener, eventBranch };
     },
   };
   window[BROWSER_CONTROL_KEY] = bridge;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseWebSocketHex, toWebSocketSendData } from "./response";
+import { getWebSocketControlledResponse, parseWebSocketHex, toWebSocketSendData } from "./response";
 
 describe("WebSocket custom response payloads", () => {
   it("parses case-insensitive hexadecimal bytes", () => {
@@ -30,5 +30,40 @@ describe("WebSocket custom response payloads", () => {
     expect(blob).toBeInstanceOf(Blob);
     expect((blob as Blob).type).toBe("text/plain");
     await expect((blob as Blob).text()).resolves.toBe("hi");
+  });
+
+  it("selects responses only from the active listener or event branch", () => {
+    const listener = {
+      info: {
+        id: "listener",
+        kind: "websocket" as const,
+        endpoint: "ws://example.test",
+        operation: "message",
+        source: "code" as const,
+      },
+      endpointId: "endpoint",
+      event: "message" as const,
+      enabled: true,
+      behavior: { preset: "default" as const },
+      response: { type: "send" as const, dataType: "string" as const, value: "listener response" },
+      customResponse: {
+        type: "send" as const,
+        dataType: "string" as const,
+        value: "listener custom response",
+      },
+    };
+    const branch = {
+      eventType: "chat/message",
+      enabled: true,
+      behavior: { preset: "default" as const },
+      response: { type: "send" as const, dataType: "string" as const, value: "branch response" },
+    };
+
+    expect(getWebSocketControlledResponse(listener, "response")).toEqual(listener.response);
+    expect(getWebSocketControlledResponse(listener, "customResponse")).toEqual(
+      listener.customResponse,
+    );
+    expect(getWebSocketControlledResponse(listener, "response", branch)).toEqual(branch.response);
+    expect(getWebSocketControlledResponse(listener, "customResponse", branch)).toBeUndefined();
   });
 });

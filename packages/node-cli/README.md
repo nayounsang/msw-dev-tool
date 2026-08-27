@@ -50,9 +50,10 @@ msw-dev-tool --pid 4182 ws-add-endpoint --json '{"kind":"string","value":"ws://l
 msw-dev-tool --pid 4182 ws-add-listener '<endpoint-id>' --json '{"behavior":{"preset":"default"},"response":{"type":"send","dataType":"string","value":"temp response","delay":300,"repeat":{"interval":500,"repetitions":3}},"customResponse":{"type":"send","dataType":"string","value":"custom response","delay":100}}'
 msw-dev-tool --pid 4182 ws-set-listener-behavior '<listener-id>' --json '{"preset":"close"}'
 msw-dev-tool --pid 4182 ws-set-listener-response '<listener-id>' --json '{"type":"send","dataType":"string","value":"scheduled","delay":300,"repeat":{"interval":500,"repetitions":"Infinity"}}'
+msw-dev-tool --pid 4182 ws-set-listener-event-behavior '<listener-id>' 'chat/join' --json '{"preset":"send","options":{"message":"joined"}}'
 ```
 
-Temporary listeners default to `{"preset":"default"}`. Their `response` and `customResponse` are independent configurations; each carries its own payload, delay, and repeat schedule. Repetitions include the first response, and unbounded repetition is the JSON string `"Infinity"` with a positive interval. Use `ws-set-listener-response` and `ws-set-listener-custom-response` to update each complete configuration independently. See the [Node CLI documentation](https://msw-dev-tool-docs.vercel.app/docs/node-cli) for every HTTP and WebSocket command, JSON input, and result shape.
+Temporary listeners default to `{"preset":"default"}`. Their `response` and `customResponse` are independent configurations; each carries its own payload, delay, and repeat schedule. Repetitions include the first response, and unbounded repetition is the JSON string `"Infinity"` with a positive interval. Use `ws-set-listener-event-behavior`, `ws-set-listener-event-response`, and `ws-set-listener-event-custom-response` for declared logical event branches. See the [Node CLI documentation](https://msw-dev-tool-docs.vercel.app/docs/node-cli) for every HTTP and WebSocket command, JSON input, and result shape.
 
 ## Example (app)
 

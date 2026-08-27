@@ -19,7 +19,11 @@ const api = vi.hoisted(() => ({
   setSnapshotWebSocketListenerBehavior: vi.fn(),
   setSnapshotWebSocketListenerCustomResponse: vi.fn(),
   setSnapshotWebSocketListenerEnabled: vi.fn(),
+  setSnapshotWebSocketListenerEventEnabled: vi.fn(),
   setSnapshotWebSocketListenerResponse: vi.fn(),
+  setSnapshotWebSocketListenerEventBehavior: vi.fn(),
+  setSnapshotWebSocketListenerEventCustomResponse: vi.fn(),
+  setSnapshotWebSocketListenerEventResponse: vi.fn(),
 }));
 vi.mock("@msw-dev-tool/core/node/internal", () => api);
 import { FileSnapshotCliSession } from "./session";
@@ -58,6 +62,11 @@ const wsSnapshot = (endpoint = wsEndpoint) => ({
   revision: 2,
   state: { flattenHandlers: [], webSocket: [endpoint] },
 });
+const wsEventBranch = {
+  eventType: "chat/message",
+  enabled: true,
+  behavior: { preset: "default" },
+};
 
 describe("FileSnapshotCliSession", () => {
   it("adapts reads and every mutation result", async () => {
@@ -190,6 +199,94 @@ describe("FileSnapshotCliSession", () => {
         delay: 300,
         repeat: { interval: 500, repetitions: "Infinity" },
       },
+    );
+    vi.useRealTimers();
+  });
+
+  it("adapts every logical WebSocket event branch mutation", async () => {
+    vi.useFakeTimers();
+    const listenerWithBranch = { ...wsListener, eventBranches: [wsEventBranch] };
+    const endpointWithBranch = { ...wsEndpoint, listeners: [listenerWithBranch] };
+    api.setSnapshotWebSocketListenerEventBehavior.mockReturnValue(wsSnapshot(endpointWithBranch));
+    api.setSnapshotWebSocketListenerEventEnabled.mockReturnValue(
+      wsSnapshot({
+        ...wsEndpoint,
+        listeners: [
+          { ...listenerWithBranch, eventBranches: [{ ...wsEventBranch, enabled: false }] },
+        ],
+      }),
+    );
+    api.setSnapshotWebSocketListenerEventCustomResponse.mockReturnValue(
+      wsSnapshot({
+        ...wsEndpoint,
+        listeners: [
+          {
+            ...listenerWithBranch,
+            eventBranches: [
+              {
+                ...wsEventBranch,
+                customResponse: { type: "send", dataType: "string", value: "custom" },
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    api.setSnapshotWebSocketListenerEventResponse.mockReturnValue(
+      wsSnapshot({
+        ...wsEndpoint,
+        listeners: [
+          {
+            ...listenerWithBranch,
+            eventBranches: [
+              {
+                ...wsEventBranch,
+                response: { type: "send", dataType: "string", value: "response" },
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    const session = new FileSnapshotCliSession("/tmp/session.json");
+    const calls = [
+      session.setWebSocketListenerEventEnabled(wsListener.info.id, "chat/message", false),
+      session.setWebSocketListenerEventBehavior(wsListener.info.id, "chat/message", {
+        preset: "echo",
+      }),
+      session.setWebSocketListenerEventCustomResponse(wsListener.info.id, "chat/message", {
+        type: "send",
+        dataType: "string",
+        value: "custom",
+      }),
+      session.setWebSocketListenerEventResponse(wsListener.info.id, "chat/message", {
+        type: "send",
+        dataType: "string",
+        value: "response",
+      }),
+    ];
+    await vi.advanceTimersByTimeAsync(300);
+    await expect(Promise.all(calls)).resolves.toEqual([
+      expect.objectContaining({
+        eventBranch: expect.objectContaining({ enabled: false }),
+      }),
+      expect.objectContaining({ eventBranch: wsEventBranch }),
+      expect.objectContaining({
+        eventBranch: expect.objectContaining({
+          customResponse: { type: "send", dataType: "string", value: "custom" },
+        }),
+      }),
+      expect.objectContaining({
+        eventBranch: expect.objectContaining({
+          response: { type: "send", dataType: "string", value: "response" },
+        }),
+      }),
+    ]);
+    expect(api.setSnapshotWebSocketListenerEventBehavior).toHaveBeenCalledWith(
+      "/tmp/session.json",
+      wsListener.info.id,
+      "chat/message",
+      { preset: "echo" },
     );
     vi.useRealTimers();
   });
