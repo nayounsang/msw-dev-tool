@@ -1,5 +1,17 @@
 # @msw-dev-tool/browser-cli
 
+## 2.3.0
+
+### Minor Changes
+
+- 99ff90e: Support independently configured logical message event branches for WebSocket listeners.
+
+### Patch Changes
+
+- Updated dependencies [99ff90e]
+  - @msw-dev-tool/core@1.9.0
+  - @msw-dev-tool/cli-core@0.4.0
+
 ## 2.2.0
 
 ### Minor Changes
