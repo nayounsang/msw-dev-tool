@@ -10,19 +10,77 @@ Use WebSocket runtime controls to test real-time message behavior, connection re
 
 Import `ws` from `@msw-dev-tool/core/msw` so MSW Dev Tool can discover the endpoint and its `message` listeners.
 
+When the listener does not need to branch by message payload, keep the whole `message` listener as one mock.
+
 ```ts copy
 import { ws } from "@msw-dev-tool/core/msw";
 
+const chat = ws.link("ws://localhost:8080/chat");
+
 export const handlers = [
-  ws.link("ws://localhost:8080/chat").addEventListener("connection", ({ client }) => {
+  chat.addEventListener("connection", ({ client }) => {
     client.addEventListener("message", (event) => {
-      client.send(`received: ${event.data}`);
+      client.send(`received: ${String(event.data)}`);
     });
   }),
 ];
 ```
 
 After the handler connects, the WebSocket panel lists its endpoint and discovered `message` listener.
+
+## Declare logical message branches when needed
+
+Use logical message branches only when one listener handles several payload types and you need to manage the behavior for each type independently. Keep the existing message handling and response logic, then add `mswDevTool` as the third argument to `addEventListener`.
+
+```ts copy
+import { ws } from "@msw-dev-tool/core/msw";
+
+type ChatMessage =
+  | { type: "chat/join"; userId: string }
+  | { type: "chat/message"; message: { text: string; sentAt: string } };
+
+const parseChatMessage = (data: unknown): ChatMessage =>
+  JSON.parse(String(data)) as ChatMessage;
+
+const chat = ws.link("ws://localhost:8080/chat");
+
+export const handlers = [
+  chat.addEventListener("connection", ({ client }) => {
+    client.addEventListener(
+      "message",
+      (event) => {
+        const message = parseChatMessage(event.data);
+
+        switch (message.type) {
+          case "chat/join":
+            client.send(
+              JSON.stringify({ type: "chat/joined", userId: message.userId }),
+            );
+            break;
+          case "chat/message":
+            client.send(
+              JSON.stringify({ type: "chat/message", message: message.message }),
+            );
+            break;
+        }
+      },
+      {
+        mswDevTool: {
+          eventTypes: ["chat/join", "chat/message"],
+          resolveEventType: (data) => parseChatMessage(data).type,
+        },
+      },
+    );
+  }),
+];
+```
+
+- Use the first, normal mock when every message gets the same response or you do not need to manage behavior inside the handler separately.
+- Use the branching mock when one listener handles multiple payload types and each type needs independent behavior.
+- Declare only the `type` values you want to manage in `eventTypes`. `resolveEventType` receives `event.data`, not the full `MessageEvent`, and returns the type string.
+- Other listeners that do not need logical branches can remain normal `message` listeners without options. Message listeners on the same endpoint can each use different `eventTypes` and `resolveEventType` functions.
+
+Logical branches support only WebSocket `message` listeners. Lifecycle events such as `open`, `close`, and `error`, batch payloads that contain multiple logical event types, and Socket.IO event protocols are not supported. Each message is classified as at most one logical event type. If `resolveEventType` throws or returns a type not listed in `eventTypes`, MSW Dev Tool does not apply branch control and runs the original listener.
 
 ## Configure temporary listener responses
 
