@@ -19,6 +19,6 @@ export function App() {
 }
 ```
 
-Configure the worker with `setupDevToolWorker(...handlers)` from `@msw-dev-tool/core/browser`. The UI lets you inspect HTTP scenarios and WebSocket endpoints/listeners, then change their enabled state or response behavior at runtime.
+Configure the worker with `setupDevToolWorker(...handlers)` from `@msw-dev-tool/core/browser`. The UI lets you inspect HTTP scenarios and WebSocket endpoints/listeners, then change their enabled state or response behavior at runtime. Listeners that declare logical message events show independent event branches beneath the listener.
 
 See [Getting Started](https://msw-dev-tool-docs.vercel.app/docs/get-started), [HTTP Mocking Scenarios](https://msw-dev-tool-docs.vercel.app/docs/http), and [WebSocket Mocking Scenarios](https://msw-dev-tool-docs.vercel.app/docs/websocket).
