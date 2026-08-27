@@ -17,6 +17,7 @@ import {
   setWebSocketListenerCustomResponse,
   setWebSocketListenerResponse,
   setWebSocketListenerEnabled,
+  setWebSocketListenerEventEnabled,
   setWebSocketListenerEventBehavior,
   setWebSocketListenerEventCustomResponse,
   setWebSocketListenerEventResponse,
@@ -163,6 +164,22 @@ export const setSnapshotWebSocketListenerBehavior = (
       snapshotWebSocketEndpoints(prev),
       listenerId,
       webSocketBehaviorSchema.parse(behavior),
+    );
+    return bumpSnapshot(prev, { webSocket: webSocketEndpointsSchema.parse(next.endpoints) });
+  });
+
+export const setSnapshotWebSocketListenerEventEnabled = (
+  sessionPath: string,
+  listenerId: string,
+  eventType: string,
+  enabled: boolean,
+): Promise<SessionSnapshot> =>
+  withLockedMutation(sessionPath, (prev) => {
+    const next = setWebSocketListenerEventEnabled(
+      snapshotWebSocketEndpoints(prev),
+      listenerId,
+      eventType,
+      enabled,
     );
     return bumpSnapshot(prev, { webSocket: webSocketEndpointsSchema.parse(next.endpoints) });
   });

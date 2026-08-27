@@ -66,6 +66,11 @@ export type CliSession = {
     listenerId: string,
     enabled: boolean,
   ): Promise<CliWebSocketListenerResult>;
+  setWebSocketListenerEventEnabled(
+    listenerId: string,
+    eventType: string,
+    enabled: boolean,
+  ): Promise<CliWebSocketEventResult>;
   setWebSocketListenerBehavior(
     listenerId: string,
     behavior: WebSocketBehaviorSelection,

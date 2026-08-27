@@ -347,6 +347,38 @@ describe("closeWebSocketConnections", () => {
     }
   });
 
+  it("cancels branch schedules when the listener is disabled", async () => {
+    vi.useFakeTimers();
+    try {
+      const { adapter, endpointId, listenerId, client, store } = await setupCustomResponseHarness(
+        "cancel-branch-scheduled",
+        ["join"],
+      );
+      store.getState().setWebSocketListenerEventResponse(listenerId, "join", {
+        type: "send",
+        dataType: "string",
+        value: "late branch",
+        delay: 100,
+        repeat: { interval: 50, repetitions: "Infinity" },
+      });
+      adapter.dispatchWebSocketMessage(
+        endpointId,
+        client,
+        new Event("message"),
+        listenerId,
+        undefined,
+        "join",
+      );
+
+      store.getState().setWebSocketListenerEnabled(listenerId, false);
+      await vi.advanceTimersByTimeAsync(1_000);
+
+      expect(client.send).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("cancels all scheduled responses when the client disconnects", async () => {
     vi.useFakeTimers();
     try {

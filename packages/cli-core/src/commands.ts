@@ -249,6 +249,30 @@ export const commands: CliCommand[] = [
     },
   },
   {
+    name: "ws-set-listener-event-enabled",
+    usage: "ws-set-listener-event-enabled <listenerId> <eventType> <true|false>",
+    async execute(context, { positionals }) {
+      const [listenerId, eventType, enabledStr] = [positionals[1], positionals[2], positionals[3]];
+      if (!listenerId || !eventType || enabledStr === undefined)
+        throw new Error(
+          "Usage: ws-set-listener-event-enabled <listenerId> <eventType> <true|false>",
+        );
+      if (enabledStr !== "true" && enabledStr !== "false")
+        throw new Error("enabled must be true or false");
+      return withMetadata(
+        {
+          ok: true,
+          ...(await context.session.setWebSocketListenerEventEnabled(
+            listenerId,
+            eventType,
+            enabledStr === "true",
+          )),
+        },
+        context,
+      );
+    },
+  },
+  {
     name: "ws-set-listener-event-behavior",
     usage: "ws-set-listener-event-behavior <listenerId> <eventType> --json '<behaviorJson>'",
     async execute(context, { flags, positionals }) {

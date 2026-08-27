@@ -236,6 +236,9 @@ const EventBranchBehaviorSelect = ({
   const options = [
     { label: "Disable mock", value: "disable" },
     ...selectableBehaviorOptions().map(({ label, value }) => ({ label, value })),
+    ...(selectableBehaviorOptions().some((option) => option.value === currentValue)
+      ? []
+      : [{ label: behaviorLabel(branch.behavior), value: currentValue }]),
   ];
   return (
     <Select

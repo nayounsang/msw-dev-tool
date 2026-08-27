@@ -97,6 +97,11 @@ const createSession = (): CliSession => {
       endpoint: wsEndpointWithListener,
       listener: wsListener,
     }),
+    setWebSocketListenerEventEnabled: async () => ({
+      endpoint: wsEndpointWithEventBranch,
+      listener: wsEndpointWithEventBranch.listeners[0]!,
+      eventBranch: wsEventBranch,
+    }),
     setWebSocketListenerBehavior: async () => ({
       endpoint: wsEndpointWithListener,
       listener: wsListener,
@@ -392,6 +397,11 @@ describe("shared CLI commands", () => {
       listener: wsEndpointWithEventBranch.listeners[0]!,
       eventBranch: wsEventBranch,
     });
+    session.setWebSocketListenerEventEnabled = vi.fn().mockResolvedValue({
+      endpoint: wsEndpointWithEventBranch,
+      listener: wsEndpointWithEventBranch.listeners[0]!,
+      eventBranch: { ...wsEventBranch, enabled: false },
+    });
     session.setWebSocketListenerEventCustomResponse = vi.fn().mockResolvedValue({
       endpoint: wsEndpointWithEventBranch,
       listener: wsEndpointWithEventBranch.listeners[0]!,
@@ -404,8 +414,16 @@ describe("shared CLI commands", () => {
     });
     const context = { session };
     const behavior = findCommand("ws-set-listener-event-behavior")!;
+    const enabled = findCommand("ws-set-listener-event-enabled")!;
     const customResponse = findCommand("ws-set-listener-event-custom-response")!;
     const response = findCommand("ws-set-listener-event-response")!;
+
+    await expect(
+      enabled.execute(context, {
+        flags: {},
+        positionals: [enabled.name, wsListener.info.id, wsEventBranch.eventType, "false"],
+      }),
+    ).resolves.toMatchObject({ ok: true, eventBranch: { enabled: false } });
 
     await expect(
       behavior.execute(context, {

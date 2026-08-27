@@ -192,6 +192,11 @@ describe("CdpBrowserCliSession", () => {
       endpoint: { endpointId: "endpoint-a" },
       listener: { info: { id: "listener-a" } },
     }));
+    const setWebSocketListenerEventEnabled = vi.fn(() => ({
+      endpoint: { endpointId: "endpoint-a" },
+      listener: { info: { id: "listener-a" } },
+      eventBranch: { eventType: "chat/message" },
+    }));
     const setWebSocketListenerBehavior = vi.fn(() => ({
       endpoint: { endpointId: "endpoint-a" },
       listener: { info: { id: "listener-a" } },
@@ -225,6 +230,7 @@ describe("CdpBrowserCliSession", () => {
         addWebSocketListener: 1,
         removeWebSocketListener: 1,
         setWebSocketListenerEnabled: 1,
+        setWebSocketListenerEventEnabled: 1,
         setWebSocketListenerBehavior: 1,
         setWebSocketListenerResponse: 2,
         setWebSocketListenerEventBehavior: 1,
@@ -239,6 +245,7 @@ describe("CdpBrowserCliSession", () => {
       addWebSocketListener,
       removeWebSocketListener,
       setWebSocketListenerEnabled,
+      setWebSocketListenerEventEnabled,
       setWebSocketListenerBehavior,
       setWebSocketListenerResponse,
       setWebSocketListenerEventBehavior,
@@ -257,6 +264,7 @@ describe("CdpBrowserCliSession", () => {
     await session.addWebSocketListener("endpoint-a", behavior);
     await session.removeWebSocketListener("listener-a");
     await session.setWebSocketListenerEnabled("listener-a", false);
+    await session.setWebSocketListenerEventEnabled("listener-a", "chat/message", false);
     await session.setWebSocketListenerBehavior("listener-a", {
       preset: "close",
       options: { code: 4001, reason: "done" },
@@ -328,7 +336,7 @@ describe("CdpBrowserCliSession", () => {
       dataType: "string",
       value: "response",
     });
-    expect(call).toHaveBeenCalledTimes(14);
+    expect(call).toHaveBeenCalledTimes(15);
     expect(call.mock.calls[2]?.[1].expression).toContain('"source":"browser\\\\.example"');
     expect(call.mock.calls[4]?.[1].expression).toContain("false");
   });

@@ -43,6 +43,7 @@ const REQUIRED_BROWSER_CONTROL_METHOD_VERSIONS = {
   addWebSocketListener: 1,
   removeWebSocketListener: 1,
   setWebSocketListenerEnabled: 1,
+  setWebSocketListenerEventEnabled: 1,
   setWebSocketListenerBehavior: 1,
   setWebSocketListenerCustomResponse: 2,
   setWebSocketListenerResponse: 2,
@@ -146,6 +147,13 @@ export class CdpBrowserCliSession implements CliSession {
     behavior: WebSocketBehaviorSelection,
   ): Promise<CliWebSocketListenerResult> {
     return this.invoke("setWebSocketListenerBehavior", [listenerId, behavior]);
+  }
+  public setWebSocketListenerEventEnabled(
+    listenerId: string,
+    eventType: string,
+    enabled: boolean,
+  ): Promise<CliWebSocketEventResult> {
+    return this.invoke("setWebSocketListenerEventEnabled", [listenerId, eventType, enabled]);
   }
   public setWebSocketListenerCustomResponse(
     listenerId: string,

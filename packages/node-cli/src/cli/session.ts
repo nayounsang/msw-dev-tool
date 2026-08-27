@@ -18,6 +18,7 @@ import {
   setSnapshotWebSocketListenerCustomResponse,
   setSnapshotWebSocketListenerResponse,
   setSnapshotWebSocketListenerEnabled,
+  setSnapshotWebSocketListenerEventEnabled,
   setSnapshotWebSocketListenerEventBehavior,
   setSnapshotWebSocketListenerEventCustomResponse,
   setSnapshotWebSocketListenerEventResponse,
@@ -164,6 +165,28 @@ export class FileSnapshotCliSession implements CliSession {
     return {
       endpoint,
       listener: endpoint.listeners.find((listener) => listener.info.id === listenerId)!,
+    };
+  }
+  public async setWebSocketListenerEventEnabled(
+    listenerId: string,
+    eventType: string,
+    enabled: boolean,
+  ) {
+    const snapshot = await setSnapshotWebSocketListenerEventEnabled(
+      this.sessionPath,
+      listenerId,
+      eventType,
+      enabled,
+    );
+    await settleAfterWrite();
+    const endpoint = snapshot.state.webSocket!.find((entry) =>
+      entry.listeners.some((listener) => listener.info.id === listenerId),
+    )!;
+    const listener = endpoint.listeners.find((entry) => entry.info.id === listenerId)!;
+    return {
+      endpoint,
+      listener,
+      eventBranch: listener.eventBranches!.find((entry) => entry.eventType === eventType)!,
     };
   }
   public async setWebSocketListenerCustomResponse(

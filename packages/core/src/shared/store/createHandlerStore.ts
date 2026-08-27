@@ -80,7 +80,13 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
     };
     const clearListenerTimers = (listenerId: string) => {
       connections.forEach((clients) =>
-        clients.forEach((client) => clearResponseTimers(client, listenerId)),
+        clients.forEach((client) => {
+          const schedules = responseSchedules.get(client);
+          if (!schedules) return;
+          [...schedules.keys()]
+            .filter((key) => key === listenerId || key.startsWith(`${listenerId}:`))
+            .forEach((key) => clearResponseTimers(client, key));
+        }),
       );
     };
     const closeConnections = (id: string) => {

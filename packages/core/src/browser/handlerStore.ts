@@ -287,6 +287,14 @@ const registerBrowserControlBridge = () => {
       const listener = requireWebSocketListener(listenerId);
       return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener };
     },
+    setWebSocketListenerEventEnabled: (listenerId, eventType, enabled) => {
+      handlerStore.getState().setWebSocketListenerEventEnabled(listenerId, eventType, enabled);
+      const listener = requireWebSocketListener(listenerId);
+      const eventBranch = listener.eventBranches?.find((entry) => entry.eventType === eventType);
+      if (!eventBranch)
+        throw new Error(`WebSocket listener event not found: ${listenerId}/${eventType}`);
+      return { endpoint: requireWebSocketEndpoint(listener.endpointId), listener, eventBranch };
+    },
     setWebSocketListenerBehavior: (listenerId, behavior) => {
       handlerStore
         .getState()

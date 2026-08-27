@@ -280,6 +280,10 @@ describe("browser control bridge", () => {
         .eventBranch.behavior,
     ).toEqual({ preset: "echo" });
     expect(
+      bridge.setWebSocketListenerEventEnabled(listenerId, "chat/message", false).eventBranch
+        .enabled,
+    ).toBe(false);
+    expect(
       bridge.setWebSocketListenerEventCustomResponse(listenerId, "chat/message", {
         type: "send",
         dataType: "string",

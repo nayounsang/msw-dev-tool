@@ -33,6 +33,7 @@ export const BROWSER_CONTROL_METHOD_VERSIONS = {
   addWebSocketListener: 1,
   removeWebSocketListener: 1,
   setWebSocketListenerEnabled: 1,
+  setWebSocketListenerEventEnabled: 1,
   setWebSocketListenerBehavior: 1,
   setWebSocketListenerCustomResponse: 2,
   setWebSocketListenerResponse: 2,
@@ -94,6 +95,11 @@ export type BrowserControlBridge = {
     listenerId: string,
     enabled: boolean,
   ) => BrowserControlWebSocketListenerResult;
+  setWebSocketListenerEventEnabled: (
+    listenerId: string,
+    eventType: string,
+    enabled: boolean,
+  ) => BrowserControlWebSocketEventResult;
   setWebSocketListenerBehavior: (
     listenerId: string,
     behavior: WebSocketBehaviorSelection,

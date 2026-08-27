@@ -19,6 +19,7 @@ const api = vi.hoisted(() => ({
   setSnapshotWebSocketListenerBehavior: vi.fn(),
   setSnapshotWebSocketListenerCustomResponse: vi.fn(),
   setSnapshotWebSocketListenerEnabled: vi.fn(),
+  setSnapshotWebSocketListenerEventEnabled: vi.fn(),
   setSnapshotWebSocketListenerResponse: vi.fn(),
   setSnapshotWebSocketListenerEventBehavior: vi.fn(),
   setSnapshotWebSocketListenerEventCustomResponse: vi.fn(),
@@ -207,6 +208,14 @@ describe("FileSnapshotCliSession", () => {
     const listenerWithBranch = { ...wsListener, eventBranches: [wsEventBranch] };
     const endpointWithBranch = { ...wsEndpoint, listeners: [listenerWithBranch] };
     api.setSnapshotWebSocketListenerEventBehavior.mockReturnValue(wsSnapshot(endpointWithBranch));
+    api.setSnapshotWebSocketListenerEventEnabled.mockReturnValue(
+      wsSnapshot({
+        ...wsEndpoint,
+        listeners: [
+          { ...listenerWithBranch, eventBranches: [{ ...wsEventBranch, enabled: false }] },
+        ],
+      }),
+    );
     api.setSnapshotWebSocketListenerEventCustomResponse.mockReturnValue(
       wsSnapshot({
         ...wsEndpoint,
@@ -241,6 +250,7 @@ describe("FileSnapshotCliSession", () => {
     );
     const session = new FileSnapshotCliSession("/tmp/session.json");
     const calls = [
+      session.setWebSocketListenerEventEnabled(wsListener.info.id, "chat/message", false),
       session.setWebSocketListenerEventBehavior(wsListener.info.id, "chat/message", {
         preset: "echo",
       }),
@@ -257,6 +267,9 @@ describe("FileSnapshotCliSession", () => {
     ];
     await vi.advanceTimersByTimeAsync(300);
     await expect(Promise.all(calls)).resolves.toEqual([
+      expect.objectContaining({
+        eventBranch: expect.objectContaining({ enabled: false }),
+      }),
       expect.objectContaining({ eventBranch: wsEventBranch }),
       expect.objectContaining({
         eventBranch: expect.objectContaining({
