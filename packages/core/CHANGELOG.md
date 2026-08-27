@@ -1,5 +1,11 @@
 # @msw-dev-tool/core
 
+## 1.9.0
+
+### Minor Changes
+
+- 99ff90e: Support independently configured logical message event branches for WebSocket listeners.
+
 ## 1.8.0
 
 ### Minor Changes
