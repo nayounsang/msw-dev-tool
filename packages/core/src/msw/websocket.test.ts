@@ -51,6 +51,29 @@ const waitFor = async (predicate: () => boolean, timeout = 2_000) => {
 };
 
 describe("wrapped ws", () => {
+  it("keeps same-matcher links distinct without interpreting URL suffixes", async () => {
+    const first = ws
+      .link("ws://wrapper.test/duplicate")
+      .addEventListener("connection", () => undefined);
+    const second = ws
+      .link("ws://wrapper.test/duplicate")
+      .addEventListener("connection", () => undefined);
+    const literalSuffix = ws
+      .link("ws://wrapper.test/duplicate:1")
+      .addEventListener("connection", () => undefined);
+    const store = createHandlerStore<SetupServer>({
+      createRuntime: (handlers) => setupServer(...handlers),
+    });
+
+    await store.getState().setupDevToolRuntime(first, second, literalSuffix);
+
+    expect(store.getState().webSocketEndpoints.map((endpoint) => endpoint.id)).toEqual([
+      first.id,
+      second.id,
+      literalSuffix.id,
+    ]);
+  });
+
   it("binds setup handlers, discovers listeners, and restores them after reset", async () => {
     const chat = ws.link("ws://wrapper.test/chat");
     const ignored = ws.link("ws://wrapper.test/ignored");

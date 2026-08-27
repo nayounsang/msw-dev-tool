@@ -1,13 +1,68 @@
 import { ws as originalWs, type WebSocketEventListener, type WebSocketLink } from "msw";
+import { z } from "zod";
 import {
   attachWebSocketHandlerBindHook,
   type WebSocketStoreAdapter,
 } from "../shared/websocket/bind";
-import type { ManagedWebSocketListener } from "../shared/types";
+import type { ManagedWebSocketListener, WebSocketMessageListenerOptions } from "../shared/types";
 import type { SerializableWebSocketMatcher } from "../shared/types";
 
 type WebSocketConnection = Parameters<WebSocketEventListener<"connection">>[0];
 type WebSocketClient = WebSocketConnection["client"];
+type WrappedWebSocketClient = WebSocketClient & {
+  addEventListener<TData = unknown>(
+    type: "message",
+    listener: (event: MessageEvent<TData>) => void,
+    options?: WebSocketMessageListenerOptions<TData>,
+  ): void;
+};
+type WrappedWebSocketConnection = Omit<WebSocketConnection, "client"> & {
+  client: WrappedWebSocketClient;
+};
+export type WrappedWebSocketLink = Omit<WebSocketLink, "addEventListener"> & {
+  addEventListener(
+    event: "connection",
+    listener: (connection: WrappedWebSocketConnection) => void,
+  ): ReturnType<WebSocketLink["addEventListener"]>;
+};
+
+const webSocketClientShapeSchema = z
+  .object({
+    addEventListener: z.function(),
+    send: z.function(),
+    close: z.function(),
+  })
+  .passthrough();
+const wrappedWebSocketClientSchema = z.custom<WrappedWebSocketClient>(
+  (value) => webSocketClientShapeSchema.safeParse(value).success,
+);
+const webSocketConnectionShapeSchema = z
+  .object({
+    client: webSocketClientShapeSchema,
+    server: z.object({ connect: z.function() }).passthrough(),
+  })
+  .passthrough();
+const wrappedWebSocketConnectionSchema = z.custom<WrappedWebSocketConnection>(
+  (value) => webSocketConnectionShapeSchema.safeParse(value).success,
+);
+const messageEventSchema = z.object({ data: z.unknown() }).passthrough();
+const messageRoutingSchema = z.object({
+  eventTypes: z.array(z.string()),
+  resolveEventType: z.function().args(z.unknown()).returns(z.string()),
+});
+const messageListenerOptionsSchema = z
+  .object({ mswDevTool: messageRoutingSchema.optional() })
+  .passthrough();
+const nativeMessageListenerOptionsSchema = z
+  .object({
+    capture: z.boolean().optional(),
+    once: z.boolean().optional(),
+    passive: z.boolean().optional(),
+    signal: z.instanceof(AbortSignal).optional(),
+    mswDevTool: z.unknown().optional(),
+  })
+  .passthrough()
+  .transform(({ mswDevTool: _mswDevTool, ...options }) => options);
 
 /**
  * MSW does not expose a matcher-to-endpoint formatter,
@@ -26,7 +81,7 @@ const createProxyClient = (
   endpointId: string,
   registerListener: (listener: ManagedWebSocketListener) => void,
   adapter: WebSocketStoreAdapter,
-): WebSocketClient => {
+): WrappedWebSocketClient => {
   let nextMessageListenerOrder = 0;
   /**
    * Cache method wrappers to preserve method identity and call native Client
@@ -34,7 +89,7 @@ const createProxyClient = (
    */
   const methods = new Map<PropertyKey, unknown>();
 
-  return new Proxy(client, {
+  const proxy = new Proxy(client, {
     get(target, property) {
       const cached = methods.get(property);
       if (cached) return cached;
@@ -49,24 +104,53 @@ const createProxyClient = (
             }
             const order = nextMessageListenerOrder++;
             const listenerId = `${endpointId}:message:${order}`;
+            const routing = messageListenerOptionsSchema.safeParse(options);
             registerListener({
               id: listenerId,
               endpointId,
               order,
               event: "message",
               source: "code",
+              eventTypes: routing.success ? routing.data.mswDevTool?.eventTypes : undefined,
             });
-            const dispatch = (event: Event) =>
-              adapter.dispatchWebSocketMessage(endpointId, target, event, listenerId, (nextEvent) =>
-                Reflect.apply(listener, target, [nextEvent]),
-              );
-            Reflect.apply(target.addEventListener, target, [type, dispatch, options]);
+            const dispatch = (event: Event) => {
+              const original = (nextEvent: Event) => Reflect.apply(listener, target, [nextEvent]);
+              const messageEvent = messageEventSchema.safeParse(event);
+              if (!routing.success || !routing.data.mswDevTool || !messageEvent.success) {
+                adapter.dispatchWebSocketMessage(endpointId, target, event, listenerId, original);
+                return;
+              }
+              try {
+                const eventType = routing.data.mswDevTool.resolveEventType(messageEvent.data.data);
+                if (!routing.data.mswDevTool.eventTypes.includes(eventType)) {
+                  original(event);
+                  return;
+                }
+                adapter.dispatchWebSocketMessage(
+                  endpointId,
+                  target,
+                  event,
+                  listenerId,
+                  original,
+                  eventType,
+                );
+              } catch {
+                original(event);
+              }
+            };
+            const nativeOptions = nativeMessageListenerOptionsSchema.safeParse(options);
+            const registeredOptions = nativeOptions.success ? nativeOptions.data : options;
+            Reflect.apply(target.addEventListener, target, [type, dispatch, registeredOptions]);
             const registration = {
               reconnect: () => {
-                Reflect.apply(target.addEventListener, target, [type, dispatch, options]);
+                Reflect.apply(target.addEventListener, target, [type, dispatch, registeredOptions]);
               },
               disconnect: () => {
-                Reflect.apply(target.removeEventListener, target, [type, dispatch, options]);
+                Reflect.apply(target.removeEventListener, target, [
+                  type,
+                  dispatch,
+                  registeredOptions,
+                ]);
               },
             };
             adapter.registerWebSocketMessageListener(endpointId, registration);
@@ -94,9 +178,13 @@ const createProxyClient = (
       return bound;
     },
   });
+
+  return wrappedWebSocketClientSchema.parse(proxy);
 };
 
-const createWrappedLink = (matcher: Parameters<typeof originalWs.link>[0]): WebSocketLink => {
+const createWrappedLink = (
+  matcher: Parameters<typeof originalWs.link>[0],
+): WrappedWebSocketLink => {
   const originalLink = originalWs.link(matcher);
 
   return {
@@ -110,7 +198,7 @@ const createWrappedLink = (matcher: Parameters<typeof originalWs.link>[0]): WebS
       };
       const handler = originalLink.addEventListener(event, (connection) => {
         if (!adapter) {
-          listener(connection);
+          listener(wrappedWebSocketConnectionSchema.parse(connection));
           return;
         }
         const boundAdapter = adapter;
@@ -126,10 +214,17 @@ const createWrappedLink = (matcher: Parameters<typeof originalWs.link>[0]): WebS
           boundAdapter.connectWebSocket(endpointId, connection.server);
           return;
         }
-        listener({
-          ...connection,
-          client: createProxyClient(connection.client, endpointId, registerListener, boundAdapter),
-        });
+        listener(
+          wrappedWebSocketConnectionSchema.parse({
+            ...connection,
+            client: createProxyClient(
+              connection.client,
+              endpointId,
+              registerListener,
+              boundAdapter,
+            ),
+          }),
+        );
       });
 
       endpointId = handler.id;
@@ -161,7 +256,7 @@ const createWrappedLink = (matcher: Parameters<typeof originalWs.link>[0]): WebS
   };
 };
 
-export const wrappedWs: typeof originalWs = { link: createWrappedLink };
+export const wrappedWs = { link: createWrappedLink };
 
 /** Creates a live MSW handler for a temporary endpoint. */
 export const createTemporaryWebSocketHandler = (

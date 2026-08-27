@@ -41,6 +41,63 @@ describe("WebSocket state model", () => {
     expect(slice.getState().listeners).toHaveLength(1);
   });
 
+  it("keeps per-event configuration independent for a routed code listener", () => {
+    const slice = createWebSocketSlice();
+    const endpointId = "code-routed";
+    slice.registerCodeEndpoint({
+      info: {
+        id: endpointId,
+        kind: "websocket",
+        endpoint: "ws://example.test/routed",
+        operation: "endpoint",
+        source: "code",
+      },
+      matcher: { kind: "string", value: "ws://example.test/routed" },
+    });
+    slice.registerCodeListener({
+      info: {
+        id: "code-routed:message:0",
+        kind: "websocket",
+        endpoint: "ws://example.test/routed",
+        operation: "message",
+        source: "code",
+      },
+      endpointId,
+      event: "message",
+      eventTypes: ["chat/join", "chat/message"],
+    });
+
+    slice.setListenerEventBehavior("code-routed:message:0", "chat/join", { preset: "echo" });
+    slice.setListenerEventCustomResponse("code-routed:message:0", "chat/message", {
+      type: "send",
+      dataType: "string",
+      value: "custom",
+    });
+    slice.setListenerEventResponse("code-routed:message:0", "chat/message", {
+      type: "send",
+      dataType: "string",
+      value: "response",
+    });
+    slice.setListenerEventEnabled("code-routed:message:0", "chat/join", false);
+    slice.registerCodeListener({
+      info: {
+        id: "code-routed:message:0",
+        kind: "websocket",
+        endpoint: "ws://example.test/routed",
+        operation: "message",
+        source: "code",
+      },
+      endpointId,
+      event: "message",
+      eventTypes: ["chat/join", "chat/leave"],
+    });
+
+    expect(slice.getState().listeners[0]?.eventBranches).toEqual([
+      { eventType: "chat/join", enabled: false, behavior: { preset: "echo" } },
+      { eventType: "chat/leave", enabled: true, behavior: { preset: "default" } },
+    ]);
+  });
+
   it("manages temporary lifecycle, behavior, enabled state, and runtime cleanup", () => {
     const runtime = {
       addTempEndpoint: vi.fn(),

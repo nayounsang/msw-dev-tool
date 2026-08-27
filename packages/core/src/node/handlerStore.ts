@@ -7,6 +7,9 @@ type NodeStore = StoreApi<HandlerStoreInternalState<SetupServer>>;
 
 const baseStore: NodeStore = createHandlerStore<SetupServer>({
   createRuntime: (handlers) => setupServer(...handlers),
+  onWebSocketStateChange: (webSocket) => {
+    void activeSession?.publishWebSocket(webSocket);
+  },
 });
 
 let activeSession: SessionController | null = null;

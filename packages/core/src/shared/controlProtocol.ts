@@ -36,6 +36,9 @@ export const BROWSER_CONTROL_METHOD_VERSIONS = {
   setWebSocketListenerBehavior: 1,
   setWebSocketListenerCustomResponse: 2,
   setWebSocketListenerResponse: 2,
+  setWebSocketListenerEventBehavior: 1,
+  setWebSocketListenerEventCustomResponse: 1,
+  setWebSocketListenerEventResponse: 1,
 } as const;
 
 export type BrowserControlMethod = keyof typeof BROWSER_CONTROL_METHOD_VERSIONS;
@@ -55,6 +58,9 @@ export type BrowserControlWebSocketEndpointResult = { endpoint: WebSocketEndpoin
 export type BrowserControlWebSocketListenerResult = {
   endpoint: WebSocketEndpointConfig;
   listener: WebSocketListenerConfig;
+};
+export type BrowserControlWebSocketEventResult = BrowserControlWebSocketListenerResult & {
+  eventBranch: import("./types").WebSocketEventBranchConfig;
 };
 
 export type BrowserControlBridge = {
@@ -100,4 +106,19 @@ export type BrowserControlBridge = {
     listenerId: string,
     response: WebSocketResponseConfig,
   ) => BrowserControlWebSocketListenerResult;
+  setWebSocketListenerEventBehavior: (
+    listenerId: string,
+    eventType: string,
+    behavior: WebSocketBehaviorSelection,
+  ) => BrowserControlWebSocketEventResult;
+  setWebSocketListenerEventCustomResponse: (
+    listenerId: string,
+    eventType: string,
+    response: WebSocketResponseConfig,
+  ) => BrowserControlWebSocketEventResult;
+  setWebSocketListenerEventResponse: (
+    listenerId: string,
+    eventType: string,
+    response: WebSocketResponseConfig,
+  ) => BrowserControlWebSocketEventResult;
 };

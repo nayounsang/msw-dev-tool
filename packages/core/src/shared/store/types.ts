@@ -60,6 +60,26 @@ export type HandlerStoreBaseState = {
     response: WebSocketResponseConfig,
   ) => void;
   setWebSocketListenerResponse: (listenerId: string, response: WebSocketResponseConfig) => void;
+  setWebSocketListenerEventBehavior: (
+    listenerId: string,
+    eventType: string,
+    behavior: WebSocketBehaviorSelection,
+  ) => void;
+  setWebSocketListenerEventEnabled: (
+    listenerId: string,
+    eventType: string,
+    enabled: boolean,
+  ) => void;
+  setWebSocketListenerEventCustomResponse: (
+    listenerId: string,
+    eventType: string,
+    response: WebSocketResponseConfig,
+  ) => void;
+  setWebSocketListenerEventResponse: (
+    listenerId: string,
+    eventType: string,
+    response: WebSocketResponseConfig,
+  ) => void;
   hydrateWebSocket: (endpoints: WebSocketEndpointConfig[]) => void;
   getWebSocketEndpoint: (endpointId: string) => WebSocketEndpointConfig | undefined;
   getWebSocketListener: (
@@ -84,6 +104,7 @@ export type CreateHandlerStoreOptions<TRuntime extends MswDevToolRuntime> = {
   onSetup?: (args: { runtime: TRuntime; flattenHandlers: FlattenHandler[] }) => void;
   persist?: PersistOptions<HandlerStoreInternalState<TRuntime>>;
   webSocketRuntime?: WebSocketRuntimeAdapter;
+  onWebSocketStateChange?: (endpoints: WebSocketEndpointConfig[]) => void;
   getStoredWebSocketState?: () => unknown;
 };
 

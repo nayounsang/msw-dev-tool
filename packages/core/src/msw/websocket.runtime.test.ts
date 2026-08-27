@@ -159,7 +159,7 @@ describe("temporary WebSocket runtime", () => {
 });
 
 describe("closeWebSocketConnections", () => {
-  const setupCustomResponseHarness = async (path: string) => {
+  const setupCustomResponseHarness = async (path: string, eventTypes?: readonly string[]) => {
     const endpoint = ws.link(`ws://wrapper.test/${path}`);
     const handler = endpoint.addEventListener("connection", () => undefined);
     const store = createHandlerStore<SetupServer>({
@@ -178,12 +178,95 @@ describe("closeWebSocketConnections", () => {
       order: 0,
       event: "message",
       source: "code",
+      eventTypes,
     });
     const client = { send: vi.fn(), close: vi.fn() };
     adapter.registerWebSocketConnection(endpointId, client);
     store.getState().setWebSocketListenerBehavior(listenerId, { preset: "custom response" });
     return { adapter, endpointId, listenerId, client, store };
   };
+
+  it("controls declared logical events independently and falls back for unknown events", async () => {
+    const { adapter, endpointId, listenerId, client, store } = await setupCustomResponseHarness(
+      "logical-events",
+      ["join", "message"],
+    );
+    store.getState().setWebSocketListenerEventBehavior(listenerId, "join", {
+      preset: "send",
+      options: { message: "joined" },
+    });
+    store.getState().setWebSocketListenerEventBehavior(listenerId, "message", {
+      preset: "send",
+      options: { message: "received" },
+    });
+    const original = vi.fn();
+
+    adapter.dispatchWebSocketMessage(
+      endpointId,
+      client,
+      new Event("message"),
+      listenerId,
+      original,
+      "join",
+    );
+    adapter.dispatchWebSocketMessage(
+      endpointId,
+      client,
+      new Event("message"),
+      listenerId,
+      original,
+      "message",
+    );
+    adapter.dispatchWebSocketMessage(
+      endpointId,
+      client,
+      new Event("message"),
+      listenerId,
+      original,
+      "other",
+    );
+
+    expect(client.send).toHaveBeenNthCalledWith(1, "joined");
+    expect(client.send).toHaveBeenNthCalledWith(2, "received");
+    expect(original).toHaveBeenCalledOnce();
+  });
+
+  it("uses a branch custom response and suppresses a disabled branch", async () => {
+    const { adapter, endpointId, listenerId, client, store } = await setupCustomResponseHarness(
+      "logical-event-response",
+      ["join", "message"],
+    );
+    store.getState().setWebSocketListenerEventCustomResponse(listenerId, "join", {
+      type: "send",
+      dataType: "string",
+      value: "custom join",
+    });
+    store.getState().setWebSocketListenerEventBehavior(listenerId, "join", {
+      preset: "custom response",
+    });
+    store.getState().setWebSocketListenerEventEnabled(listenerId, "message", false);
+    const original = vi.fn();
+
+    adapter.dispatchWebSocketMessage(
+      endpointId,
+      client,
+      new Event("message"),
+      listenerId,
+      original,
+      "join",
+    );
+    adapter.dispatchWebSocketMessage(
+      endpointId,
+      client,
+      new Event("message"),
+      listenerId,
+      original,
+      "message",
+    );
+
+    expect(client.send).toHaveBeenCalledWith("custom join");
+    expect(original).not.toHaveBeenCalled();
+  });
 
   it("delays the first temporary default response", async () => {
     vi.useFakeTimers();

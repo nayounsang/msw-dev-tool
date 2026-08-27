@@ -20,6 +20,10 @@ import {
   setWebSocketListenerCustomResponse,
   setWebSocketListenerResponse,
   setWebSocketListenerEnabled,
+  setWebSocketListenerEventBehavior,
+  setWebSocketListenerEventEnabled,
+  setWebSocketListenerEventCustomResponse,
+  setWebSocketListenerEventResponse,
 } from "../websocket/state";
 import { webSocketEndpointsSchema } from "../schema/websocket";
 
@@ -50,7 +54,27 @@ export const createWebSocketSlice = (runtime?: WebSocketRuntimeAdapter) => {
     state = next;
   };
   const registerListener = (listener: WebSocketListenerConfig) => {
-    if (getListener(listener.info.id)) return;
+    const existing = getListener(listener.info.id);
+    if (existing) {
+      if (!listener.eventBranches) return;
+      const eventBranches = listener.eventBranches.map(
+        (branch) =>
+          existing.eventBranches?.find((saved) => saved.eventType === branch.eventType) ?? branch,
+      );
+      const updated = { ...existing, eventBranches };
+      set({
+        endpoints: state.endpoints.map((endpoint) => ({
+          ...endpoint,
+          listeners: endpoint.listeners.map((entry) =>
+            entry.info.id === updated.info.id ? updated : entry,
+          ),
+        })),
+        listeners: state.listeners.map((entry) =>
+          entry.info.id === updated.info.id ? updated : entry,
+        ),
+      });
+      return;
+    }
     const endpoint = getEndpoint(listener.endpointId);
     if (!endpoint) return;
     set({
@@ -88,8 +112,14 @@ export const createWebSocketSlice = (runtime?: WebSocketRuntimeAdapter) => {
       info: WebSocketHandlerInfo;
       endpointId: string;
       event: "message";
+      eventTypes?: readonly string[];
     }) => {
-      registerListener({ ...input, enabled: true, behavior: defaultBehavior });
+      const eventBranches = input.eventTypes?.map((eventType) => ({
+        eventType,
+        enabled: true,
+        behavior: defaultBehavior,
+      }));
+      registerListener({ ...input, enabled: true, behavior: defaultBehavior, eventBranches });
     },
     addTempEndpoint: (input: { matcher: SerializableWebSocketMatcher; endpoint: string }) => {
       const next = addTemporaryWebSocketEndpoint(state.endpoints, input.matcher, input.endpoint);
@@ -159,6 +189,70 @@ export const createWebSocketSlice = (runtime?: WebSocketRuntimeAdapter) => {
           entry.info.id === listenerId ? next.listener : entry,
         ),
       });
+    },
+    setListenerEventBehavior: (
+      listenerId: string,
+      eventType: string,
+      behavior: WebSocketBehaviorSelection,
+    ) => {
+      const next = setWebSocketListenerEventBehavior(
+        state.endpoints,
+        listenerId,
+        eventType,
+        behavior,
+      );
+      set({
+        endpoints: next.endpoints,
+        listeners: next.endpoints.flatMap((entry) => entry.listeners),
+      });
+      return next.eventBranch;
+    },
+    setListenerEventEnabled: (listenerId: string, eventType: string, enabled: boolean) => {
+      const next = setWebSocketListenerEventEnabled(
+        state.endpoints,
+        listenerId,
+        eventType,
+        enabled,
+      );
+      set({
+        endpoints: next.endpoints,
+        listeners: next.endpoints.flatMap((entry) => entry.listeners),
+      });
+      return next.eventBranch;
+    },
+    setListenerEventCustomResponse: (
+      listenerId: string,
+      eventType: string,
+      response: WebSocketResponseConfig,
+    ) => {
+      const next = setWebSocketListenerEventCustomResponse(
+        state.endpoints,
+        listenerId,
+        eventType,
+        response,
+      );
+      set({
+        endpoints: next.endpoints,
+        listeners: next.endpoints.flatMap((entry) => entry.listeners),
+      });
+      return next.eventBranch;
+    },
+    setListenerEventResponse: (
+      listenerId: string,
+      eventType: string,
+      response: WebSocketResponseConfig,
+    ) => {
+      const next = setWebSocketListenerEventResponse(
+        state.endpoints,
+        listenerId,
+        eventType,
+        response,
+      );
+      set({
+        endpoints: next.endpoints,
+        listeners: next.endpoints.flatMap((entry) => entry.listeners),
+      });
+      return next.eventBranch;
     },
     replace: (next: WebSocketEndpointConfig[]) => {
       set({ endpoints: next, listeners: next.flatMap((entry) => entry.listeners) });

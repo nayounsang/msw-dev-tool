@@ -38,6 +38,7 @@ export type WebSocketStoreAdapter = {
     event: Event,
     listenerId?: string,
     original?: (event: Event) => void,
+    eventType?: string,
   ): void;
   closeWebSocketConnections(endpointId: string): void;
   resetWebSocketConnections(): void;

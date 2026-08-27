@@ -43,6 +43,35 @@ describe("SessionController", () => {
     expect(onSnapshot).not.toHaveBeenCalled();
   });
 
+  it("publishes discovered WebSocket state only when it changes", async () => {
+    const sessionPath = createTempSessionPath();
+    const controller = new SessionController({ onSnapshot: vi.fn(), onReset: () => [] });
+    const webSocket = [
+      {
+        info: {
+          id: "endpoint:published",
+          kind: "websocket" as const,
+          endpoint: "ws://controller.test/published",
+          operation: "endpoint",
+          source: "code" as const,
+        },
+        endpointId: "endpoint:published",
+        matcher: { kind: "string" as const, value: "ws://controller.test/published" },
+        enabled: true,
+        listeners: [],
+      },
+    ];
+
+    await controller.start([createFlattenHandler()]);
+    await controller.publishWebSocket(webSocket);
+    const published = (await readSnapshot(sessionPath))!;
+    await controller.publishWebSocket(webSocket);
+
+    expect(published.state.webSocket).toEqual(webSocket);
+    expect((await readSnapshot(sessionPath))?.revision).toBe(published.revision);
+    await controller.dispose();
+  });
+
   it("seeds a session and applies each newer non-reset snapshot once", async () => {
     const sessionPath = createTempSessionPath();
     const onSnapshot = vi.fn();

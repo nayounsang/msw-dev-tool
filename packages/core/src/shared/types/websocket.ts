@@ -14,7 +14,20 @@ export type ManagedWebSocketListener = {
   order: number;
   event: "message";
   source: "code";
+  /** Logical message event types declared by this physical listener. */
+  eventTypes?: readonly string[];
 };
+
+/** Declares per-message logical routing for one `message` listener. */
+export interface WebSocketMessageEventRouting<TData = unknown> {
+  eventTypes: readonly string[];
+  resolveEventType: (data: TData) => string;
+}
+
+/** Options accepted by wrapped WebSocket `message` listeners. */
+export interface WebSocketMessageListenerOptions<TData = unknown> extends AddEventListenerOptions {
+  mswDevTool?: WebSocketMessageEventRouting<TData>;
+}
 
 export type ManagedWebSocketRegistration = {
   endpoint: ManagedWebSocketEndpoint;
@@ -69,6 +82,15 @@ export type WebSocketListenerConfig = {
   info: WebSocketHandlerInfo;
   endpointId: string;
   event: "message";
+  enabled: boolean;
+  behavior: WebSocketBehaviorSelection;
+  response?: WebSocketResponseConfig;
+  customResponse?: WebSocketResponseConfig;
+  eventBranches?: WebSocketEventBranchConfig[];
+};
+
+export type WebSocketEventBranchConfig = {
+  eventType: string;
   enabled: boolean;
   behavior: WebSocketBehaviorSelection;
   response?: WebSocketResponseConfig;

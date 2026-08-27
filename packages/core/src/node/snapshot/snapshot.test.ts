@@ -26,6 +26,9 @@ import {
   setSnapshotWebSocketListenerBehavior,
   setSnapshotWebSocketListenerCustomResponse,
   setSnapshotWebSocketListenerResponse,
+  setSnapshotWebSocketListenerEventBehavior,
+  setSnapshotWebSocketListenerEventCustomResponse,
+  setSnapshotWebSocketListenerEventResponse,
   setSnapshotWebSocketListenerEnabled,
   readSnapshotOrEmpty,
   getSessionPathForPid,
@@ -267,6 +270,72 @@ describe("snapshot file protocol", () => {
     await removeSnapshotWebSocketListener(sessionPath, listener.info.id);
     await removeSnapshotWebSocketEndpoint(sessionPath, endpoint.endpointId);
     await expect(listSnapshotWebSocketEndpoints(sessionPath)).resolves.toEqual([]);
+  });
+
+  it("mutates each persisted logical WebSocket event branch field", async () => {
+    const dir = makeTempDir();
+    const sessionPath = path.join(dir, "session.json");
+    const endpointId = "code-routed";
+    const listenerId = `${endpointId}:message:0`;
+    await writeSnapshot(sessionPath, {
+      ...createEmptySnapshot(),
+      state: {
+        flattenHandlers: [],
+        webSocket: [
+          {
+            info: {
+              id: endpointId,
+              kind: "websocket",
+              endpoint: "ws://snapshot.test/routed",
+              operation: "endpoint",
+              source: "code",
+            },
+            endpointId,
+            matcher: { kind: "string", value: "ws://snapshot.test/routed" },
+            enabled: true,
+            listeners: [
+              {
+                info: {
+                  id: listenerId,
+                  kind: "websocket",
+                  endpoint: "ws://snapshot.test/routed",
+                  operation: "message",
+                  source: "code",
+                },
+                endpointId,
+                event: "message",
+                enabled: true,
+                behavior: { preset: "default" },
+                eventBranches: [
+                  { eventType: "chat/message", enabled: true, behavior: { preset: "default" } },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    await setSnapshotWebSocketListenerEventBehavior(sessionPath, listenerId, "chat/message", {
+      preset: "echo",
+    });
+    await setSnapshotWebSocketListenerEventCustomResponse(sessionPath, listenerId, "chat/message", {
+      type: "send",
+      dataType: "string",
+      value: "custom",
+    });
+    const updated = await setSnapshotWebSocketListenerEventResponse(
+      sessionPath,
+      listenerId,
+      "chat/message",
+      { type: "send", dataType: "string", value: "response" },
+    );
+
+    expect(updated.state.webSocket?.[0]?.listeners[0]?.eventBranches?.[0]).toMatchObject({
+      behavior: { preset: "echo" },
+      customResponse: { value: "custom" },
+      response: { value: "response" },
+    });
   });
 
   it("stores full and default temporary WebSocket listener inputs independently", async () => {

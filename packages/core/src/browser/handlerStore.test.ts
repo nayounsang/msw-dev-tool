@@ -238,6 +238,63 @@ describe("browser control bridge", () => {
     );
   });
 
+  it("exposes logical WebSocket event branch mutations through the browser bridge", async () => {
+    await setupDevToolWorker();
+    const endpointId = handlerStore.getState().addTempWebSocketEndpoint({
+      endpoint: "ws://browser.test/routed",
+      matcher: { kind: "string", value: "ws://browser.test/routed" },
+    });
+    const endpoint = handlerStore.getState().getWebSocketEndpoint(endpointId)!;
+    const listenerId = `${endpoint.endpointId}:message:0`;
+    handlerStore.getState().hydrateWebSocket([
+      {
+        ...endpoint,
+        listeners: [
+          {
+            info: {
+              id: listenerId,
+              kind: "websocket",
+              endpoint: endpoint.info.endpoint,
+              operation: "message",
+              source: "temp",
+            },
+            endpointId: endpoint.endpointId,
+            event: "message",
+            enabled: true,
+            behavior: { preset: "default" },
+            eventBranches: [
+              {
+                eventType: "chat/message",
+                enabled: true,
+                behavior: { preset: "default" },
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+    const bridge = getBridge();
+
+    expect(
+      bridge.setWebSocketListenerEventBehavior(listenerId, "chat/message", { preset: "echo" })
+        .eventBranch.behavior,
+    ).toEqual({ preset: "echo" });
+    expect(
+      bridge.setWebSocketListenerEventCustomResponse(listenerId, "chat/message", {
+        type: "send",
+        dataType: "string",
+        value: "custom",
+      }).eventBranch.customResponse,
+    ).toMatchObject({ value: "custom" });
+    expect(
+      bridge.setWebSocketListenerEventResponse(listenerId, "chat/message", {
+        type: "send",
+        dataType: "string",
+        value: "response",
+      }).eventBranch.response,
+    ).toMatchObject({ value: "response" });
+  });
+
   it("keeps HTTP temp metadata when hydrating WebSocket state", async () => {
     await setupDevToolWorker(http.get("/hydrate", () => HttpResponse.json({ ok: true })));
     const state = handlerStore.getState();

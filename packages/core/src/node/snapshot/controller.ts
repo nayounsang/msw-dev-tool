@@ -76,6 +76,27 @@ export class SessionController {
     return this.syncQueue;
   }
 
+  /** Persist runtime-discovered WebSocket listeners for external CLI clients. */
+  public publishWebSocket(webSocket: WebSocketEndpointConfig[]): Promise<void> {
+    const repository = this.repository;
+    if (!repository || this.disposing) return Promise.resolve();
+    this.syncQueue = this.syncQueue
+      .then(async () => {
+        const parsed = webSocketEndpointsSchema.parse(webSocket);
+        const written = await repository.mutate((previous) =>
+          JSON.stringify(previous.state.webSocket ?? []) === JSON.stringify(parsed)
+            ? previous
+            : bumpSnapshot(previous, { webSocket: parsed }),
+        );
+        this.lastWrittenRevision = written.revision;
+        this.lastAppliedRevision = written.revision;
+      })
+      .catch((error: unknown) => {
+        console.warn("[msw-dev-tool] failed to publish WebSocket session state", error);
+      });
+    return this.syncQueue;
+  }
+
   private async syncNow(): Promise<void> {
     const repository = this.repository;
     if (!repository) return;
