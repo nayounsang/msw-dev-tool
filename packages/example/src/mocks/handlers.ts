@@ -26,8 +26,19 @@ export const handlers: Array<RequestHandler | WebSocketHandler> = [
     return HttpResponse.json(users, { status: 200 });
   }),
   browserChat.addEventListener("connection", ({ client }) => {
-    client.addEventListener("message", (event) => {
-      client.send(`echo:${String(event.data)}`);
-    });
+    client.addEventListener(
+      "message",
+      (event) => {
+        client.send(`echo:${String(event.data)}`);
+      },
+      {
+        mswDevTool: {
+          eventTypes: ["chat/join", "chat/message"],
+          resolveEventType: (data: unknown) => JSON.parse(String(data)).type,
+        },
+      },
+    );
+    // This option-less listener remains a normal physical message listener.
+    client.addEventListener("message", (event) => client.send(`audit:${String(event.data)}`));
   }),
 ];
