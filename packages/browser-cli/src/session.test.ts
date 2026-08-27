@@ -200,6 +200,21 @@ describe("CdpBrowserCliSession", () => {
       endpoint: { endpointId: "endpoint-a" },
       listener: { info: { id: "listener-a" } },
     }));
+    const setWebSocketListenerEventBehavior = vi.fn(() => ({
+      endpoint: { endpointId: "endpoint-a" },
+      listener: { info: { id: "listener-a" } },
+      eventBranch: { eventType: "chat/message" },
+    }));
+    const setWebSocketListenerEventCustomResponse = vi.fn(() => ({
+      endpoint: { endpointId: "endpoint-a" },
+      listener: { info: { id: "listener-a" } },
+      eventBranch: { eventType: "chat/message" },
+    }));
+    const setWebSocketListenerEventResponse = vi.fn(() => ({
+      endpoint: { endpointId: "endpoint-a" },
+      listener: { info: { id: "listener-a" } },
+      eventBranch: { eventType: "chat/message" },
+    }));
     const { client, call } = createEvaluatingClient({
       methods: {
         listWebSocket: 1,
@@ -212,6 +227,9 @@ describe("CdpBrowserCliSession", () => {
         setWebSocketListenerEnabled: 1,
         setWebSocketListenerBehavior: 1,
         setWebSocketListenerResponse: 2,
+        setWebSocketListenerEventBehavior: 1,
+        setWebSocketListenerEventCustomResponse: 1,
+        setWebSocketListenerEventResponse: 1,
       },
       listWebSocket,
       getWebSocketEndpoint,
@@ -223,6 +241,9 @@ describe("CdpBrowserCliSession", () => {
       setWebSocketListenerEnabled,
       setWebSocketListenerBehavior,
       setWebSocketListenerResponse,
+      setWebSocketListenerEventBehavior,
+      setWebSocketListenerEventCustomResponse,
+      setWebSocketListenerEventResponse,
     });
     const session = new CdpBrowserCliSession(client);
     const matcher = { kind: "regexp" as const, source: "browser\\.example", flags: "i" };
@@ -259,6 +280,19 @@ describe("CdpBrowserCliSession", () => {
       delay: 300,
       repeat: { interval: 500, repetitions: "Infinity" },
     });
+    await session.setWebSocketListenerEventBehavior("listener-a", "chat/message", {
+      preset: "echo",
+    });
+    await session.setWebSocketListenerEventCustomResponse("listener-a", "chat/message", {
+      type: "send",
+      dataType: "string",
+      value: "custom",
+    });
+    await session.setWebSocketListenerEventResponse("listener-a", "chat/message", {
+      type: "send",
+      dataType: "string",
+      value: "response",
+    });
 
     expect(addWebSocketEndpoint).toHaveBeenCalledWith(matcher);
     expect(addWebSocketListener).toHaveBeenCalledWith("endpoint-a", behavior);
@@ -281,7 +315,20 @@ describe("CdpBrowserCliSession", () => {
       delay: 300,
       repeat: { interval: 500, repetitions: "Infinity" },
     });
-    expect(call).toHaveBeenCalledTimes(11);
+    expect(setWebSocketListenerEventBehavior).toHaveBeenCalledWith("listener-a", "chat/message", {
+      preset: "echo",
+    });
+    expect(setWebSocketListenerEventCustomResponse).toHaveBeenCalledWith(
+      "listener-a",
+      "chat/message",
+      { type: "send", dataType: "string", value: "custom" },
+    );
+    expect(setWebSocketListenerEventResponse).toHaveBeenCalledWith("listener-a", "chat/message", {
+      type: "send",
+      dataType: "string",
+      value: "response",
+    });
+    expect(call).toHaveBeenCalledTimes(14);
     expect(call.mock.calls[2]?.[1].expression).toContain('"source":"browser\\\\.example"');
     expect(call.mock.calls[4]?.[1].expression).toContain("false");
   });

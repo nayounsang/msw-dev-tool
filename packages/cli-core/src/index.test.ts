@@ -47,6 +47,15 @@ const wsListener: WebSocketListenerConfig = {
 };
 
 const wsEndpointWithListener: WebSocketEndpointConfig = { ...wsEndpoint, listeners: [wsListener] };
+const wsEventBranch = {
+  eventType: "chat/message",
+  enabled: true,
+  behavior: { preset: "default" as const },
+};
+const wsEndpointWithEventBranch: WebSocketEndpointConfig = {
+  ...wsEndpoint,
+  listeners: [{ ...wsListener, eventBranches: [wsEventBranch] }],
+};
 
 const createSession = (): CliSession => {
   const handlers = [{ ...handler }];
@@ -102,6 +111,21 @@ const createSession = (): CliSession => {
     setWebSocketListenerResponse: async () => ({
       endpoint: wsEndpointWithListener,
       listener: { ...wsListener, response: { type: "send", dataType: "string", value: "default" } },
+    }),
+    setWebSocketListenerEventBehavior: async () => ({
+      endpoint: wsEndpointWithEventBranch,
+      listener: wsEndpointWithEventBranch.listeners[0]!,
+      eventBranch: wsEventBranch,
+    }),
+    setWebSocketListenerEventCustomResponse: async () => ({
+      endpoint: wsEndpointWithEventBranch,
+      listener: wsEndpointWithEventBranch.listeners[0]!,
+      eventBranch: wsEventBranch,
+    }),
+    setWebSocketListenerEventResponse: async () => ({
+      endpoint: wsEndpointWithEventBranch,
+      listener: wsEndpointWithEventBranch.listeners[0]!,
+      eventBranch: wsEventBranch,
     }),
   };
 };
@@ -359,6 +383,54 @@ describe("shared CLI commands", () => {
         positionals: ["ws-set-listener-custom-response", wsListener.info.id],
       }),
     ).resolves.toMatchObject({ ok: true, listener: { customResponse: { value: "hello" } } });
+  });
+
+  it("executes every logical WebSocket event branch command", async () => {
+    const session = createSession();
+    session.setWebSocketListenerEventBehavior = vi.fn().mockResolvedValue({
+      endpoint: wsEndpointWithEventBranch,
+      listener: wsEndpointWithEventBranch.listeners[0]!,
+      eventBranch: wsEventBranch,
+    });
+    session.setWebSocketListenerEventCustomResponse = vi.fn().mockResolvedValue({
+      endpoint: wsEndpointWithEventBranch,
+      listener: wsEndpointWithEventBranch.listeners[0]!,
+      eventBranch: wsEventBranch,
+    });
+    session.setWebSocketListenerEventResponse = vi.fn().mockResolvedValue({
+      endpoint: wsEndpointWithEventBranch,
+      listener: wsEndpointWithEventBranch.listeners[0]!,
+      eventBranch: wsEventBranch,
+    });
+    const context = { session };
+    const behavior = findCommand("ws-set-listener-event-behavior")!;
+    const customResponse = findCommand("ws-set-listener-event-custom-response")!;
+    const response = findCommand("ws-set-listener-event-response")!;
+
+    await expect(
+      behavior.execute(context, {
+        flags: { json: '{"preset":"echo"}' },
+        positionals: [behavior.name, wsListener.info.id, wsEventBranch.eventType],
+      }),
+    ).resolves.toMatchObject({ ok: true, eventBranch: wsEventBranch });
+    await expect(
+      customResponse.execute(context, {
+        flags: { json: '{"type":"send","dataType":"string","value":"custom"}' },
+        positionals: [customResponse.name, wsListener.info.id, wsEventBranch.eventType],
+      }),
+    ).resolves.toMatchObject({ ok: true, eventBranch: wsEventBranch });
+    await expect(
+      response.execute(context, {
+        flags: { json: '{"type":"send","dataType":"string","value":"response"}' },
+        positionals: [response.name, wsListener.info.id, wsEventBranch.eventType],
+      }),
+    ).resolves.toMatchObject({ ok: true, eventBranch: wsEventBranch });
+
+    expect(session.setWebSocketListenerEventBehavior).toHaveBeenCalledWith(
+      wsListener.info.id,
+      wsEventBranch.eventType,
+      { preset: "echo" },
+    );
   });
 
   it("rejects ws commands with missing arguments", async () => {

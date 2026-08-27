@@ -18,6 +18,9 @@ import {
   setSnapshotWebSocketListenerCustomResponse,
   setSnapshotWebSocketListenerResponse,
   setSnapshotWebSocketListenerEnabled,
+  setSnapshotWebSocketListenerEventBehavior,
+  setSnapshotWebSocketListenerEventCustomResponse,
+  setSnapshotWebSocketListenerEventResponse,
 } from "@msw-dev-tool/core/node/internal";
 import { CliSession } from "@msw-dev-tool/cli-core";
 import type { AddWebSocketListenerInput } from "@msw-dev-tool/core/shared";
@@ -197,6 +200,72 @@ export class FileSnapshotCliSession implements CliSession {
     return {
       endpoint,
       listener: endpoint.listeners.find((listener) => listener.info.id === listenerId)!,
+    };
+  }
+  public async setWebSocketListenerEventBehavior(
+    listenerId: string,
+    eventType: string,
+    behavior: Parameters<typeof setSnapshotWebSocketListenerEventBehavior>[3],
+  ) {
+    const snapshot = await setSnapshotWebSocketListenerEventBehavior(
+      this.sessionPath,
+      listenerId,
+      eventType,
+      behavior,
+    );
+    await settleAfterWrite();
+    const endpoint = snapshot.state.webSocket!.find((entry) =>
+      entry.listeners.some((listener) => listener.info.id === listenerId),
+    )!;
+    const listener = endpoint.listeners.find((entry) => entry.info.id === listenerId)!;
+    return {
+      endpoint,
+      listener,
+      eventBranch: listener.eventBranches!.find((entry) => entry.eventType === eventType)!,
+    };
+  }
+  public async setWebSocketListenerEventCustomResponse(
+    listenerId: string,
+    eventType: string,
+    response: Parameters<typeof setSnapshotWebSocketListenerEventCustomResponse>[3],
+  ) {
+    const snapshot = await setSnapshotWebSocketListenerEventCustomResponse(
+      this.sessionPath,
+      listenerId,
+      eventType,
+      response,
+    );
+    await settleAfterWrite();
+    const endpoint = snapshot.state.webSocket!.find((entry) =>
+      entry.listeners.some((listener) => listener.info.id === listenerId),
+    )!;
+    const listener = endpoint.listeners.find((entry) => entry.info.id === listenerId)!;
+    return {
+      endpoint,
+      listener,
+      eventBranch: listener.eventBranches!.find((entry) => entry.eventType === eventType)!,
+    };
+  }
+  public async setWebSocketListenerEventResponse(
+    listenerId: string,
+    eventType: string,
+    response: Parameters<typeof setSnapshotWebSocketListenerEventResponse>[3],
+  ) {
+    const snapshot = await setSnapshotWebSocketListenerEventResponse(
+      this.sessionPath,
+      listenerId,
+      eventType,
+      response,
+    );
+    await settleAfterWrite();
+    const endpoint = snapshot.state.webSocket!.find((entry) =>
+      entry.listeners.some((listener) => listener.info.id === listenerId),
+    )!;
+    const listener = endpoint.listeners.find((entry) => entry.info.id === listenerId)!;
+    return {
+      endpoint,
+      listener,
+      eventBranch: listener.eventBranches!.find((entry) => entry.eventType === eventType)!,
     };
   }
 }

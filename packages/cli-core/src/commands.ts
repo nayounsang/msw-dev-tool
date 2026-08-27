@@ -249,6 +249,72 @@ export const commands: CliCommand[] = [
     },
   },
   {
+    name: "ws-set-listener-event-behavior",
+    usage: "ws-set-listener-event-behavior <listenerId> <eventType> --json '<behaviorJson>'",
+    async execute(context, { flags, positionals }) {
+      const [listenerId, eventType] = [positionals[1], positionals[2]];
+      if (!listenerId || !eventType || typeof flags.json !== "string")
+        throw new Error(
+          "Usage: ws-set-listener-event-behavior <listenerId> <eventType> --json '<behaviorJson>'",
+        );
+      return withMetadata(
+        {
+          ok: true,
+          ...(await context.session.setWebSocketListenerEventBehavior(
+            listenerId,
+            eventType,
+            webSocketBehaviorSchema.parse(JSON.parse(flags.json)),
+          )),
+        },
+        context,
+      );
+    },
+  },
+  {
+    name: "ws-set-listener-event-custom-response",
+    usage: "ws-set-listener-event-custom-response <listenerId> <eventType> --json '<responseJson>'",
+    async execute(context, { flags, positionals }) {
+      const [listenerId, eventType] = [positionals[1], positionals[2]];
+      if (!listenerId || !eventType || typeof flags.json !== "string")
+        throw new Error(
+          "Usage: ws-set-listener-event-custom-response <listenerId> <eventType> --json '<responseJson>'",
+        );
+      return withMetadata(
+        {
+          ok: true,
+          ...(await context.session.setWebSocketListenerEventCustomResponse(
+            listenerId,
+            eventType,
+            webSocketResponseConfigSchema.parse(JSON.parse(flags.json)),
+          )),
+        },
+        context,
+      );
+    },
+  },
+  {
+    name: "ws-set-listener-event-response",
+    usage: "ws-set-listener-event-response <listenerId> <eventType> --json '<responseJson>'",
+    async execute(context, { flags, positionals }) {
+      const [listenerId, eventType] = [positionals[1], positionals[2]];
+      if (!listenerId || !eventType || typeof flags.json !== "string")
+        throw new Error(
+          "Usage: ws-set-listener-event-response <listenerId> <eventType> --json '<responseJson>'",
+        );
+      return withMetadata(
+        {
+          ok: true,
+          ...(await context.session.setWebSocketListenerEventResponse(
+            listenerId,
+            eventType,
+            webSocketResponseConfigSchema.parse(JSON.parse(flags.json)),
+          )),
+        },
+        context,
+      );
+    },
+  },
+  {
     name: "ws-set-listener-behavior",
     usage: "ws-set-listener-behavior <listenerId> --json '<behaviorJson>'",
     async execute(context, { flags, positionals }) {
