@@ -132,6 +132,7 @@ export class SessionController {
         return bumpSnapshot(previous, {
           flattenHandlers: toSerializableFlattenHandlers(flattenHandlers),
           webSocket: webSocketEndpointsSchema.parse(webSocket),
+          mockEnabled: true,
           pendingReset: false,
         });
       });

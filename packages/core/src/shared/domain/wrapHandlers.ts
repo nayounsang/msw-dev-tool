@@ -1,4 +1,4 @@
-import { HttpResponse } from "msw";
+import { HttpResponse, passthrough } from "msw";
 import type { BehaviorResolverResult } from "../types";
 import { HttpResponseConfig, HttpHandlerBehavior } from "../types";
 import { getHandlerResponseByBehavior } from "../utils/handler";
@@ -35,6 +35,8 @@ export const wrapHandlersWithBehavior = <T>(
   handlers: T[],
   getBehavior: (id: string) => HttpHandlerBehavior | undefined,
   getCustomResponse: (id: string) => HttpResponseConfig | undefined = () => undefined,
+  getEnabled: (id: string) => boolean = () => true,
+  getMockEnabled: () => boolean = () => true,
 ): T[] => {
   return handlers.map((handler) => {
     if (!isHttpHandler(handler)) {
@@ -48,6 +50,7 @@ export const wrapHandlersWithBehavior = <T>(
         method: handler.info.method.toString().toLowerCase(),
       });
       const behavior = getBehavior(id);
+      if (!getMockEnabled() || !getEnabled(id)) return passthrough();
 
       return await getHandlerResponseByBehavior(
         behavior,

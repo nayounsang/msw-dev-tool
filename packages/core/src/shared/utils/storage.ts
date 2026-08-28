@@ -18,6 +18,7 @@ export const mergeStorageData = (
       return {
         ...newHandler,
         behavior: savedHandler.behavior,
+        enabled: savedHandler.enabled ?? true,
         type: savedHandler.type,
         customResponse: savedHandler.customResponse,
       };

@@ -210,7 +210,10 @@ const createWrappedLink = (
           },
           { once: true },
         );
-        if (!boundAdapter.getWebSocketEndpoint(endpointId)?.enabled) {
+        if (
+          !boundAdapter.isMockEnabled() ||
+          !boundAdapter.getWebSocketEndpoint(endpointId)?.enabled
+        ) {
           boundAdapter.connectWebSocket(endpointId, connection.server);
           return;
         }
@@ -273,7 +276,7 @@ export const createTemporaryWebSocketHandler = (
       },
       { once: true },
     );
-    if (!adapter.getWebSocketEndpoint(endpointId)?.enabled) {
+    if (!adapter.isMockEnabled() || !adapter.getWebSocketEndpoint(endpointId)?.enabled) {
       adapter.connectWebSocket(endpointId, server);
       return;
     }

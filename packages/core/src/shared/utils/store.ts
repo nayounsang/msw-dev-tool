@@ -37,6 +37,7 @@ export const convertHandlers = (handlers: readonly unknown[]) => {
       method,
       handler,
       behavior: HttpHandlerBehavior.DEFAULT,
+      enabled: true,
       type: "default",
     });
   }

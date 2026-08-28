@@ -17,6 +17,7 @@ const persistedFlattenHandlerSchema = z.object({
   path: z.string(),
   method: z.nativeEnum(HttpMethod),
   behavior: z.nativeEnum(HttpHandlerBehavior),
+  enabled: z.boolean().optional(),
   type: z.enum(["temp", "default"]),
   tempInput: tempHandlerSchema.optional(),
   customResponse: httpResponseConfigSchema.optional(),
@@ -26,6 +27,7 @@ const browserStoragePayloadSchema = z.object({
   revision: z.number().optional(),
   state: z.object({
     flattenHandlers: z.array(persistedFlattenHandlerSchema),
+    mockEnabled: z.boolean().optional(),
     webSocket: webSocketEndpointsSchema.optional(),
   }),
 });

@@ -32,6 +32,7 @@ export type WebSocketStoreAdapter = {
     registration: WebSocketMessageListenerRegistration,
   ): void;
   connectWebSocket(endpointId: string, server: { connect: () => void }): void;
+  isMockEnabled(): boolean;
   dispatchWebSocketMessage(
     endpointId: string,
     client: ManagedWebSocketClient,

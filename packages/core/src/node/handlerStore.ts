@@ -30,6 +30,7 @@ const applyExternalSnapshot = (snapshot: SessionSnapshot): void => {
     snapshot,
   });
   baseStore.setState({ flattenHandlers });
+  baseStore.getState().setMockEnabled(snapshot.state.mockEnabled ?? true);
   if (snapshot.state.webSocket) baseStore.getState().hydrateWebSocket(snapshot.state.webSocket);
 };
 

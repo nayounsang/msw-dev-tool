@@ -27,6 +27,13 @@ export const setHandlerBehavior = (
   return handlers.map((handler) => (handler.id === id ? { ...handler, behavior } : handler));
 };
 
+export const setHandlerEnabled = (
+  handlers: FlattenHandler[],
+  id: string,
+  enabled: boolean,
+): FlattenHandler[] =>
+  handlers.map((handler) => (handler.id === id ? { ...handler, enabled } : handler));
+
 export const setHandlerCustomResponse = (
   handlers: FlattenHandler[],
   id: string,

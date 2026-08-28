@@ -1,4 +1,4 @@
-import { HttpHandler as MswHttpHandler, HttpMethods } from "msw";
+import { HttpHandler as MswHttpHandler, HttpMethods, passthrough } from "msw";
 import {
   FlattenHandler,
   HttpResponseConfig,
@@ -40,12 +40,15 @@ export const buildTempHandler = (
   data: TempHandlerInput,
   getBehavior: (id: string) => HttpHandlerBehavior | undefined,
   getCustomResponse: (id: string) => HttpResponseConfig | undefined = () => undefined,
+  getEnabled: (id: string) => boolean = () => true,
+  getMockEnabled: () => boolean = () => true,
 ): { handler: HttpHandler; flattenHandler: FlattenHandler } => {
   const { path, method } = data;
 
   const id = getRowId({ path, method });
 
   const created = new MswHttpHandler(toMswMethod(method), path, async () => {
+    if (!getMockEnabled() || !getEnabled(id)) return passthrough();
     const behavior = getBehavior(id);
     return await getHandlerResponseByBehavior(
       behavior,
@@ -65,6 +68,7 @@ export const buildTempHandler = (
     handler: created,
     type: "temp",
     behavior: HttpHandlerBehavior.DEFAULT,
+    enabled: true,
     tempInput: data,
   };
 
@@ -79,6 +83,8 @@ export const rehydrateTempHandlers = (
   handlers: HydratableFlattenHandler[],
   getBehavior: (id: string) => HttpHandlerBehavior | undefined,
   getCustomResponse: (id: string) => HttpResponseConfig | undefined = () => undefined,
+  getEnabled: (id: string) => boolean = () => true,
+  getMockEnabled: () => boolean = () => true,
 ): FlattenHandler[] => {
   return handlers.flatMap((entry) => {
     if (entry.type !== "temp") {
@@ -87,7 +93,20 @@ export const rehydrateTempHandlers = (
     if (!entry.tempInput) {
       return [];
     }
-    const { flattenHandler } = buildTempHandler(entry.tempInput, getBehavior, getCustomResponse);
-    return [{ ...flattenHandler, behavior: entry.behavior, customResponse: entry.customResponse }];
+    const { flattenHandler } = buildTempHandler(
+      entry.tempInput,
+      getBehavior,
+      getCustomResponse,
+      getEnabled,
+      getMockEnabled,
+    );
+    return [
+      {
+        ...flattenHandler,
+        behavior: entry.behavior,
+        enabled: entry.enabled ?? true,
+        customResponse: entry.customResponse,
+      },
+    ];
   });
 };

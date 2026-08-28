@@ -20,6 +20,7 @@ export const createFlattenHandler = (
 ): FlattenHandler => ({
   handler: createHttpHandler(overrides.method, overrides.path),
   behavior: HttpHandlerBehavior.DEFAULT,
+  enabled: true,
   type: "default",
   ...overrides,
 });
