@@ -1,5 +1,17 @@
 # @msw-dev-tool/node-cli
 
+## 0.6.0
+
+### Minor Changes
+
+- ae9a86a: Add global and per-HTTP-handler mock enable controls that preserve response behavior and persisted state. The React UI now exposes these controls, and the Browser and Node CLIs support `set-enabled` and `set-mock-enabled` commands alongside existing WebSocket-specific enable controls.
+
+### Patch Changes
+
+- Updated dependencies [ae9a86a]
+  - @msw-dev-tool/core@1.10.0
+  - @msw-dev-tool/cli-core@0.5.0
+
 ## 0.5.0
 
 ### Minor Changes
