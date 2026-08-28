@@ -81,9 +81,9 @@ describe("setupDevToolServer", () => {
     expect(seeded?.state.flattenHandlers[0]?.behavior).toBe(HttpHandlerBehavior.DEFAULT);
 
     const id = nodeHandlerStore.getState().flattenHandlers[0]!.id;
-    nodeHandlerStore.getState().setHandlerBehavior(id, HttpHandlerBehavior.DISABLE);
+    nodeHandlerStore.getState().setHandlerEnabled(id, false);
 
-    expect(nodeHandlerStore.getState().getHandlerBehavior(id)).toBe(HttpHandlerBehavior.DISABLE);
+    expect(nodeHandlerStore.getState().getFlattenHandlerById(id)?.enabled).toBe(false);
     expect((await readSnapshot(sessionPath))?.state.flattenHandlers[0]?.behavior).toBe(
       HttpHandlerBehavior.DEFAULT,
     );

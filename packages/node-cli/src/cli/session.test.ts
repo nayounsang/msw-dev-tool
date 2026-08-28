@@ -8,6 +8,8 @@ const api = vi.hoisted(() => ({
   removeSnapshotTempHandler: vi.fn(),
   requestSnapshotReset: vi.fn(),
   setSnapshotBehavior: vi.fn(),
+  setSnapshotHandlerEnabled: vi.fn(),
+  setSnapshotMockEnabled: vi.fn(),
   setSnapshotCustomResponse: vi.fn(),
   addSnapshotWebSocketEndpoint: vi.fn(),
   addSnapshotWebSocketListener: vi.fn(),
@@ -75,6 +77,11 @@ describe("FileSnapshotCliSession", () => {
     api.listSnapshotHandlers.mockReturnValue([{ id: "a" }]);
     api.getSnapshotHandler.mockReturnValue({ id: "a" });
     api.setSnapshotBehavior.mockReturnValue(snapshot());
+    api.setSnapshotHandlerEnabled.mockReturnValue(snapshot([{ id: "a", enabled: false }]));
+    api.setSnapshotMockEnabled.mockReturnValue({
+      revision: 2,
+      state: { flattenHandlers: [{ id: "a" }], pendingReset: false, mockEnabled: false },
+    });
     api.setSnapshotCustomResponse.mockReturnValue(snapshot());
     api.addSnapshotTempHandler.mockReturnValue(snapshot([{ id: "a" }, { id: "temp" }]));
     api.removeSnapshotTempHandler.mockReturnValue(snapshot());
@@ -83,11 +90,14 @@ describe("FileSnapshotCliSession", () => {
       revision: 2,
       pendingReset: false,
       handlerCount: 1,
+      mockEnabled: true,
     });
     await expect(session.list()).resolves.toEqual([{ id: "a" }]);
     await expect(session.get("a")).resolves.toEqual({ id: "a" });
     const calls = [
       session.setBehavior("a", "delay"),
+      session.setEnabled("a", false),
+      session.setMockEnabled(false),
       session.setCustomResponse("a", {
         status: "200",
         contentType: "text/plain",
@@ -98,7 +108,9 @@ describe("FileSnapshotCliSession", () => {
       session.reset(),
     ];
     await vi.advanceTimersByTimeAsync(300);
-    await expect(Promise.all(calls)).resolves.toHaveLength(5);
+    await expect(Promise.all(calls)).resolves.toHaveLength(7);
+    expect(api.setSnapshotHandlerEnabled).toHaveBeenCalledWith("/tmp/session.json", "a", false);
+    expect(api.setSnapshotMockEnabled).toHaveBeenCalledWith("/tmp/session.json", false);
     expect(api.requestSnapshotReset).toHaveBeenCalledWith("/tmp/session.json");
     vi.useRealTimers();
   });

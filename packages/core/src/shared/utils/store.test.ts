@@ -27,6 +27,7 @@ describe("convertHandlers", () => {
         method: HttpMethod.GET,
         handler: httpHandler,
         behavior: HttpHandlerBehavior.DEFAULT,
+        enabled: true,
         type: "default",
       },
     ]);

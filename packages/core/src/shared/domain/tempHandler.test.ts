@@ -137,7 +137,7 @@ describe("rehydrateTempHandlers", () => {
           path: "/temp",
           method: HttpMethod.POST,
           type: "temp",
-          behavior: CustomBehavior.DISABLE,
+          behavior: CustomBehavior.DELAY,
           tempInput: baseInput,
         }),
         createFlattenHandler({
@@ -154,7 +154,7 @@ describe("rehydrateTempHandlers", () => {
     expect(result).toHaveLength(2);
     expect(result[0].id).toBe(defaultId);
     expect(result[1].id).toBe(tempId);
-    expect(result[1].behavior).toBe(CustomBehavior.DISABLE);
+    expect(result[1].behavior).toBe(CustomBehavior.DELAY);
     expect(typeof result[1].handler.resolver).toBe("function");
   });
 

@@ -28,12 +28,14 @@ describe("getStorageData", () => {
       STORAGE_KEY,
       JSON.stringify({
         state: {
+          mockEnabled: false,
           flattenHandlers: [
             {
               id,
               path: "/x",
               method: HttpMethod.GET,
-              behavior: CustomBehavior.DISABLE,
+              behavior: CustomBehavior.DEFAULT,
+              enabled: true,
               type: "default",
             },
           ],
@@ -46,11 +48,15 @@ describe("getStorageData", () => {
         id,
         path: "/x",
         method: HttpMethod.GET,
-        behavior: CustomBehavior.DISABLE,
+        behavior: CustomBehavior.DEFAULT,
+        enabled: true,
         type: "default",
       },
     ]);
-    expect(getBrowserStorageSnapshot().revision).toBe(0);
+    expect(getBrowserStorageSnapshot()).toMatchObject({
+      revision: 0,
+      state: { mockEnabled: false },
+    });
   });
 
   it("reads the revision from the extended browser payload", () => {

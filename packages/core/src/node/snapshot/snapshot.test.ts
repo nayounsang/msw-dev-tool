@@ -11,6 +11,8 @@ import {
   writeSnapshot,
   withLockedMutation,
   setSnapshotBehavior,
+  setSnapshotHandlerEnabled,
+  setSnapshotMockEnabled,
   setSnapshotCustomResponse,
   addSnapshotTempHandler,
   removeSnapshotTempHandler,
@@ -163,6 +165,40 @@ describe("snapshot file protocol", () => {
     });
   });
 
+  it("mutates HTTP and global mock enabled state without changing other settings", async () => {
+    const dir = makeTempDir();
+    const sessionPath = path.join(dir, "session.json");
+    await writeSnapshot(
+      sessionPath,
+      bumpSnapshot(createEmptySnapshot(), {
+        flattenHandlers: [
+          {
+            id: "a",
+            path: "/api",
+            method: HttpMethod.GET,
+            behavior: HttpHandlerBehavior.DELAY,
+            enabled: true,
+            type: "default",
+          },
+        ],
+      }),
+    );
+
+    const handlerDisabled = await setSnapshotHandlerEnabled(sessionPath, "a", false);
+    expect(handlerDisabled).toMatchObject({
+      revision: 2,
+      state: {
+        mockEnabled: true,
+        flattenHandlers: [{ behavior: HttpHandlerBehavior.DELAY, enabled: false }],
+      },
+    });
+    const globallyDisabled = await setSnapshotMockEnabled(sessionPath, false);
+    expect(globallyDisabled).toMatchObject({
+      revision: 3,
+      state: { mockEnabled: false, flattenHandlers: [{ enabled: false }] },
+    });
+  });
+
   it("adds temp handlers with tempInput", async () => {
     const dir = makeTempDir();
     const sessionPath = path.join(dir, "session.json");
@@ -178,6 +214,7 @@ describe("snapshot file protocol", () => {
 
     expect(next.state.flattenHandlers).toHaveLength(1);
     expect(next.state.flattenHandlers[0]?.type).toBe("temp");
+    expect(next.state.flattenHandlers[0]?.enabled).toBe(true);
     expect(next.state.flattenHandlers[0]?.tempInput?.path).toBe("/api/tmp");
   });
 

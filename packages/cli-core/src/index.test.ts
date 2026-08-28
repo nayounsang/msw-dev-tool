@@ -60,7 +60,8 @@ const wsEndpointWithEventBranch: WebSocketEndpointConfig = {
 const createSession = (): CliSession => {
   const handlers = [{ ...handler }];
   let revision = 0;
-  const info = () => ({ revision, handlerCount: handlers.length });
+  let mockEnabled = true;
+  const info = () => ({ revision, handlerCount: handlers.length, mockEnabled });
   return {
     describe: async () => info(),
     list: async () => handlers,
@@ -71,6 +72,18 @@ const createSession = (): CliSession => {
       item.behavior = behavior;
       revision += 1;
       return { ...info(), handler: item };
+    },
+    setEnabled: async (id, enabled) => {
+      const item = handlers.find((entry) => entry.id === id);
+      if (!item) throw new Error(`Handler not found for id: ${id}`);
+      item.enabled = enabled;
+      revision += 1;
+      return { ...info(), handler: item };
+    },
+    setMockEnabled: async (enabled) => {
+      mockEnabled = enabled;
+      revision += 1;
+      return info();
     },
     setCustomResponse: async (id, customResponse) => {
       const item = handlers.find((entry) => entry.id === id);
@@ -184,6 +197,34 @@ describe("shared CLI commands", () => {
         customResponse: { status: "201", contentType: "text/plain", response: "created" },
       },
     });
+  });
+
+  it("sets HTTP and global mock enabled state and validates boolean arguments", async () => {
+    const context = { session: createSession() };
+    await expect(
+      findCommand("set-enabled")!.execute(context, {
+        flags: {},
+        positionals: ["set-enabled", "a", "false"],
+      }),
+    ).resolves.toMatchObject({ ok: true, revision: 1, handler: { id: "a", enabled: false } });
+    await expect(
+      findCommand("set-mock-enabled")!.execute(context, {
+        flags: {},
+        positionals: ["set-mock-enabled", "false"],
+      }),
+    ).resolves.toMatchObject({ ok: true, revision: 2, mockEnabled: false });
+    await expect(
+      findCommand("set-enabled")!.execute(context, {
+        flags: {},
+        positionals: ["set-enabled", "a"],
+      }),
+    ).rejects.toThrow("Usage: set-enabled <handlerId> <true|false>");
+    await expect(
+      findCommand("set-mock-enabled")!.execute(context, {
+        flags: {},
+        positionals: ["set-mock-enabled", "maybe"],
+      }),
+    ).rejects.toThrow("enabled must be true or false");
   });
 
   it("rejects a missing command argument before reaching the adapter", async () => {

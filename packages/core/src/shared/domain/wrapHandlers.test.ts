@@ -52,6 +52,38 @@ describe("wrapHandlersWithBehavior", () => {
     expect(original).toHaveBeenCalledOnce();
   });
 
+  it("passes through when either HTTP or global mocking is disabled, without losing behavior", async () => {
+    const original = vi.fn(async () => HttpResponse.json({ original: true }));
+    const handler = createHttpHandler(HttpMethod.GET, "/x", original);
+    let handlerEnabled = false;
+    let mockEnabled = true;
+    wrapHandlersWithBehavior(
+      [handler],
+      () => CustomBehavior.RETURN_NULL,
+      () => undefined,
+      () => handlerEnabled,
+      () => mockEnabled,
+    );
+    const args = {
+      request: new Request("http://localhost/x"),
+      requestId: "1",
+      params: {},
+      cookies: {},
+    };
+
+    await handler.resolver(args);
+    mockEnabled = false;
+    handlerEnabled = true;
+    await handler.resolver(args);
+    expect(original).not.toHaveBeenCalled();
+
+    mockEnabled = true;
+    const result = await handler.resolver(args);
+    expect(original).not.toHaveBeenCalled();
+    if (!(result instanceof Response)) throw new Error("Expected Response");
+    expect(await result.json()).toBeNull();
+  });
+
   it("uses the custom response for a code-defined handler", async () => {
     const handler = createHttpHandler(HttpMethod.GET, "/x");
     wrapHandlersWithBehavior(

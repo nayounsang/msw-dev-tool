@@ -1,4 +1,5 @@
 import { setupServer, type SetupServer } from "msw/node";
+import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHandlerStore } from "./createHandlerStore";
 
@@ -9,6 +10,38 @@ afterEach(() => {
 });
 
 describe("createHandlerStore WebSocket coordination", () => {
+  it("keeps global and HTTP handler mock switches independent and resets both", async () => {
+    const store = createHandlerStore<SetupServer>({
+      createRuntime: (handlers) => setupServer(...handlers),
+    });
+    const runtime = await store
+      .getState()
+      .setupDevToolRuntime(http.get("/items", () => HttpResponse.json({ ok: true })));
+    servers.push(runtime);
+    const handlerId = store.getState().flattenHandlers[0]!.id;
+
+    store.getState().setHandlerEnabled(handlerId, false);
+    store.getState().setMockEnabled(false);
+    expect(store.getState().mockEnabled).toBe(false);
+    expect(store.getState().getFlattenHandlerById(handlerId)?.enabled).toBe(false);
+
+    store.getState().setMockEnabled(true);
+    expect(store.getState().getFlattenHandlerById(handlerId)?.enabled).toBe(false);
+
+    store.getState().resetMSWDevTool();
+    expect(store.getState().mockEnabled).toBe(true);
+    expect(store.getState().getFlattenHandlerById(handlerId)?.enabled).toBe(true);
+
+    store.getState().registerCodeWebSocketEndpoint({
+      id: "reset-endpoint",
+      endpoint: "ws://reset.test/chat",
+      source: "code",
+    });
+    store.getState().setWebSocketEndpointEnabled("reset-endpoint", false);
+    store.getState().resetMSWDevTool();
+    expect(store.getState().getWebSocketEndpoint("reset-endpoint")?.enabled).toBe(true);
+  });
+
   it("keeps a code listener when a temporary listener was added before connection", async () => {
     const store = createHandlerStore<SetupServer>({
       createRuntime: (handlers) => setupServer(...handlers),

@@ -109,6 +109,32 @@ describe("browser control bridge", () => {
     expect(await result.text()).toBe("custom body");
   });
 
+  it("exposes and persists HTTP and global mock enable transitions", async () => {
+    await setupDevToolWorker(http.get("/enabled", () => HttpResponse.json({ ok: true })));
+    const bridge = getBridge();
+    const handler = bridge.list()[0]!;
+    const revision = bridge.describe().revision;
+
+    expect(bridge.setEnabled(handler.id, false)).toMatchObject({
+      revision: revision + 1,
+      handler: { id: handler.id, enabled: false },
+      mockEnabled: true,
+    });
+    expect(bridge.setMockEnabled(false)).toMatchObject({
+      revision: revision + 2,
+      mockEnabled: false,
+    });
+    expect(JSON.parse(sessionStorage.getItem(STORAGE_KEY)!)).toMatchObject({
+      revision: revision + 2,
+      state: { mockEnabled: false, flattenHandlers: [{ id: handler.id, enabled: false }] },
+    });
+
+    expect(bridge.setMockEnabled(true)).toMatchObject({ mockEnabled: true });
+    expect(bridge.get(handler.id)).toMatchObject({ enabled: false });
+    expect(bridge.reset()).toMatchObject({ mockEnabled: true });
+    expect(bridge.get(handler.id)).toMatchObject({ enabled: true });
+  });
+
   it("registers wrapped WebSocket endpoints through the browser store adapter", async () => {
     const chat = ws.link("ws://browser.test/chat");
     await setupDevToolWorker(chat.addEventListener("connection", () => undefined));

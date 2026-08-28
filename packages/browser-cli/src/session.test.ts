@@ -75,6 +75,38 @@ describe("CdpBrowserCliSession", () => {
     );
   });
 
+  it("sends HTTP and global mock enable arguments through the page control bridge", async () => {
+    const call = vi.fn().mockResolvedValue({
+      result: { value: { revision: 3, handlerCount: 1, mockEnabled: false } },
+    });
+    const session = new CdpBrowserCliSession({ call } as unknown as CdpClient);
+
+    await session.setEnabled("handler-a", false);
+    await session.setMockEnabled(false);
+    expect(call.mock.calls[0]?.[1].expression).toContain(
+      'bridge["setEnabled"](...["handler-a",false])',
+    );
+    expect(call.mock.calls[1]?.[1].expression).toContain('bridge["setMockEnabled"](...[false])');
+  });
+
+  it.each(["setEnabled", "setMockEnabled"] as const)(
+    "rejects %s before invocation when its capability is unavailable",
+    async (method) => {
+      const invoke = vi.fn();
+      const { client } = createEvaluatingClient({ methods: { [method]: 99 }, [method]: invoke });
+      const session = new CdpBrowserCliSession(client);
+
+      await expect(
+        method === "setEnabled"
+          ? session.setEnabled("handler-a", false)
+          : session.setMockEnabled(false),
+      ).rejects.toThrow(
+        `MSW Dev Tool browser control method "${method}" version 1 is unavailable. Update @msw-dev-tool/core.`,
+      );
+      expect(invoke).not.toHaveBeenCalled();
+    },
+  );
+
   it("sends WebSocket custom response configuration through the page control bridge", async () => {
     const call = vi.fn().mockResolvedValue({ result: { value: { endpoint: {}, listener: {} } } });
     const session = new CdpBrowserCliSession({ call } as unknown as CdpClient);

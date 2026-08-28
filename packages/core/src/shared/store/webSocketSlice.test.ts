@@ -329,6 +329,61 @@ describe("WebSocket state model", () => {
     ]);
   });
 
+  it("matches persisted code endpoint settings by matcher when its runtime ID changes", () => {
+    const slice = createWebSocketSlice();
+    slice.registerCodeEndpoint({
+      info: {
+        id: "runtime-id",
+        kind: "websocket",
+        endpoint: "ws://example.test/reloaded",
+        operation: "endpoint",
+        source: "code",
+      },
+      matcher: { kind: "string", value: "ws://example.test/reloaded" },
+    });
+    slice.hydrate([
+      {
+        info: {
+          id: "previous-runtime-id",
+          kind: "websocket",
+          endpoint: "ws://example.test/reloaded",
+          operation: "endpoint",
+          source: "code",
+        },
+        endpointId: "previous-runtime-id",
+        matcher: { kind: "string", value: "ws://example.test/reloaded" },
+        enabled: false,
+        listeners: [
+          {
+            info: {
+              id: "previous-runtime-id:temp:message:0",
+              kind: "websocket",
+              endpoint: "ws://example.test/reloaded",
+              operation: "message",
+              source: "temp",
+            },
+            endpointId: "previous-runtime-id",
+            event: "message",
+            enabled: false,
+            behavior: { preset: "no-reply" },
+          },
+        ],
+      },
+    ]);
+
+    expect(slice.getState().endpoints[0]).toMatchObject({
+      endpointId: "runtime-id",
+      enabled: false,
+      listeners: [
+        {
+          endpointId: "runtime-id",
+          enabled: false,
+          behavior: { preset: "no-reply" },
+        },
+      ],
+    });
+  });
+
   it("allocates a fresh listener ID after an earlier listener is removed", () => {
     const slice = createWebSocketSlice();
     const endpointId = slice.addTempEndpoint({
