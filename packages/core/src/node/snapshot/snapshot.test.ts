@@ -947,4 +947,63 @@ try {
     expect(result.headers.get("X-Source")).toBe("snapshot");
     expect(await result.text()).toBe("restored custom response");
   });
+
+  it("keeps restored temp handlers in sync with later enable changes", async () => {
+    const runtime = {
+      use: () => undefined,
+      resetHandlers: () => undefined,
+      listHandlers: () => [],
+    };
+    const path = "/snapshot-temp-toggle";
+    const method = HttpMethod.GET;
+    const id = getRowId({ path, method });
+    let enabled = false;
+    let mockEnabled = false;
+
+    const next = applySnapshotToRuntime({
+      runtime,
+      current: [],
+      getHandlerEnabled: () => enabled,
+      getMockEnabled: () => mockEnabled,
+      snapshot: {
+        revision: 1,
+        state: {
+          flattenHandlers: [
+            {
+              id,
+              path,
+              method,
+              behavior: HttpHandlerBehavior.DEFAULT,
+              type: "temp",
+              tempInput: {
+                path,
+                method,
+                contentType: MimeType.APPLICATION_JSON,
+                status: StringHttpStatusCode.OK,
+                response: '{"enabled":true}',
+              },
+            },
+          ],
+        },
+        owner: { pid: 1 },
+      },
+    });
+
+    const handler = next[0]?.handler;
+    if (!handler) throw new Error("Expected restored temp handler");
+    const request = {
+      request: new Request(`http://localhost${path}`, { method: "GET" }),
+      requestId: "1",
+      params: {},
+      cookies: {},
+    };
+
+    expect(await handler.resolver(request)).toBeInstanceOf(Response);
+    enabled = true;
+    mockEnabled = true;
+    const result = await handler.resolver(request);
+    if (!(result instanceof Response)) throw new Error("Expected Response");
+    expect(result.status).toBe(200);
+    expect(await result.text()).toBe('{"enabled":true}');
+  });
 });

@@ -21,8 +21,10 @@ export const applySnapshotToRuntime = (args: {
   runtime: MswDevToolRuntime;
   current: FlattenHandler[];
   snapshot: SessionSnapshot;
+  getHandlerEnabled?: (id: string) => boolean;
+  getMockEnabled?: () => boolean;
 }): FlattenHandler[] => {
-  const { runtime, current, snapshot } = args;
+  const { runtime, current, snapshot, getHandlerEnabled, getMockEnabled } = args;
   const currentById = new Map(current.map((h) => [h.id, h]));
   const snapshotIds = new Set(snapshot.state.flattenHandlers.map((h) => h.id));
 
@@ -68,8 +70,8 @@ export const applySnapshotToRuntime = (args: {
     seedAsHandlers,
     lookupBehavior,
     lookupCustomResponse,
-    lookupEnabled,
-    () => snapshot.state.mockEnabled ?? true,
+    getHandlerEnabled ?? lookupEnabled,
+    getMockEnabled ?? (() => snapshot.state.mockEnabled ?? true),
   ).map((h) => {
     const fromSnap = snapshot.state.flattenHandlers.find((s) => s.id === h.id);
     return fromSnap
