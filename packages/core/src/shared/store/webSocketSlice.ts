@@ -42,6 +42,7 @@ export type WebSocketStoreState = {
 };
 
 const defaultBehavior: WebSocketBehaviorSelection = { preset: "default" };
+const listenerIdSuffix = (id: string) => id.slice(id.lastIndexOf(":message:"));
 export {
   canonicalWebSocketMatcher,
   createWebSocketEndpointId,
@@ -277,12 +278,21 @@ export const createWebSocketSlice = (runtime?: WebSocketRuntimeAdapter) => {
           ...entry,
           enabled: persisted.enabled,
           listeners: [
-            ...entry.listeners.map(
-              (listener) =>
-                persisted.listeners.find(
-                  (savedListener) => savedListener.info.id === listener.info.id,
-                ) ?? listener,
-            ),
+            ...entry.listeners.map((listener) => {
+              const savedListener = persisted.listeners.find(
+                (candidate) =>
+                  candidate.info.source === "code" &&
+                  listenerIdSuffix(candidate.info.id) === listenerIdSuffix(listener.info.id),
+              );
+              return savedListener
+                ? {
+                    ...listener,
+                    ...savedListener,
+                    info: listener.info,
+                    endpointId: entry.endpointId,
+                  }
+                : listener;
+            }),
             ...persistedListeners.map((listener) => ({
               ...listener,
               endpointId: entry.endpointId,

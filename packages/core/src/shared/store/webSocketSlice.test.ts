@@ -367,13 +367,13 @@ describe("WebSocket state model", () => {
         listeners: [
           {
             info: {
-              id: "runtime-id:message:0",
+              id: "previous-runtime-id:message:0",
               kind: "websocket",
               endpoint: "ws://example.test/reloaded",
               operation: "message",
               source: "code",
             },
-            endpointId: "runtime-id",
+            endpointId: "previous-runtime-id",
             event: "message",
             enabled: false,
             behavior: { preset: "no-reply" },

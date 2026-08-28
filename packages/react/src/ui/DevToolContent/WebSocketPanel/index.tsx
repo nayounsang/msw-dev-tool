@@ -427,18 +427,28 @@ const ListenerGroup = ({
     <section className="msw-dt-ws-listener-group" aria-labelledby={titleId}>
       <div className="msw-dt-ws-listener-heading">
         <h3 id={titleId}>Listener: {listener.info.operation}</h3>
-        {isTemp && (
+        {(isEventRouted || isTemp) && (
           <div className="msw-dt-ws-listener-actions">
-            <Button
-              variant="ghost"
-              color="danger"
-              title="Delete listener"
-              aria-label={`Delete listener ${listener.info.id}`}
-              className="msw-dt-danger-text"
-              onClick={() => onRemove(listener.info.id)}
-            >
-              <Trash2 size={16} />
-            </Button>
+            {isEventRouted && (
+              <MockToggle
+                checked={parentEnabled && listener.enabled}
+                disabled={!parentEnabled}
+                label={`Enable mock for ${listener.info.id}`}
+                onChange={(enabled) => setListenerEnabled(listener.info.id, enabled)}
+              />
+            )}
+            {isTemp && (
+              <Button
+                variant="ghost"
+                color="danger"
+                title="Delete listener"
+                aria-label={`Delete listener ${listener.info.id}`}
+                className="msw-dt-danger-text"
+                onClick={() => onRemove(listener.info.id)}
+              >
+                <Trash2 size={16} />
+              </Button>
+            )}
           </div>
         )}
       </div>
