@@ -29,11 +29,14 @@ export type HandlerStoreBaseState = {
   /** GraphQL handlers and unsupported handlers. */
   restHandlers: unknown[];
   flattenHandlers: FlattenHandler[];
+  mockEnabled: boolean;
   resetMSWDevTool: () => void;
   addTempHandler: (handler: { data: TempHandlerInput }) => void;
   getFlattenHandlerById: (id: string) => FlattenHandler | undefined;
   getHandlerBehavior: (id: string) => HttpHandlerBehavior | undefined;
   setHandlerBehavior: (id: string, behavior: HttpHandlerBehavior) => void;
+  setHandlerEnabled: (id: string, enabled: boolean) => void;
+  setMockEnabled: (enabled: boolean) => void;
   getHandlerCustomResponse: (id: string) => HttpResponseConfig | undefined;
   setHandlerCustomResponse: (id: string, response: HttpResponseConfig) => void;
   removeTempHandler: (id: string) => void;

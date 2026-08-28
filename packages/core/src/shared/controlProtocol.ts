@@ -21,6 +21,8 @@ export const BROWSER_CONTROL_METHOD_VERSIONS = {
   list: 1,
   get: 1,
   setBehavior: 1,
+  setEnabled: 1,
+  setMockEnabled: 1,
   setCustomResponse: 2,
   addTemp: 1,
   removeTemp: 1,
@@ -48,6 +50,7 @@ export type BrowserControlMethodVersions = Record<BrowserControlMethod, number>;
 export type BrowserControlSessionInfo = {
   revision: number;
   handlerCount: number;
+  mockEnabled: boolean;
 };
 
 export type BrowserControlMutationResult = BrowserControlSessionInfo & {
@@ -72,6 +75,8 @@ export type BrowserControlBridge = {
   list: () => PersistedFlattenHandler[];
   get: (id: string) => PersistedFlattenHandler | undefined;
   setBehavior: (id: string, behavior: HttpHandlerBehavior) => BrowserControlMutationResult;
+  setEnabled: (id: string, enabled: boolean) => BrowserControlMutationResult;
+  setMockEnabled: (enabled: boolean) => BrowserControlSessionInfo;
   setCustomResponse: (id: string, response: HttpResponseConfig) => BrowserControlMutationResult;
   addTemp: (data: TempHandlerInput) => BrowserControlMutationResult;
   removeTemp: (id: string) => BrowserControlSessionInfo;
