@@ -7,6 +7,7 @@ import {
   rehydrateTempHandlers,
   removeTempHandler as removeTempHandlerFromList,
   setHandlerBehavior as applyHandlerBehavior,
+  setHandlerEnabled as applyHandlerEnabled,
   setHandlerCustomResponse as applyHandlerCustomResponse,
   wrapHandlersWithBehavior,
 } from "../domain";
@@ -97,6 +98,7 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
       connections.delete(id);
       reconnectors.delete(id);
     };
+    const closeAllConnections = () => [...connections.keys()].forEach(closeConnections);
     const temporaryHandlers = new Map<string, unknown>();
     let codeWebSocketHandlers: readonly Handler[] = [];
     const webSocketSlice = createWebSocketSlice({
@@ -170,6 +172,7 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
         deleteEmptySet(reconnectors, id, set);
       },
       connectWebSocket: (_id: string, server: { connect: () => void }) => server.connect(),
+      isMockEnabled: () => get().mockEnabled,
       dispatchWebSocketMessage: (
         endpointId: string,
         client: ManagedWebSocketClient,
@@ -181,7 +184,7 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
         const endpoint = webSocketSlice
           .getState()
           .endpoints.find((entry) => entry.endpointId === endpointId);
-        if (!endpoint?.enabled) return;
+        if (!get().mockEnabled || !endpoint?.enabled) return;
         const listeners = listenerId
           ? [webSocketSlice.getState().listeners.find((entry) => entry.info.id === listenerId)]
           : endpoint.listeners;
@@ -324,6 +327,8 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
       );
     };
     const lookupBehavior = (id: string) => findHandlerBehavior(get().flattenHandlers, id);
+    const lookupEnabled = (id: string) =>
+      findFlattenHandlerById(get().flattenHandlers, id)?.enabled ?? true;
     const lookupCustomResponse = (id: string) =>
       findHandlerCustomResponse(get().flattenHandlers, id);
 
@@ -358,6 +363,7 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
 
     return {
       flattenHandlers: [],
+      mockEnabled: true,
       common: registry.getState(),
       webSocket: webSocketSlice.getState(),
       runtime: null,
@@ -365,7 +371,13 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
       webSocketEndpoints: [],
       webSocketListeners: [],
       setupDevToolRuntime: async (...handlers: Handler[]) => {
-        const wrapped = wrapHandlersWithBehavior(handlers, lookupBehavior, lookupCustomResponse);
+        const wrapped = wrapHandlersWithBehavior(
+          handlers,
+          lookupBehavior,
+          lookupCustomResponse,
+          lookupEnabled,
+          () => get().mockEnabled,
+        );
         const runtime = options.createRuntime(wrapped);
 
         const { flattenHandlers, unsupportedHandlers } = initMSWDevToolStore(runtime);
@@ -382,6 +394,8 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
           mergedHandlers,
           lookupBehavior,
           lookupCustomResponse,
+          lookupEnabled,
+          () => get().mockEnabled,
         );
         registerTempHandlers(runtime, rehydratedHandlers);
 
@@ -437,13 +451,20 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
         bindWebSocketHandlers(
           codeWebSocketHandlers.length > 0 ? codeWebSocketHandlers : runtime.listHandlers(),
         );
-        syncWebSocketState({ runtime, flattenHandlers, restHandlers: unsupportedHandlers });
+        syncWebSocketState({
+          runtime,
+          flattenHandlers,
+          restHandlers: unsupportedHandlers,
+          mockEnabled: true,
+        });
       },
       addTempHandler: ({ data }) => {
         const { handler, flattenHandler } = buildTempHandler(
           data,
           lookupBehavior,
           lookupCustomResponse,
+          lookupEnabled,
+          () => get().mockEnabled,
         );
         const runtime = get().getRuntime();
         const flattenHandlers = appendFlattenHandler(get().flattenHandlers, flattenHandler);
@@ -471,6 +492,13 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
         set({
           flattenHandlers: applyHandlerBehavior(get().flattenHandlers, id, behavior),
         });
+      },
+      setHandlerEnabled: (id, enabled) => {
+        set({ flattenHandlers: applyHandlerEnabled(get().flattenHandlers, id, enabled) });
+      },
+      setMockEnabled: (enabled) => {
+        if (!enabled) closeAllConnections();
+        set({ mockEnabled: enabled });
       },
       setWebSocketListenerCustomResponse: (listenerId, response) => {
         clearListenerTimers(listenerId);

@@ -99,7 +99,7 @@ describe("mergeStorageData", () => {
             path: "/temp",
             method: HttpMethod.POST,
             type: "temp",
-            behavior: CustomBehavior.DISABLE,
+            behavior: CustomBehavior.DELAY,
             tempInput: {
               path: "/temp",
               method: HttpMethod.POST,

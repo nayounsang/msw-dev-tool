@@ -81,9 +81,9 @@ describe("setupDevToolServer", () => {
     expect(seeded?.state.flattenHandlers[0]?.behavior).toBe(HttpHandlerBehavior.DEFAULT);
 
     const id = nodeHandlerStore.getState().flattenHandlers[0]!.id;
-    nodeHandlerStore.getState().setHandlerBehavior(id, HttpHandlerBehavior.DISABLE);
+    nodeHandlerStore.getState().setHandlerEnabled(id, false);
 
-    expect(nodeHandlerStore.getState().getHandlerBehavior(id)).toBe(HttpHandlerBehavior.DISABLE);
+    expect(nodeHandlerStore.getState().getFlattenHandlerById(id)?.enabled).toBe(false);
     expect((await readSnapshot(sessionPath))?.state.flattenHandlers[0]?.behavior).toBe(
       HttpHandlerBehavior.DEFAULT,
     );
@@ -104,6 +104,14 @@ describe("setupDevToolServer", () => {
 
     await syncNodeSession();
     expect(nodeHandlerStore.getState().flattenHandlers.some((h) => h.type === "temp")).toBe(true);
+    const temporary = nodeHandlerStore.getState().flattenHandlers.find((h) => h.type === "temp");
+    if (!temporary) throw new Error("Expected temporary handler");
+    await temporary.handler.resolver({
+      request: new Request("http://localhost/api/tmp"),
+      requestId: "1",
+      params: {},
+      cookies: {},
+    });
 
     await requestSnapshotReset(sessionPath);
     await syncNodeSession();

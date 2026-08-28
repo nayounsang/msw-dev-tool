@@ -18,6 +18,7 @@ export type CliSessionInfo = {
   revision: number;
   pendingReset?: boolean;
   handlerCount: number;
+  mockEnabled: boolean;
 };
 
 export type CliMutationResult = CliSessionInfo & { handler: CliHandler };
@@ -43,6 +44,8 @@ export type CliSession = {
   list(): Promise<CliHandler[]>;
   get(id: string): Promise<CliHandler | undefined>;
   setBehavior(id: string, behavior: HttpHandlerBehavior): Promise<CliMutationResult>;
+  setEnabled(id: string, enabled: boolean): Promise<CliMutationResult>;
+  setMockEnabled(enabled: boolean): Promise<CliSessionInfo>;
   setCustomResponse(id: string, response: HttpResponseConfig): Promise<CliMutationResult>;
   addTemp(data: TempHandlerInput): Promise<CliMutationResult>;
   removeTemp(id: string): Promise<CliSessionInfo>;

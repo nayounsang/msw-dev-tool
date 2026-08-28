@@ -47,6 +47,7 @@ const mapState = (base: HandlerStoreInternalState<SetupWorker>): HandlerStoreSta
   worker: base.runtime,
   restHandlers: base.restHandlers,
   flattenHandlers: base.flattenHandlers,
+  mockEnabled: base.mockEnabled,
   webSocketEndpoints: base.webSocketEndpoints,
   webSocketListeners: base.webSocketListeners,
   common: base.common,
@@ -58,6 +59,8 @@ const mapState = (base: HandlerStoreInternalState<SetupWorker>): HandlerStoreSta
   getFlattenHandlerById: base.getFlattenHandlerById,
   getHandlerBehavior: base.getHandlerBehavior,
   setHandlerBehavior: base.setHandlerBehavior,
+  setHandlerEnabled: base.setHandlerEnabled,
+  setMockEnabled: base.setMockEnabled,
   getHandlerCustomResponse: base.getHandlerCustomResponse,
   setHandlerCustomResponse: base.setHandlerCustomResponse,
   removeTempHandler: base.removeTempHandler,
@@ -113,6 +116,7 @@ const baseStore = createHandlerStore<SetupWorker>({
   mergeOnSetup: ({ flattenHandlers }) => {
     const { flattenHandlers: mergedHandlers } = mergeStorageData({
       flattenHandlers,
+      mockEnabled: true,
     });
     return mergedHandlers;
   },
@@ -120,6 +124,7 @@ const baseStore = createHandlerStore<SetupWorker>({
     name: STORAGE_KEY,
     partialize: (state) => ({
       flattenHandlers: state.flattenHandlers.map(({ handler: _handler, ...rest }) => rest),
+      mockEnabled: state.mockEnabled,
       webSocket: state.webSocket.endpoints,
     }),
     getStoredState: readBrowserPersistedState,
@@ -150,6 +155,7 @@ export const handlerStore: StoreApi<HandlerStoreState> = {
     if ("worker" in nextPartial) basePartial.runtime = nextPartial.worker;
     if ("restHandlers" in nextPartial) basePartial.restHandlers = nextPartial.restHandlers;
     if ("flattenHandlers" in nextPartial) basePartial.flattenHandlers = nextPartial.flattenHandlers;
+    if ("mockEnabled" in nextPartial) basePartial.mockEnabled = nextPartial.mockEnabled;
     if ("webSocketEndpoints" in nextPartial)
       basePartial.webSocketEndpoints = nextPartial.webSocketEndpoints;
     if ("webSocketListeners" in nextPartial)
@@ -177,6 +183,7 @@ const describeBrowserSession = () => {
   return {
     revision: snapshot.revision,
     handlerCount: handlerStore.getState().flattenHandlers.length,
+    mockEnabled: handlerStore.getState().mockEnabled,
   };
 };
 
@@ -213,6 +220,15 @@ const registerBrowserControlBridge = () => {
       requireHandler(id);
       handlerStore.getState().setHandlerBehavior(id, behavior);
       return { ...describeBrowserSession(), handler: toSerializable(requireHandler(id)) };
+    },
+    setEnabled: (id, enabled) => {
+      requireHandler(id);
+      handlerStore.getState().setHandlerEnabled(id, enabled);
+      return { ...describeBrowserSession(), handler: toSerializable(requireHandler(id)) };
+    },
+    setMockEnabled: (enabled) => {
+      handlerStore.getState().setMockEnabled(enabled);
+      return describeBrowserSession();
     },
     setCustomResponse: (id, response) => {
       requireHandler(id);

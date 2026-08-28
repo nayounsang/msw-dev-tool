@@ -5,7 +5,6 @@ import type { WebSocketEndpointConfig } from "./websocket";
 
 export const CustomBehavior = {
   DEFAULT: "default",
-  DISABLE: "disable mock",
   DELAY: "delay",
   RETURN_NULL: "return null",
   NETWORK_ERROR: "network error",
@@ -41,6 +40,7 @@ export type FlattenHandler = {
   method: HttpMethod;
   handler: HttpHandler;
   behavior: HttpHandlerBehavior;
+  enabled: boolean;
   /** Response data used when the custom response behavior is selected. */
   customResponse?: HttpResponseConfig;
   type: "temp" | "default";
@@ -49,14 +49,18 @@ export type FlattenHandler = {
 };
 
 /** A handler shape that can safely cross a persistence or CDP boundary. */
-export type PersistedFlattenHandler = Omit<FlattenHandler, "handler">;
+export type PersistedFlattenHandler = Omit<FlattenHandler, "handler" | "enabled"> & {
+  enabled?: boolean;
+};
 
 export interface StorageData {
   flattenHandlers: FlattenHandler[];
+  mockEnabled: boolean;
 }
 
 /** Browser storage intentionally excludes the non-serializable MSW handler. */
 export interface PersistedStorageData {
   flattenHandlers: PersistedFlattenHandler[];
+  mockEnabled?: boolean;
   webSocket?: WebSocketEndpointConfig[];
 }

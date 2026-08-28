@@ -6,6 +6,7 @@ import {
   setWebSocketListenerCustomResponse,
   setWebSocketListenerResponse,
   mergeDiscoveredWebSocketState,
+  resetWebSocketEndpoints,
 } from "./state";
 import type { WebSocketEndpointConfig } from "../types";
 
@@ -16,6 +17,45 @@ const endpoint = (value = "ws://state.test/chat"): WebSocketEndpointConfig =>
   }).endpoint;
 
 describe("temporary WebSocket listener state", () => {
+  it("resets code endpoint, listener, and event-branch enable settings", () => {
+    const reset = resetWebSocketEndpoints([
+      {
+        info: {
+          id: "code-endpoint",
+          kind: "websocket",
+          endpoint: "ws://state.test/code",
+          operation: "endpoint",
+          source: "code",
+        },
+        endpointId: "code-endpoint",
+        matcher: { kind: "string", value: "ws://state.test/code" },
+        enabled: false,
+        listeners: [
+          {
+            info: {
+              id: "code-listener",
+              kind: "websocket",
+              endpoint: "ws://state.test/code",
+              operation: "message",
+              source: "code",
+            },
+            endpointId: "code-endpoint",
+            event: "message",
+            enabled: false,
+            behavior: { preset: "echo" },
+            eventBranches: [
+              { eventType: "chat/join", enabled: false, behavior: { preset: "no-reply" } },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    expect(reset).toMatchObject([
+      { enabled: true, listeners: [{ enabled: true, eventBranches: [{ enabled: true }] }] },
+    ]);
+  });
+
   it("merges code discovery without replacing saved controls or temporary state", () => {
     const codeInfo = {
       id: "code-endpoint",

@@ -273,6 +273,27 @@ export const setSnapshotBehavior = (
     });
   });
 
+export const setSnapshotHandlerEnabled = (
+  sessionPath: string,
+  id: string,
+  enabled: boolean,
+): Promise<SessionSnapshot> =>
+  withLockedMutation(sessionPath, (prev) => {
+    if (!prev.state.flattenHandlers.some((handler) => handler.id === id))
+      throw new Error(`Handler not found for id: ${id}`);
+    return bumpSnapshot(prev, {
+      flattenHandlers: prev.state.flattenHandlers.map((handler) =>
+        handler.id === id ? { ...handler, enabled } : handler,
+      ),
+    });
+  });
+
+export const setSnapshotMockEnabled = (
+  sessionPath: string,
+  mockEnabled: boolean,
+): Promise<SessionSnapshot> =>
+  withLockedMutation(sessionPath, (prev) => bumpSnapshot(prev, { mockEnabled }));
+
 export const setSnapshotCustomResponse = (
   sessionPath: string,
   id: string,
@@ -301,6 +322,7 @@ export const addSnapshotTempHandler = (
       path: data.path,
       method: data.method,
       behavior: HttpHandlerBehavior.DEFAULT,
+      enabled: true,
       type: "temp",
       tempInput: data,
     };

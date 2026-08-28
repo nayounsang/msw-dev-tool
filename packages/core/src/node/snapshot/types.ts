@@ -10,6 +10,7 @@ export const serializableFlattenHandlerSchema = z.object({
   path: z.string(),
   method: z.nativeEnum(HttpMethod),
   behavior: z.nativeEnum(HttpHandlerBehavior),
+  enabled: z.boolean().optional(),
   type: z.enum(["temp", "default"]),
   tempInput: tempHandlerInputSchema.optional(),
   customResponse: httpResponseConfigSchema.optional(),
@@ -19,6 +20,7 @@ export const sessionSnapshotSchema = z.object({
   revision: z.number(),
   state: z.object({
     flattenHandlers: z.array(serializableFlattenHandlerSchema),
+    mockEnabled: z.boolean().optional(),
     webSocket: webSocketEndpointsSchema.optional(),
     pendingReset: z.boolean().optional(),
   }),

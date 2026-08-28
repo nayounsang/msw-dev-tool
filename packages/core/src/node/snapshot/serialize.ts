@@ -7,7 +7,7 @@ export const toSerializableFlattenHandlers = (
 
 export const createEmptySnapshot = (revision = 0): SessionSnapshot => ({
   revision,
-  state: { flattenHandlers: [], webSocket: [] },
+  state: { flattenHandlers: [], webSocket: [], mockEnabled: true },
   owner: { pid: process.pid },
 });
 
@@ -27,6 +27,7 @@ export const bumpSnapshot = (
     state: {
       flattenHandlers: next.flattenHandlers ?? prev.state.flattenHandlers,
       webSocket: next.webSocket ?? prev.state.webSocket,
+      mockEnabled: next.mockEnabled ?? prev.state.mockEnabled ?? true,
       ...(pendingReset ? { pendingReset: true } : {}),
     },
     owner: prev.owner,

@@ -14,6 +14,7 @@ import {
   webSocketResponseConfigSchema,
 } from "@msw-dev-tool/core/shared";
 import { Button } from "../../Components/Button";
+import { MockToggle } from "../../Components/MockToggle";
 import { CloseButton } from "../../Components/CloseButton";
 import { Input } from "../../Components/Input";
 import { Select } from "../../Components/Select";
@@ -88,26 +89,6 @@ const selectableBehaviorOptions = () => behaviorOptions;
 
 const matcherLabel = (matcher: SerializableWebSocketMatcher) =>
   matcher.kind === "string" ? matcher.value : `/${matcher.source}/${matcher.flags}`;
-
-const Toggle = ({
-  checked,
-  label,
-  onChange,
-}: {
-  checked: boolean;
-  label: string;
-  onChange: (checked: boolean) => void;
-}) => (
-  <label className="msw-dt-ws-toggle" onClick={(event) => event.stopPropagation()}>
-    <input
-      type="checkbox"
-      checked={checked}
-      onChange={(event) => onChange(event.target.checked)}
-      aria-label={label}
-    />
-    <span aria-hidden="true" />
-  </label>
-);
 
 const EndpointForm = ({ onClose }: { onClose: () => void }) => {
   const addEndpoint = useHandlerStore((state) => state.addTempWebSocketEndpoint);
@@ -187,14 +168,11 @@ const EndpointForm = ({ onClose }: { onClose: () => void }) => {
 };
 
 const ListenerBehaviorSelect = ({ listener }: { listener: WebSocketListenerConfig }) => {
-  const setEnabled = useHandlerStore((state) => state.setWebSocketListenerEnabled);
   const setBehavior = useHandlerStore((state) => state.setWebSocketListenerBehavior);
   const responseOptions = selectableBehaviorOptions().map(({ label, value }) => ({ label, value }));
   const currentValue = behaviorValue(listener.behavior);
   const options = [
-    ...responseOptions.slice(0, 1),
-    { label: "Disable mock", value: "disable" },
-    ...responseOptions.slice(1),
+    ...responseOptions,
     ...(responseOptions.some((option) => option.value === currentValue)
       ? []
       : [{ label: behaviorLabel(listener.behavior), value: currentValue }]),
@@ -203,21 +181,16 @@ const ListenerBehaviorSelect = ({ listener }: { listener: WebSocketListenerConfi
   return (
     <Select
       label={`Behavior for ${listener.info.id}`}
-      value={listener.enabled ? currentValue : "disable"}
+      value={currentValue}
       options={options}
       className="msw-dt-w-behavior-select"
       onValueChange={(value) => {
         if (!value) return;
-        if (value === "disable") {
-          setEnabled(listener.info.id, false);
-          return;
-        }
         const behavior = selectableBehaviorOptions().find(
           (option) => option.value === value,
         )?.behavior;
         if (!behavior) return;
         setBehavior(listener.info.id, behavior);
-        setEnabled(listener.info.id, true);
       }}
     />
   );
@@ -231,10 +204,8 @@ const EventBranchBehaviorSelect = ({
   branch: WebSocketEventBranchConfig;
 }) => {
   const setBehavior = useHandlerStore((state) => state.setWebSocketListenerEventBehavior);
-  const setEnabled = useHandlerStore((state) => state.setWebSocketListenerEventEnabled);
   const currentValue = behaviorValue(branch.behavior);
   const options = [
-    { label: "Disable mock", value: "disable" },
     ...selectableBehaviorOptions().map(({ label, value }) => ({ label, value })),
     ...(selectableBehaviorOptions().some((option) => option.value === currentValue)
       ? []
@@ -243,20 +214,15 @@ const EventBranchBehaviorSelect = ({
   return (
     <Select
       label={`Behavior for ${branch.eventType}`}
-      value={branch.enabled ? currentValue : "disable"}
+      value={currentValue}
       options={options}
       className="msw-dt-w-behavior-select"
       onValueChange={(value) => {
-        if (value === "disable") {
-          setEnabled(listener.info.id, branch.eventType, false);
-          return;
-        }
         const behavior = selectableBehaviorOptions().find(
           (option) => option.value === value,
         )?.behavior;
         if (behavior) {
           setBehavior(listener.info.id, branch.eventType, behavior);
-          setEnabled(listener.info.id, branch.eventType, true);
         }
       }}
     />
@@ -441,31 +407,48 @@ const ListenerDialog = ({ endpoint }: { endpoint: WebSocketEndpointConfig }) => 
 
 const ListenerGroup = ({
   listener,
+  mockEnabled,
+  endpointEnabled,
   onRemove,
 }: {
   listener: WebSocketListenerConfig;
+  mockEnabled: boolean;
+  endpointEnabled: boolean;
   onRemove: (listenerId: string) => void;
 }) => {
   const branches = listener.eventBranches ?? [];
   const isEventRouted = listener.eventBranches !== undefined;
   const isTemp = listener.info.source === "temp";
+  const setListenerEnabled = useHandlerStore((state) => state.setWebSocketListenerEnabled);
+  const setEventEnabled = useHandlerStore((state) => state.setWebSocketListenerEventEnabled);
+  const parentEnabled = mockEnabled && endpointEnabled;
   const titleId = `ws-listener-${listener.info.id}`;
   return (
     <section className="msw-dt-ws-listener-group" aria-labelledby={titleId}>
       <div className="msw-dt-ws-listener-heading">
         <h3 id={titleId}>Listener: {listener.info.operation}</h3>
-        {isTemp && (
+        {(isEventRouted || isTemp) && (
           <div className="msw-dt-ws-listener-actions">
-            <Button
-              variant="ghost"
-              color="danger"
-              title="Delete listener"
-              aria-label={`Delete listener ${listener.info.id}`}
-              className="msw-dt-danger-text"
-              onClick={() => onRemove(listener.info.id)}
-            >
-              <Trash2 size={16} />
-            </Button>
+            {isEventRouted && (
+              <MockToggle
+                checked={parentEnabled && listener.enabled}
+                disabled={!parentEnabled}
+                label={`Enable mock for ${listener.info.id}`}
+                onChange={(enabled) => setListenerEnabled(listener.info.id, enabled)}
+              />
+            )}
+            {isTemp && (
+              <Button
+                variant="ghost"
+                color="danger"
+                title="Delete listener"
+                aria-label={`Delete listener ${listener.info.id}`}
+                className="msw-dt-danger-text"
+                onClick={() => onRemove(listener.info.id)}
+              >
+                <Trash2 size={16} />
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -479,6 +462,7 @@ const ListenerGroup = ({
             }`}
           >
             {isEventRouted && <span>Event type</span>}
+            <span>Mock Enable</span>
             <span>Behavior</span>
             <span>Custom response</span>
           </div>
@@ -486,12 +470,26 @@ const ListenerGroup = ({
             ? branches.map((branch) => (
                 <div className="msw-dt-ws-listener-control-row" key={branch.eventType}>
                   <span className="msw-dt-ws-event-name">{branch.eventType}</span>
+                  <MockToggle
+                    checked={parentEnabled && listener.enabled && branch.enabled}
+                    disabled={!parentEnabled || !listener.enabled}
+                    label={`Enable mock for ${branch.eventType}`}
+                    onChange={(enabled) =>
+                      setEventEnabled(listener.info.id, branch.eventType, enabled)
+                    }
+                  />
                   <EventBranchBehaviorSelect listener={listener} branch={branch} />
                   <ResponseDialog listener={listener} branch={branch} field="customResponse" />
                 </div>
               ))
             : [
                 <div className="msw-dt-ws-listener-control-row" key="default">
+                  <MockToggle
+                    checked={parentEnabled && listener.enabled}
+                    disabled={!parentEnabled}
+                    label={`Enable mock for ${listener.info.id}`}
+                    onChange={(enabled) => setListenerEnabled(listener.info.id, enabled)}
+                  />
                   <ListenerBehaviorSelect listener={listener} />
                   <ResponseDialog listener={listener} field="customResponse" />
                   {listener.behavior.preset === "custom response" && !listener.customResponse && (
@@ -513,6 +511,8 @@ const EndpointRow = ({ endpoint }: { endpoint: WebSocketEndpointConfig }) => {
   const removeListener = useHandlerStore((state) => state.removeWebSocketListener);
   const setEndpointEnabled = useHandlerStore((state) => state.setWebSocketEndpointEnabled);
   const isTemp = endpoint.info.source === "temp";
+  const mockEnabled = useHandlerStore((state) => state.mockEnabled);
+  const effectiveEnabled = mockEnabled && endpoint.enabled;
   return (
     <>
       <tr className="msw-dt-ws-endpoint-row" onClick={() => setExpanded(!expanded)}>
@@ -523,8 +523,9 @@ const EndpointRow = ({ endpoint }: { endpoint: WebSocketEndpointConfig }) => {
         </td>
         <td>{endpoint.listeners.length}</td>
         <td>
-          <Toggle
-            checked={endpoint.enabled}
+          <MockToggle
+            checked={effectiveEnabled}
+            disabled={!mockEnabled}
             label={`Enable mock for ${matcherLabel(endpoint.matcher)}`}
             onChange={(enabled) => setEndpointEnabled(endpoint.endpointId, enabled)}
           />
@@ -561,6 +562,8 @@ const EndpointRow = ({ endpoint }: { endpoint: WebSocketEndpointConfig }) => {
                   <ListenerGroup
                     key={listener.info.id}
                     listener={listener}
+                    mockEnabled={mockEnabled}
+                    endpointEnabled={endpoint.enabled}
                     onRemove={removeListener}
                   />
                 ))}

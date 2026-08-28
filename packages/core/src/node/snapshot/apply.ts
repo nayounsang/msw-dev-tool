@@ -21,8 +21,10 @@ export const applySnapshotToRuntime = (args: {
   runtime: MswDevToolRuntime;
   current: FlattenHandler[];
   snapshot: SessionSnapshot;
+  getHandlerEnabled?: (id: string) => boolean;
+  getMockEnabled?: () => boolean;
 }): FlattenHandler[] => {
-  const { runtime, current, snapshot } = args;
+  const { runtime, current, snapshot, getHandlerEnabled, getMockEnabled } = args;
   const currentById = new Map(current.map((h) => [h.id, h]));
   const snapshotIds = new Set(snapshot.state.flattenHandlers.map((h) => h.id));
 
@@ -38,6 +40,7 @@ export const applySnapshotToRuntime = (args: {
     seed.push({
       ...existing,
       behavior: entry.behavior,
+      enabled: entry.enabled ?? true,
       type: entry.type,
       tempInput: entry.tempInput,
       customResponse: entry.customResponse,
@@ -59,18 +62,27 @@ export const applySnapshotToRuntime = (args: {
   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   const seedAsHandlers = seed as FlattenHandler[];
 
-  const next = rehydrateTempHandlers(seedAsHandlers, lookupBehavior, lookupCustomResponse).map(
-    (h) => {
-      const fromSnap = snapshot.state.flattenHandlers.find((s) => s.id === h.id);
-      return fromSnap
-        ? {
-            ...h,
-            behavior: fromSnap.behavior,
-            customResponse: fromSnap.customResponse,
-          }
-        : h;
-    },
-  );
+  const lookupEnabled = (id: string) =>
+    snapshot.state.flattenHandlers.find((h) => h.id === id)?.enabled ??
+    current.find((h) => h.id === id)?.enabled ??
+    true;
+  const next = rehydrateTempHandlers(
+    seedAsHandlers,
+    lookupBehavior,
+    lookupCustomResponse,
+    getHandlerEnabled ?? lookupEnabled,
+    getMockEnabled ?? (() => snapshot.state.mockEnabled ?? true),
+  ).map((h) => {
+    const fromSnap = snapshot.state.flattenHandlers.find((s) => s.id === h.id);
+    return fromSnap
+      ? {
+          ...h,
+          behavior: fromSnap.behavior,
+          enabled: fromSnap.enabled ?? true,
+          customResponse: fromSnap.customResponse,
+        }
+      : h;
+  });
 
   const tempsChanged =
     tempIdsSignature(current) !== tempIdsSignature(snapshot.state.flattenHandlers);
@@ -88,6 +100,7 @@ const serializableTempToSeed = (entry: SerializableFlattenHandler): FlattenHandl
   path: entry.path,
   method: entry.method,
   behavior: entry.behavior,
+  enabled: entry.enabled ?? true,
   customResponse: entry.customResponse,
   type: "temp",
   tempInput: entry.tempInput,

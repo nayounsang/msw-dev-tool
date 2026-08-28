@@ -10,12 +10,15 @@ import { FlattenHandler, useHandlerStore } from "@msw-dev-tool/core/browser";
 import { Button } from "../../Components/Button";
 import { Trash2 } from "lucide-react";
 import { CustomResponseDialog } from "../HandlerTable/CustomResponseDialog";
+import { MockToggle } from "../../Components/MockToggle";
 
 const columnHelper = createColumnHelper<FlattenHandler>();
 
 export const useFlattenHandlersTable = () => {
   const flattenHandlers = useHandlerStore((state) => state.flattenHandlers);
+  const mockEnabled = useHandlerStore((state) => state.mockEnabled);
   const removeTempHandler = useHandlerStore((state) => state.removeTempHandler);
+  const setHandlerEnabled = useHandlerStore((state) => state.setHandlerEnabled);
 
   const columns: ColumnDef<FlattenHandler, any>[] = useMemo(() => {
     return [
@@ -46,6 +49,17 @@ export const useFlattenHandlersTable = () => {
       columnHelper.accessor("method", {
         header: "Method",
         cell: ({ row }) => row.original.method,
+      }),
+      columnHelper.accessor("enabled", {
+        header: "Mock Enable",
+        cell: ({ row }) => (
+          <MockToggle
+            checked={mockEnabled && row.original.enabled}
+            disabled={!mockEnabled}
+            label={`Enable mock for ${row.original.path}`}
+            onChange={(enabled) => setHandlerEnabled(row.original.id, enabled)}
+          />
+        ),
       }),
       columnHelper.accessor("behavior", {
         header: "Behavior",
@@ -83,7 +97,7 @@ export const useFlattenHandlersTable = () => {
         id: "delete",
       }),
     ];
-  }, [flattenHandlers, removeTempHandler]);
+  }, [flattenHandlers, mockEnabled, removeTempHandler, setHandlerEnabled]);
 
   const table = useReactTable({
     columns,

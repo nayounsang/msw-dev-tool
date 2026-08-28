@@ -6,6 +6,7 @@ import { CloseButton } from "../../Components/CloseButton";
 import { useHandlerStore } from "@msw-dev-tool/core/browser";
 import { Flex } from "../../Components/Flex";
 import { Button } from "../../Components/Button";
+import { MockToggle } from "../../Components/MockToggle";
 
 export const ToolButtonGroup = ({
   showAddHandler = true,
@@ -15,10 +16,16 @@ export const ToolButtonGroup = ({
   secondaryAction?: React.ReactNode;
 }) => {
   const resetMSWDevTool = useHandlerStore((state) => state.resetMSWDevTool);
+  const mockEnabled = useHandlerStore((state) => state.mockEnabled);
+  const setMockEnabled = useHandlerStore((state) => state.setMockEnabled);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   return (
     <Flex gap={6} py={4}>
+      <Flex align="center" gap={2}>
+        <span>Mock Enable</span>
+        <MockToggle checked={mockEnabled} label="Mock Enable" onChange={setMockEnabled} />
+      </Flex>
       <Button onClick={() => resetMSWDevTool()} color="danger">
         <RotateCcw size={16} />
         Reset Dev tool

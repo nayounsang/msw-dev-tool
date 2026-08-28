@@ -25,6 +25,7 @@ import {
   setWebSocketListenerEventCustomResponse,
   setWebSocketListenerEventResponse,
   reconcileCodeWebSocketListener,
+  canonicalWebSocketMatcher,
 } from "../websocket/state";
 import { webSocketEndpointsSchema } from "../schema/websocket";
 
@@ -41,6 +42,7 @@ export type WebSocketStoreState = {
 };
 
 const defaultBehavior: WebSocketBehaviorSelection = { preset: "default" };
+const listenerIdSuffix = (id: string) => id.slice(id.lastIndexOf(":message:"));
 export {
   canonicalWebSocketMatcher,
   createWebSocketEndpointId,
@@ -257,7 +259,47 @@ export const createWebSocketSlice = (runtime?: WebSocketRuntimeAdapter) => {
       const normalized = webSocketEndpointsSchema.parse(saved);
       const code = state.endpoints.filter((entry) => entry.info.source === "code");
       const savedById = new Map(normalized.map((entry) => [entry.endpointId, entry]));
-      const mergedCode = code.map((entry) => savedById.get(entry.endpointId) ?? entry);
+      const mergedCode = code.map((entry) => {
+        const persisted =
+          savedById.get(entry.endpointId) ??
+          normalized.find(
+            (candidate) =>
+              candidate.info.source === "code" &&
+              candidate.info.endpoint === entry.info.endpoint &&
+              canonicalWebSocketMatcher(candidate.matcher) ===
+                canonicalWebSocketMatcher(entry.matcher),
+          );
+        if (!persisted) return entry;
+
+        const persistedListeners = persisted.listeners.filter(
+          (listener) => listener.info.source === "temp",
+        );
+        return {
+          ...entry,
+          enabled: persisted.enabled,
+          listeners: [
+            ...entry.listeners.map((listener) => {
+              const savedListener = persisted.listeners.find(
+                (candidate) =>
+                  candidate.info.source === "code" &&
+                  listenerIdSuffix(candidate.info.id) === listenerIdSuffix(listener.info.id),
+              );
+              return savedListener
+                ? {
+                    ...listener,
+                    ...savedListener,
+                    info: listener.info,
+                    endpointId: entry.endpointId,
+                  }
+                : listener;
+            }),
+            ...persistedListeners.map((listener) => ({
+              ...listener,
+              endpointId: entry.endpointId,
+            })),
+          ],
+        };
+      });
       const temp = normalized.filter((entry) => entry.info.source === "temp");
       set({
         endpoints: [...mergedCode, ...temp],

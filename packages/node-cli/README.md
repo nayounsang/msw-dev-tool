@@ -37,6 +37,8 @@ msw-dev-tool session
 msw-dev-tool list
 msw-dev-tool get '<id>'
 msw-dev-tool set-behavior '<id>' delay
+msw-dev-tool set-enabled '<id>' false
+msw-dev-tool set-mock-enabled false
 msw-dev-tool add-temp --json '{"path":"/api/tmp","method":"get","contentType":"application/json","status":"200","response":"{\"ok\":true}"}'
 msw-dev-tool remove-temp '<id>'
 msw-dev-tool reset
@@ -53,7 +55,7 @@ msw-dev-tool --pid 4182 ws-set-listener-response '<listener-id>' --json '{"type"
 msw-dev-tool --pid 4182 ws-set-listener-event-behavior '<listener-id>' 'chat/join' --json '{"preset":"send","options":{"message":"joined"}}'
 ```
 
-Temporary listeners default to `{"preset":"default"}`. Their `response` and `customResponse` are independent configurations; each carries its own payload, delay, and repeat schedule. Repetitions include the first response, and unbounded repetition is the JSON string `"Infinity"` with a positive interval. Use `ws-set-listener-event-behavior`, `ws-set-listener-event-response`, and `ws-set-listener-event-custom-response` for declared logical event branches. See the [Node CLI documentation](https://msw-dev-tool-docs.vercel.app/docs/node-cli) for every HTTP and WebSocket command, JSON input, and result shape.
+`set-enabled <handlerId> <true|false>` controls one HTTP handler. `set-mock-enabled <true|false>` globally controls HTTP and WebSocket mocking; its JSON result contains `mockEnabled`, while individual HTTP and WebSocket settings remain unchanged. WebSocket `ws-set-*-enabled` commands instead control only the named endpoint, listener, or logical event branch. Temporary listeners default to `{"preset":"default"}`. Their `response` and `customResponse` are independent configurations; each carries its own payload, delay, and repeat schedule. Repetitions include the first response, and unbounded repetition is the JSON string `"Infinity"` with a positive interval. Use `ws-set-listener-event-behavior`, `ws-set-listener-event-response`, and `ws-set-listener-event-custom-response` for declared logical event branches. See the [Node CLI documentation](https://msw-dev-tool-docs.vercel.app/docs/node-cli) for every HTTP and WebSocket command, JSON input, and result shape.
 
 ## Example (app)
 

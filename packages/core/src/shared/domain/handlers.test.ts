@@ -26,12 +26,12 @@ describe("getFlattenHandlerById / getHandlerBehavior", () => {
         id,
         path: "/a",
         method: HttpMethod.GET,
-        behavior: CustomBehavior.DISABLE,
+        behavior: CustomBehavior.DELAY,
       }),
     ];
 
     expect(getFlattenHandlerById(handlers, id)?.path).toBe("/a");
-    expect(getHandlerBehavior(handlers, id)).toBe(CustomBehavior.DISABLE);
+    expect(getHandlerBehavior(handlers, id)).toBe(CustomBehavior.DELAY);
     expect(getHandlerBehavior(handlers, "missing")).toBeUndefined();
   });
 });

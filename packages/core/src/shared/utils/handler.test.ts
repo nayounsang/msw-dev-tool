@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { HttpResponse, passthrough } from "msw";
+import { HttpResponse } from "msw";
 import {
   CustomBehavior,
   HttpErrorStatusCode,
@@ -39,11 +39,10 @@ describe("getHandlerResponseByBehavior", () => {
     expect(original).toHaveBeenCalledTimes(2);
   });
 
-  it("returns passthrough for DISABLE", async () => {
-    const result = await getHandlerResponseByBehavior(CustomBehavior.DISABLE, async () =>
-      HttpResponse.json({}),
-    );
-    expect(result).toEqual(passthrough());
+  it("falls back to the original resolver for an unknown behavior", async () => {
+    const original = vi.fn(async () => HttpResponse.json({}));
+    await getHandlerResponseByBehavior("disable mock", original);
+    expect(original).toHaveBeenCalledOnce();
   });
 
   it("awaits delay and returns empty Response for DELAY", async () => {

@@ -1,4 +1,4 @@
-import { delay, HttpResponse, passthrough } from "msw";
+import { delay, HttpResponse } from "msw";
 import {
   BehaviorResolverResult,
   HttpResponseConfig,
@@ -45,10 +45,6 @@ export const getHandlerResponseByBehavior = async (
 ): Promise<BehaviorResolverResult> => {
   if (!behavior || behavior === CustomBehavior.DEFAULT) {
     return originalResolverCallback();
-  }
-
-  if (behavior === CustomBehavior.DISABLE) {
-    return passthrough();
   }
 
   if (behavior === CustomBehavior.DELAY) {

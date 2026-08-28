@@ -2,6 +2,10 @@
 
 Core runtime integration for HTTP and WebSocket scenario control.
 
+HTTP handlers and WebSocket endpoints, listeners, and logical event branches each have their own
+enable setting. The shared global `mockEnabled` switch takes precedence over all of them: when it
+is off, HTTP and WebSocket traffic passes through while individual response settings are retained.
+
 ## Install
 
 ```bash

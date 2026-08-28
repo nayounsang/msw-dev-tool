@@ -61,6 +61,8 @@ Every command prints machine-readable JSON to stdout. Handler IDs are JSON strin
 msw-dev-tool --pid 4182 list
 msw-dev-tool --pid 4182 get '{"path":"/api/items","method":"get"}'
 msw-dev-tool --pid 4182 set-behavior '{"path":"/api/items","method":"get"}' delay
+msw-dev-tool --pid 4182 set-enabled '{"path":"/api/items","method":"get"}' false
+msw-dev-tool --pid 4182 set-mock-enabled false
 msw-dev-tool --pid 4182 set-custom-response '{"path":"/api/items","method":"get"}' --json '{"status":"200","contentType":"application/json","response":"[]","delay":100}'
 msw-dev-tool --pid 4182 set-behavior '{"path":"/api/items","method":"get"}' 'custom response'
 msw-dev-tool --pid 4182 add-temp --json '{"path":"/api/preview","method":"get","contentType":"application/json","status":"200","response":"{\\"ok\\":true}"}'
@@ -69,8 +71,12 @@ msw-dev-tool --pid 4182 reset
 ```
 
 ```json
-{"ok":true,"handlers":[{"id":"{\\"path\\":\\"/api/items\\",\\"method\\":\\"get\\"}","path":"/api/items","method":"get","behavior":"default"}]}
+{"ok":true,"handlers":[{"id":"{\\"path\\":\\"/api/items\\",\\"method\\":\\"get\\"}","path":"/api/items","method":"get","behavior":"default","enabled":true}],"mockEnabled":true}
 ```
+
+`set-enabled <handlerId> <true|false>` bypasses only that HTTP handler. `set-mock-enabled <true|false>`
+is the global HTTP and WebSocket switch and returns the current `mockEnabled` value. Both preserve
+individual behavior and response settings.
 
 ### WebSocket scenarios
 
@@ -96,4 +102,4 @@ msw-dev-tool --pid 4182 ws-remove-endpoint 'websocket:endpoint:ws://localhost:80
 {"ok":true,"endpoint":{"endpointId":"websocket:endpoint:ws://localhost:8080/chat","enabled":false,"listeners":[]}}
 ```
 
-`ws-add-endpoint`, `ws-add-listener`, and `ws-set-listener-behavior` accept JSON input. A temporary listener defaults to `{ "preset": "default" }`; its `response` and `customResponse` are independent configurations containing payload, delay, and repeat. Default uses `response`, while `{ "preset": "custom response" }` uses `customResponse`. `repeat.repetitions` includes the first response; use `"Infinity"` with a positive interval for unbounded repetition. Update each complete configuration with `ws-set-listener-response` or `ws-set-listener-custom-response`. Send supports String, Blob, and ArrayBuffer values; Blob and ArrayBuffer values are space-separated hexadecimal bytes. Close accepts optional `code` and `reason`. Code-discovered endpoints and listeners cannot be removed; remove commands apply only to temporary items.
+`ws-set-*-enabled` commands control only the selected WebSocket endpoint, listener, or logical event branch; the global `set-mock-enabled` switch takes precedence. `ws-add-endpoint`, `ws-add-listener`, and `ws-set-listener-behavior` accept JSON input. A temporary listener defaults to `{ "preset": "default" }`; its `response` and `customResponse` are independent configurations containing payload, delay, and repeat. Default uses `response`, while `{ "preset": "custom response" }` uses `customResponse`. `repeat.repetitions` includes the first response; use `"Infinity"` with a positive interval for unbounded repetition. Update each complete configuration with `ws-set-listener-response` or `ws-set-listener-custom-response`. Send supports String, Blob, and ArrayBuffer values; Blob and ArrayBuffer values are space-separated hexadecimal bytes. Close accepts optional `code` and `reason`. Code-discovered endpoints and listeners cannot be removed; remove commands apply only to temporary items.

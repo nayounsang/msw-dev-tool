@@ -4,7 +4,6 @@ description: Show handlers and control them
 
 import { ExampleImage } from "@/app/_components/ExampleImage";
 import { Callout } from "nextra/components";
-import { Badge } from "@/app/docs/_components/Badge";
 
 # Handler Table
 
@@ -26,10 +25,6 @@ Control how your mocked APIs respond using the behavior selector. Each handler c
 
   - Executes the original handler logic you've defined
   - Uses your custom mock implementation
-
-- **disable mock** <Badge variant="new">^2.3.0</Badge>
-  - Disables the mock for the handler
-  - The handler will be sent to the actual endpoint.
 
 - **delay**
 
@@ -55,7 +50,18 @@ Control how your mocked APIs respond using the behavior selector. Each handler c
 
 - **5xx Error**
   - Returns server error status codes
-  - Simulates server-side failure scenarios
+- Simulates server-side failure scenarios
+
+## Mock Enable
+
+Use the **Mock Enable** toggle in each HTTP row to pass requests for that handler through to
+the real endpoint. The behavior selector only controls the response while that handler is
+enabled, so switching it off does not discard its selected behavior or custom response.
+
+The toolbar **Mock Enable** toggle is a global switch for both HTTP and WebSocket mocks. When
+it is off, all requests and WebSocket connections pass through and active mock WebSocket
+connections close. Individual HTTP, endpoint, listener, and logical event-branch settings are
+preserved, so turning the global switch back on restores their prior behavior.
 
 ## Reset
 
@@ -64,4 +70,4 @@ Control how your mocked APIs respond using the behavior selector. Each handler c
 You can reset all handlers to their initial state using the `Reset Dev Tool` button:
 
 - All response behaviors will be set back to **Default**
-- All handlers will be **Enabled** for mocking
+- Global mocking and every HTTP/WebSocket enable toggle will be **Enabled** for mocking

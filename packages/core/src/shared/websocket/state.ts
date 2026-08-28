@@ -340,7 +340,14 @@ export const resetWebSocketEndpoints = (endpoints: WebSocketEndpointConfig[]) =>
     .filter((entry) => entry.info.source === "code")
     .map((entry) => ({
       ...entry,
-      listeners: entry.listeners.filter((listener) => listener.info.source === "code"),
+      enabled: true,
+      listeners: entry.listeners
+        .filter((listener) => listener.info.source === "code")
+        .map((listener) => ({
+          ...listener,
+          enabled: true,
+          eventBranches: listener.eventBranches?.map((branch) => ({ ...branch, enabled: true })),
+        })),
     }));
 
 export type WebSocketStateMutation = {
