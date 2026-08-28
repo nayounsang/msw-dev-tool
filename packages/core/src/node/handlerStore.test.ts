@@ -104,6 +104,14 @@ describe("setupDevToolServer", () => {
 
     await syncNodeSession();
     expect(nodeHandlerStore.getState().flattenHandlers.some((h) => h.type === "temp")).toBe(true);
+    const temporary = nodeHandlerStore.getState().flattenHandlers.find((h) => h.type === "temp");
+    if (!temporary) throw new Error("Expected temporary handler");
+    await temporary.handler.resolver({
+      request: new Request("http://localhost/api/tmp"),
+      requestId: "1",
+      params: {},
+      cookies: {},
+    });
 
     await requestSnapshotReset(sessionPath);
     await syncNodeSession();

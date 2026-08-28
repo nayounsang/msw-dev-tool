@@ -341,6 +341,17 @@ describe("WebSocket state model", () => {
       },
       matcher: { kind: "string", value: "ws://example.test/reloaded" },
     });
+    slice.registerCodeListener({
+      info: {
+        id: "runtime-id:message:0",
+        kind: "websocket",
+        endpoint: "ws://example.test/reloaded",
+        operation: "message",
+        source: "code",
+      },
+      endpointId: "runtime-id",
+      event: "message",
+    });
     slice.hydrate([
       {
         info: {
@@ -354,6 +365,19 @@ describe("WebSocket state model", () => {
         matcher: { kind: "string", value: "ws://example.test/reloaded" },
         enabled: false,
         listeners: [
+          {
+            info: {
+              id: "runtime-id:message:0",
+              kind: "websocket",
+              endpoint: "ws://example.test/reloaded",
+              operation: "message",
+              source: "code",
+            },
+            endpointId: "runtime-id",
+            event: "message",
+            enabled: false,
+            behavior: { preset: "no-reply" },
+          },
           {
             info: {
               id: "previous-runtime-id:temp:message:0",
@@ -374,14 +398,21 @@ describe("WebSocket state model", () => {
     expect(slice.getState().endpoints[0]).toMatchObject({
       endpointId: "runtime-id",
       enabled: false,
-      listeners: [
-        {
+    });
+    expect(slice.getState().endpoints[0]?.listeners).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          info: expect.objectContaining({ id: "runtime-id:message:0" }),
           endpointId: "runtime-id",
           enabled: false,
           behavior: { preset: "no-reply" },
-        },
-      ],
-    });
+        }),
+        expect.objectContaining({
+          info: expect.objectContaining({ id: "previous-runtime-id:temp:message:0" }),
+          endpointId: "runtime-id",
+        }),
+      ]),
+    );
   });
 
   it("allocates a fresh listener ID after an earlier listener is removed", () => {

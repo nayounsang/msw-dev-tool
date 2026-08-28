@@ -82,10 +82,13 @@ export const buildTempHandler = (
 export const rehydrateTempHandlers = (
   handlers: HydratableFlattenHandler[],
   getBehavior: (id: string) => HttpHandlerBehavior | undefined,
-  getCustomResponse: (id: string) => HttpResponseConfig | undefined = () => undefined,
-  getEnabled: (id: string) => boolean = () => true,
-  getMockEnabled: () => boolean = () => true,
+  getCustomResponse?: (id: string) => HttpResponseConfig | undefined,
+  getEnabled?: (id: string) => boolean,
+  getMockEnabled?: () => boolean,
 ): FlattenHandler[] => {
+  const resolveCustomResponse = getCustomResponse ?? (() => undefined);
+  const resolveEnabled = getEnabled ?? (() => true);
+  const resolveMockEnabled = getMockEnabled ?? (() => true);
   return handlers.flatMap((entry) => {
     if (entry.type !== "temp") {
       return isRuntimeFlattenHandler(entry) ? [entry] : [];
@@ -96,9 +99,9 @@ export const rehydrateTempHandlers = (
     const { flattenHandler } = buildTempHandler(
       entry.tempInput,
       getBehavior,
-      getCustomResponse,
-      getEnabled,
-      getMockEnabled,
+      resolveCustomResponse,
+      resolveEnabled,
+      resolveMockEnabled,
     );
     return [
       {

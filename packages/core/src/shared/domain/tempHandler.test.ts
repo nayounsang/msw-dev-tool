@@ -118,6 +118,10 @@ describe("buildTempHandler", () => {
 });
 
 describe("rehydrateTempHandlers", () => {
+  it("accepts omitted enable callbacks", () => {
+    expect(rehydrateTempHandlers([], vi.fn(), undefined, undefined, undefined)).toEqual([]);
+  });
+
   it("rebuilds temp handlers from tempInput and drops broken temps", () => {
     const getBehavior = vi.fn();
     const defaultId = getRowId({ path: "/a", method: "get" });

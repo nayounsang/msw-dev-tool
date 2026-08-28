@@ -197,6 +197,9 @@ describe("snapshot file protocol", () => {
       revision: 3,
       state: { mockEnabled: false, flattenHandlers: [{ enabled: false }] },
     });
+    await expect(setSnapshotHandlerEnabled(sessionPath, "missing", false)).rejects.toThrow(
+      "Handler not found for id: missing",
+    );
   });
 
   it("adds temp handlers with tempInput", async () => {

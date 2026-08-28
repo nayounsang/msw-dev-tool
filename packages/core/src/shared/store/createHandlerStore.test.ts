@@ -2,6 +2,7 @@ import { setupServer, type SetupServer } from "msw/node";
 import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHandlerStore } from "./createHandlerStore";
+import { HttpMethod, MimeType, StringHttpStatusCode } from "../types";
 
 const servers: SetupServer[] = [];
 
@@ -40,6 +41,50 @@ describe("createHandlerStore WebSocket coordination", () => {
     store.getState().setWebSocketEndpointEnabled("reset-endpoint", false);
     store.getState().resetMSWDevTool();
     expect(store.getState().getWebSocketEndpoint("reset-endpoint")?.enabled).toBe(true);
+  });
+
+  it("evaluates mock state callbacks for setup and added temporary handlers", async () => {
+    const tempInput = {
+      path: "/temporary",
+      method: HttpMethod.GET,
+      contentType: MimeType.APPLICATION_JSON,
+      status: StringHttpStatusCode.OK,
+      response: '{"ok":true}',
+    };
+    const store = createHandlerStore<SetupServer>({
+      createRuntime: (handlers) => setupServer(...handlers),
+      mergeOnSetup: ({ flattenHandlers }) => [
+        ...flattenHandlers,
+        {
+          id: JSON.stringify({ path: tempInput.path, method: tempInput.method }),
+          ...tempInput,
+          behavior: "default",
+          type: "temp" as const,
+          tempInput,
+        },
+      ],
+    });
+    const runtime = await store.getState().setupDevToolRuntime();
+    servers.push(runtime);
+
+    const restored = store
+      .getState()
+      .getFlattenHandlerById(JSON.stringify({ path: tempInput.path, method: tempInput.method }));
+    const addedInput = { ...tempInput, path: "/added" };
+    store.getState().addTempHandler({ data: addedInput });
+    const added = store
+      .getState()
+      .getFlattenHandlerById(JSON.stringify({ path: addedInput.path, method: addedInput.method }));
+
+    for (const handler of [restored?.handler, added?.handler]) {
+      if (!handler) throw new Error("Expected temporary handler");
+      await handler.resolver({
+        request: new Request("http://localhost/temporary"),
+        requestId: "1",
+        params: {},
+        cookies: {},
+      });
+    }
   });
 
   it("keeps a code listener when a temporary listener was added before connection", async () => {

@@ -72,9 +72,9 @@ msw-dev-tool-browser reset <cdp>
 {"ok":true,"handlers":[{"id":"{\\"path\\":\\"/api/items\\",\\"method\\":\\"get\\"}","path":"/api/items","method":"get","behavior":"default","enabled":true}],"mockEnabled":true}
 ```
 
-`set-enabled <handlerId> <true|false>` bypasses only that HTTP handler. `set-mock-enabled
-<true|false>` is the global HTTP and WebSocket switch; its result includes `mockEnabled`. Both
-leave selected behavior and custom response data intact, so they resume when enabled again.
+`set-enabled <handlerId> <true|false>` bypasses only that HTTP handler. `set-mock-enabled <true|false>`
+is the global HTTP and WebSocket switch; its result includes `mockEnabled`. Both leave selected
+behavior and custom response data intact, so they resume when enabled again.
 
 ### WebSocket scenarios
 
