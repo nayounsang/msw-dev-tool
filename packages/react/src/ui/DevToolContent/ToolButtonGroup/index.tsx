@@ -6,6 +6,7 @@ import { CloseButton } from "../../Components/CloseButton";
 import { useHandlerStore } from "@msw-dev-tool/core/browser";
 import { Flex } from "../../Components/Flex";
 import { Button } from "../../Components/Button";
+import { MockToggle } from "../../Components/MockToggle";
 
 export const ToolButtonGroup = ({
   showAddHandler = true,
@@ -21,15 +22,10 @@ export const ToolButtonGroup = ({
 
   return (
     <Flex gap={6} py={4}>
-      <label>
-        Mock Enable
-        <input
-          type="checkbox"
-          checked={mockEnabled}
-          onChange={(event) => setMockEnabled(event.target.checked)}
-          aria-label="Mock Enable"
-        />
-      </label>
+      <Flex align="center" gap={2}>
+        <span>Mock Enable</span>
+        <MockToggle checked={mockEnabled} label="Mock Enable" onChange={setMockEnabled} />
+      </Flex>
       <Button onClick={() => resetMSWDevTool()} color="danger">
         <RotateCcw size={16} />
         Reset Dev tool

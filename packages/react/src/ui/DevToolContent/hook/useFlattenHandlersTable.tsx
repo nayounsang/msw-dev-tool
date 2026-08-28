@@ -10,6 +10,7 @@ import { FlattenHandler, useHandlerStore } from "@msw-dev-tool/core/browser";
 import { Button } from "../../Components/Button";
 import { Trash2 } from "lucide-react";
 import { CustomResponseDialog } from "../HandlerTable/CustomResponseDialog";
+import { MockToggle } from "../../Components/MockToggle";
 
 const columnHelper = createColumnHelper<FlattenHandler>();
 
@@ -51,11 +52,10 @@ export const useFlattenHandlersTable = () => {
       columnHelper.accessor("enabled", {
         header: "Mock Enable",
         cell: ({ row }) => (
-          <input
-            type="checkbox"
+          <MockToggle
             checked={row.original.enabled}
-            aria-label={`Enable mock for ${row.original.path}`}
-            onChange={(event) => setHandlerEnabled(row.original.id, event.target.checked)}
+            label={`Enable mock for ${row.original.path}`}
+            onChange={(enabled) => setHandlerEnabled(row.original.id, enabled)}
           />
         ),
       }),

@@ -14,6 +14,7 @@ import {
   webSocketResponseConfigSchema,
 } from "@msw-dev-tool/core/shared";
 import { Button } from "../../Components/Button";
+import { MockToggle } from "../../Components/MockToggle";
 import { CloseButton } from "../../Components/CloseButton";
 import { Input } from "../../Components/Input";
 import { Select } from "../../Components/Select";
@@ -88,26 +89,6 @@ const selectableBehaviorOptions = () => behaviorOptions;
 
 const matcherLabel = (matcher: SerializableWebSocketMatcher) =>
   matcher.kind === "string" ? matcher.value : `/${matcher.source}/${matcher.flags}`;
-
-const Toggle = ({
-  checked,
-  label,
-  onChange,
-}: {
-  checked: boolean;
-  label: string;
-  onChange: (checked: boolean) => void;
-}) => (
-  <label className="msw-dt-ws-toggle" onClick={(event) => event.stopPropagation()}>
-    <input
-      type="checkbox"
-      checked={checked}
-      onChange={(event) => onChange(event.target.checked)}
-      aria-label={label}
-    />
-    <span aria-hidden="true" />
-  </label>
-);
 
 const EndpointForm = ({ onClose }: { onClose: () => void }) => {
   const addEndpoint = useHandlerStore((state) => state.addTempWebSocketEndpoint);
@@ -474,7 +455,7 @@ const ListenerGroup = ({
             ? branches.map((branch) => (
                 <div className="msw-dt-ws-listener-control-row" key={branch.eventType}>
                   <span className="msw-dt-ws-event-name">{branch.eventType}</span>
-                  <Toggle
+                  <MockToggle
                     checked={branch.enabled}
                     label={`Enable mock for ${branch.eventType}`}
                     onChange={(enabled) =>
@@ -487,7 +468,7 @@ const ListenerGroup = ({
               ))
             : [
                 <div className="msw-dt-ws-listener-control-row" key="default">
-                  <Toggle
+                  <MockToggle
                     checked={listener.enabled}
                     label={`Enable mock for ${listener.info.id}`}
                     onChange={(enabled) => setListenerEnabled(listener.info.id, enabled)}
@@ -523,7 +504,7 @@ const EndpointRow = ({ endpoint }: { endpoint: WebSocketEndpointConfig }) => {
         </td>
         <td>{endpoint.listeners.length}</td>
         <td>
-          <Toggle
+          <MockToggle
             checked={endpoint.enabled}
             label={`Enable mock for ${matcherLabel(endpoint.matcher)}`}
             onChange={(enabled) => setEndpointEnabled(endpoint.endpointId, enabled)}

@@ -536,7 +536,7 @@
 }
 .msw-dt-ws-listener-control-header {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(12rem, 2fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(4rem, auto) minmax(12rem, 2fr) auto;
   gap: 0.75rem;
   padding: 0.5rem 0.875rem;
   background: #f1f5f9;
@@ -545,11 +545,11 @@
   font-weight: 600;
 }
 .msw-dt-ws-listener-control-header-standard {
-  grid-template-columns: minmax(12rem, 2fr) auto;
+  grid-template-columns: minmax(4rem, auto) minmax(12rem, 2fr) auto;
 }
 .msw-dt-ws-listener-control-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(12rem, 2fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(4rem, auto) minmax(12rem, 2fr) auto;
   align-items: center;
   gap: 0.75rem;
   min-height: 3rem;
@@ -565,8 +565,8 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.msw-dt-ws-listener-control-row > .msw-dt-w-behavior-select:first-child {
-  grid-column: 1 / span 2;
+.msw-dt-ws-listener-control-header-standard + .msw-dt-ws-listener-control-row {
+  grid-template-columns: minmax(4rem, auto) minmax(12rem, 2fr) auto;
 }
 .msw-dt-ws-listener-control-row > .msw-dt-error-text {
   grid-column: 1 / -1;
@@ -668,22 +668,22 @@
     grid-template-columns: 1fr;
   }
 }
-.msw-dt-ws-toggle {
+.msw-dt-toggle {
   cursor: pointer;
   display: inline-flex;
 }
-.msw-dt-ws-toggle input {
+.msw-dt-toggle input {
   position: absolute;
   opacity: 0;
 }
-.msw-dt-ws-toggle span {
+.msw-dt-toggle span {
   width: 2rem;
   height: 1.125rem;
   background: #9ca3af;
   border-radius: 999px;
   position: relative;
 }
-.msw-dt-ws-toggle span::after {
+.msw-dt-toggle span::after {
   content: "";
   width: 0.875rem;
   height: 0.875rem;
@@ -694,13 +694,13 @@
   left: 0.125rem;
   transition: transform 0.15s ease;
 }
-.msw-dt-ws-toggle input:checked + span {
+.msw-dt-toggle input:checked + span {
   background: #0d9488;
 }
-.msw-dt-ws-toggle input:checked + span::after {
+.msw-dt-toggle input:checked + span::after {
   transform: translateX(0.875rem);
 }
-.msw-dt-ws-toggle input:focus-visible + span {
+.msw-dt-toggle input:focus-visible + span {
   outline: 2px solid #f97316;
   outline-offset: 2px;
 }
