@@ -187,14 +187,11 @@ const EndpointForm = ({ onClose }: { onClose: () => void }) => {
 };
 
 const ListenerBehaviorSelect = ({ listener }: { listener: WebSocketListenerConfig }) => {
-  const setEnabled = useHandlerStore((state) => state.setWebSocketListenerEnabled);
   const setBehavior = useHandlerStore((state) => state.setWebSocketListenerBehavior);
   const responseOptions = selectableBehaviorOptions().map(({ label, value }) => ({ label, value }));
   const currentValue = behaviorValue(listener.behavior);
   const options = [
-    ...responseOptions.slice(0, 1),
-    { label: "Disable mock", value: "disable" },
-    ...responseOptions.slice(1),
+    ...responseOptions,
     ...(responseOptions.some((option) => option.value === currentValue)
       ? []
       : [{ label: behaviorLabel(listener.behavior), value: currentValue }]),
@@ -203,21 +200,16 @@ const ListenerBehaviorSelect = ({ listener }: { listener: WebSocketListenerConfi
   return (
     <Select
       label={`Behavior for ${listener.info.id}`}
-      value={listener.enabled ? currentValue : "disable"}
+      value={currentValue}
       options={options}
       className="msw-dt-w-behavior-select"
       onValueChange={(value) => {
         if (!value) return;
-        if (value === "disable") {
-          setEnabled(listener.info.id, false);
-          return;
-        }
         const behavior = selectableBehaviorOptions().find(
           (option) => option.value === value,
         )?.behavior;
         if (!behavior) return;
         setBehavior(listener.info.id, behavior);
-        setEnabled(listener.info.id, true);
       }}
     />
   );
@@ -231,10 +223,8 @@ const EventBranchBehaviorSelect = ({
   branch: WebSocketEventBranchConfig;
 }) => {
   const setBehavior = useHandlerStore((state) => state.setWebSocketListenerEventBehavior);
-  const setEnabled = useHandlerStore((state) => state.setWebSocketListenerEventEnabled);
   const currentValue = behaviorValue(branch.behavior);
   const options = [
-    { label: "Disable mock", value: "disable" },
     ...selectableBehaviorOptions().map(({ label, value }) => ({ label, value })),
     ...(selectableBehaviorOptions().some((option) => option.value === currentValue)
       ? []
@@ -243,20 +233,15 @@ const EventBranchBehaviorSelect = ({
   return (
     <Select
       label={`Behavior for ${branch.eventType}`}
-      value={branch.enabled ? currentValue : "disable"}
+      value={currentValue}
       options={options}
       className="msw-dt-w-behavior-select"
       onValueChange={(value) => {
-        if (value === "disable") {
-          setEnabled(listener.info.id, branch.eventType, false);
-          return;
-        }
         const behavior = selectableBehaviorOptions().find(
           (option) => option.value === value,
         )?.behavior;
         if (behavior) {
           setBehavior(listener.info.id, branch.eventType, behavior);
-          setEnabled(listener.info.id, branch.eventType, true);
         }
       }}
     />
@@ -449,6 +434,8 @@ const ListenerGroup = ({
   const branches = listener.eventBranches ?? [];
   const isEventRouted = listener.eventBranches !== undefined;
   const isTemp = listener.info.source === "temp";
+  const setListenerEnabled = useHandlerStore((state) => state.setWebSocketListenerEnabled);
+  const setEventEnabled = useHandlerStore((state) => state.setWebSocketListenerEventEnabled);
   const titleId = `ws-listener-${listener.info.id}`;
   return (
     <section className="msw-dt-ws-listener-group" aria-labelledby={titleId}>
@@ -479,6 +466,7 @@ const ListenerGroup = ({
             }`}
           >
             {isEventRouted && <span>Event type</span>}
+            <span>Mock Enable</span>
             <span>Behavior</span>
             <span>Custom response</span>
           </div>
@@ -486,12 +474,24 @@ const ListenerGroup = ({
             ? branches.map((branch) => (
                 <div className="msw-dt-ws-listener-control-row" key={branch.eventType}>
                   <span className="msw-dt-ws-event-name">{branch.eventType}</span>
+                  <Toggle
+                    checked={branch.enabled}
+                    label={`Enable mock for ${branch.eventType}`}
+                    onChange={(enabled) =>
+                      setEventEnabled(listener.info.id, branch.eventType, enabled)
+                    }
+                  />
                   <EventBranchBehaviorSelect listener={listener} branch={branch} />
                   <ResponseDialog listener={listener} branch={branch} field="customResponse" />
                 </div>
               ))
             : [
                 <div className="msw-dt-ws-listener-control-row" key="default">
+                  <Toggle
+                    checked={listener.enabled}
+                    label={`Enable mock for ${listener.info.id}`}
+                    onChange={(enabled) => setListenerEnabled(listener.info.id, enabled)}
+                  />
                   <ListenerBehaviorSelect listener={listener} />
                   <ResponseDialog listener={listener} field="customResponse" />
                   {listener.behavior.preset === "custom response" && !listener.customResponse && (

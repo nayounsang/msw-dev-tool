@@ -15,10 +15,21 @@ export const ToolButtonGroup = ({
   secondaryAction?: React.ReactNode;
 }) => {
   const resetMSWDevTool = useHandlerStore((state) => state.resetMSWDevTool);
+  const mockEnabled = useHandlerStore((state) => state.mockEnabled);
+  const setMockEnabled = useHandlerStore((state) => state.setMockEnabled);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   return (
     <Flex gap={6} py={4}>
+      <label>
+        Mock Enable
+        <input
+          type="checkbox"
+          checked={mockEnabled}
+          onChange={(event) => setMockEnabled(event.target.checked)}
+          aria-label="Mock Enable"
+        />
+      </label>
       <Button onClick={() => resetMSWDevTool()} color="danger">
         <RotateCcw size={16} />
         Reset Dev tool

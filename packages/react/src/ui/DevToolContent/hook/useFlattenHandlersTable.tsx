@@ -16,6 +16,7 @@ const columnHelper = createColumnHelper<FlattenHandler>();
 export const useFlattenHandlersTable = () => {
   const flattenHandlers = useHandlerStore((state) => state.flattenHandlers);
   const removeTempHandler = useHandlerStore((state) => state.removeTempHandler);
+  const setHandlerEnabled = useHandlerStore((state) => state.setHandlerEnabled);
 
   const columns: ColumnDef<FlattenHandler, any>[] = useMemo(() => {
     return [
@@ -46,6 +47,17 @@ export const useFlattenHandlersTable = () => {
       columnHelper.accessor("method", {
         header: "Method",
         cell: ({ row }) => row.original.method,
+      }),
+      columnHelper.accessor("enabled", {
+        header: "Mock Enable",
+        cell: ({ row }) => (
+          <input
+            type="checkbox"
+            checked={row.original.enabled}
+            aria-label={`Enable mock for ${row.original.path}`}
+            onChange={(event) => setHandlerEnabled(row.original.id, event.target.checked)}
+          />
+        ),
       }),
       columnHelper.accessor("behavior", {
         header: "Behavior",
@@ -83,7 +95,7 @@ export const useFlattenHandlersTable = () => {
         id: "delete",
       }),
     ];
-  }, [flattenHandlers, removeTempHandler]);
+  }, [flattenHandlers, removeTempHandler, setHandlerEnabled]);
 
   const table = useReactTable({
     columns,
