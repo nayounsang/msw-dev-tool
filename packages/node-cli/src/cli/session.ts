@@ -12,6 +12,8 @@ import {
   removeSnapshotWebSocketListener,
   requestSnapshotReset,
   setSnapshotBehavior,
+  setSnapshotHandlerEnabled,
+  setSnapshotMockEnabled,
   setSnapshotCustomResponse,
   setSnapshotWebSocketEndpointEnabled,
   setSnapshotWebSocketListenerBehavior,
@@ -31,11 +33,12 @@ const settleAfterWrite = () =>
   new Promise<void>((resolve) => setTimeout(resolve, POST_WRITE_SETTLE_MS));
 const toInfo = (snapshot: {
   revision: number;
-  state: { pendingReset?: boolean; flattenHandlers: unknown[] };
+  state: { pendingReset?: boolean; flattenHandlers: unknown[]; mockEnabled?: boolean };
 }) => ({
   revision: snapshot.revision,
   pendingReset: Boolean(snapshot.state.pendingReset),
   handlerCount: snapshot.state.flattenHandlers.length,
+  mockEnabled: snapshot.state.mockEnabled ?? true,
 });
 
 /** File-backed adapter for Node snapshot envelopes. */
@@ -56,6 +59,18 @@ export class FileSnapshotCliSession implements CliSession {
     const handler = snapshot.state.flattenHandlers.find((entry) => entry.id === id);
     if (!handler) throw new Error(`Handler not found for id: ${id}`);
     return { ...toInfo(snapshot), handler };
+  }
+  public async setEnabled(id: string, enabled: boolean) {
+    const snapshot = await setSnapshotHandlerEnabled(this.sessionPath, id, enabled);
+    await settleAfterWrite();
+    const handler = snapshot.state.flattenHandlers.find((entry) => entry.id === id);
+    if (!handler) throw new Error(`Handler not found for id: ${id}`);
+    return { ...toInfo(snapshot), handler };
+  }
+  public async setMockEnabled(enabled: boolean) {
+    const snapshot = await setSnapshotMockEnabled(this.sessionPath, enabled);
+    await settleAfterWrite();
+    return toInfo(snapshot);
   }
   public async setCustomResponse(
     id: string,

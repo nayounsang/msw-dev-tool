@@ -37,6 +37,11 @@ const parseCustomResponse = (value: string) => {
   }
 };
 
+const parseEnabled = (value: string) => {
+  if (value !== "true" && value !== "false") throw new Error("enabled must be true or false");
+  return value === "true";
+};
+
 export const commands: CliCommand[] = [
   {
     name: "session",
@@ -71,6 +76,31 @@ export const commands: CliCommand[] = [
       if (!id || !behavior) throw new Error("Usage: set-behavior <id> <behavior>");
       return withMetadata(
         { ok: true, ...(await context.session.setBehavior(id, parseBehavior(behavior))) },
+        context,
+      );
+    },
+  },
+  {
+    name: "set-enabled",
+    usage: "set-enabled <handlerId> <true|false>",
+    async execute(context, { positionals }) {
+      const [id, enabled] = [positionals[1], positionals[2]];
+      if (!id || enabled === undefined)
+        throw new Error("Usage: set-enabled <handlerId> <true|false>");
+      return withMetadata(
+        { ok: true, ...(await context.session.setEnabled(id, parseEnabled(enabled))) },
+        context,
+      );
+    },
+  },
+  {
+    name: "set-mock-enabled",
+    usage: "set-mock-enabled <true|false>",
+    async execute(context, { positionals }) {
+      const enabled = positionals[1];
+      if (enabled === undefined) throw new Error("Usage: set-mock-enabled <true|false>");
+      return withMetadata(
+        { ok: true, ...(await context.session.setMockEnabled(parseEnabled(enabled))) },
         context,
       );
     },

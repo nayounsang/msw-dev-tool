@@ -31,6 +31,8 @@ const REQUIRED_BROWSER_CONTROL_METHOD_VERSIONS = {
   list: 1,
   get: 1,
   setBehavior: 1,
+  setEnabled: 1,
+  setMockEnabled: 1,
   setCustomResponse: 2,
   addTemp: 1,
   removeTemp: 1,
@@ -84,6 +86,12 @@ export class CdpBrowserCliSession implements CliSession {
   }
   public setBehavior(id: string, behavior: HttpHandlerBehavior): Promise<CliMutationResult> {
     return this.invoke("setBehavior", [id, behavior]);
+  }
+  public setEnabled(id: string, enabled: boolean): Promise<CliMutationResult> {
+    return this.invoke("setEnabled", [id, enabled]);
+  }
+  public setMockEnabled(enabled: boolean): Promise<CliSessionInfo> {
+    return this.invoke("setMockEnabled", [enabled]);
   }
   public setCustomResponse(id: string, response: HttpResponseConfig): Promise<CliMutationResult> {
     return this.invoke("setCustomResponse", [id, response]);
