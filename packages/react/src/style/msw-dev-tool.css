@@ -672,6 +672,10 @@
   cursor: pointer;
   display: inline-flex;
 }
+.msw-dt-toggle:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
 .msw-dt-toggle input {
   position: absolute;
   opacity: 0;

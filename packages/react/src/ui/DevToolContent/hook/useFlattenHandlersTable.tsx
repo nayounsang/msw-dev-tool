@@ -16,6 +16,7 @@ const columnHelper = createColumnHelper<FlattenHandler>();
 
 export const useFlattenHandlersTable = () => {
   const flattenHandlers = useHandlerStore((state) => state.flattenHandlers);
+  const mockEnabled = useHandlerStore((state) => state.mockEnabled);
   const removeTempHandler = useHandlerStore((state) => state.removeTempHandler);
   const setHandlerEnabled = useHandlerStore((state) => state.setHandlerEnabled);
 
@@ -53,7 +54,8 @@ export const useFlattenHandlersTable = () => {
         header: "Mock Enable",
         cell: ({ row }) => (
           <MockToggle
-            checked={row.original.enabled}
+            checked={mockEnabled && row.original.enabled}
+            disabled={!mockEnabled}
             label={`Enable mock for ${row.original.path}`}
             onChange={(enabled) => setHandlerEnabled(row.original.id, enabled)}
           />
@@ -95,7 +97,7 @@ export const useFlattenHandlersTable = () => {
         id: "delete",
       }),
     ];
-  }, [flattenHandlers, removeTempHandler, setHandlerEnabled]);
+  }, [flattenHandlers, mockEnabled, removeTempHandler, setHandlerEnabled]);
 
   const table = useReactTable({
     columns,

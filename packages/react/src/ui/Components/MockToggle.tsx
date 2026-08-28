@@ -2,10 +2,12 @@ import React from "react";
 
 export const MockToggle = ({
   checked,
+  disabled = false,
   label,
   onChange,
 }: {
   checked: boolean;
+  disabled?: boolean;
   label: string;
   onChange: (checked: boolean) => void;
 }) => (
@@ -13,6 +15,7 @@ export const MockToggle = ({
     <input
       type="checkbox"
       checked={checked}
+      disabled={disabled}
       onChange={(event) => onChange(event.target.checked)}
       aria-label={label}
     />
