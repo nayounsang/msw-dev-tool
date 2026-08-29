@@ -162,32 +162,26 @@ const createCommandContext = () => {
 const createEventBranchContext = () => {
   const session = createSession();
   const listener = wsEndpointWithEventBranch.listeners[0]!;
-  session.setWebSocketListenerEventBehavior = vi
-    .fn()
-    .mockResolvedValue({
-      endpoint: wsEndpointWithEventBranch,
-      listener,
-      eventBranch: wsEventBranch,
-    });
+  session.setWebSocketListenerEventBehavior = vi.fn().mockResolvedValue({
+    endpoint: wsEndpointWithEventBranch,
+    listener,
+    eventBranch: wsEventBranch,
+  });
   session.setWebSocketListenerEventEnabled = vi.fn().mockResolvedValue({
     endpoint: wsEndpointWithEventBranch,
     listener,
     eventBranch: { ...wsEventBranch, enabled: false },
   });
-  session.setWebSocketListenerEventCustomResponse = vi
-    .fn()
-    .mockResolvedValue({
-      endpoint: wsEndpointWithEventBranch,
-      listener,
-      eventBranch: wsEventBranch,
-    });
-  session.setWebSocketListenerEventResponse = vi
-    .fn()
-    .mockResolvedValue({
-      endpoint: wsEndpointWithEventBranch,
-      listener,
-      eventBranch: wsEventBranch,
-    });
+  session.setWebSocketListenerEventCustomResponse = vi.fn().mockResolvedValue({
+    endpoint: wsEndpointWithEventBranch,
+    listener,
+    eventBranch: wsEventBranch,
+  });
+  session.setWebSocketListenerEventResponse = vi.fn().mockResolvedValue({
+    endpoint: wsEndpointWithEventBranch,
+    listener,
+    eventBranch: wsEventBranch,
+  });
   return { session };
 };
 
