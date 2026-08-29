@@ -50,6 +50,21 @@ const runWithJsonOutput = async (argv: string[]) => {
   return JSON.parse(logs.join(""));
 };
 
+const runWithStandardOutput = async (argv: string[]) => {
+  const output: string[] = [];
+  const originalWrite = process.stdout.write.bind(process.stdout);
+  process.stdout.write = ((chunk: string | Uint8Array) => {
+    output.push(String(chunk));
+    return true;
+  }) as typeof process.stdout.write;
+  try {
+    await runCli(argv);
+  } finally {
+    process.stdout.write = originalWrite;
+  }
+  return output.join("");
+};
+
 afterEach(() => {
   vi.useRealTimers();
   process.chdir(originalCwd);
@@ -57,20 +72,15 @@ afterEach(() => {
 });
 
 describe("node-cli", () => {
-  it("prints help and rejects unknown commands", async () => {
-    const output: string[] = [];
-    const originalWrite = process.stdout.write.bind(process.stdout);
-    process.stdout.write = ((chunk: string | Uint8Array) => {
-      output.push(String(chunk));
-      return true;
-    }) as typeof process.stdout.write;
-    try {
-      await runCli([]);
-      await runCli(["--help"]);
-    } finally {
-      process.stdout.write = originalWrite;
-    }
-    expect(output.join("")).toContain("Session discovery");
+  it("prints command help when called without a command", async () => {
+    await expect(runWithStandardOutput([])).resolves.toContain("Session discovery");
+  });
+
+  it("prints command help when called with --help", async () => {
+    await expect(runWithStandardOutput(["--help"])).resolves.toContain("Session discovery");
+  });
+
+  it("rejects an unknown command", async () => {
     await expect(runCli(["unknown"])).rejects.toThrow("Unknown command");
   });
   it("lists PID sessions in the current working directory", async () => {
@@ -94,7 +104,7 @@ describe("node-cli", () => {
     expect(payload).toMatchObject({ ok: true, pid, revision: 1, handler: { behavior: "delay" } });
   });
 
-  it("requires --pid when multiple sessions exist and selects the requested PID", async () => {
+  it("requires --pid when more than one session is available", async () => {
     createSessionFile(4182);
     const secondPath = getSessionPathForPid(4217);
     fs.writeFileSync(
@@ -102,6 +112,16 @@ describe("node-cli", () => {
       JSON.stringify({ revision: 0, owner: { pid: 4217 }, state: { flattenHandlers: [] } }),
     );
     await expect(runCli(["list"])).rejects.toThrow(/Multiple msw-dev-tool sessions/);
+  });
+
+  it("uses the requested PID when more than one session is available", async () => {
+    createSessionFile(4182);
+    const secondPath = getSessionPathForPid(4217);
+    fs.writeFileSync(
+      secondPath,
+      JSON.stringify({ revision: 0, owner: { pid: 4217 }, state: { flattenHandlers: [] } }),
+    );
+
     await expect(runWithJsonOutput(["--pid", "4217", "list"])).resolves.toMatchObject({
       ok: true,
       pid: 4217,
@@ -109,12 +129,20 @@ describe("node-cli", () => {
     });
   });
 
-  it("rejects malformed commands before mutating a selected session", async () => {
+  it("rejects get without a handler ID before changing a selected session", async () => {
     const { pid } = createSessionFile();
     await expect(runCli(["--pid", String(pid), "get"])).rejects.toThrow("Usage: get <id>");
+  });
+
+  it("rejects a non-numeric session PID", async () => {
+    createSessionFile();
     await expect(runCli(["--pid", "not-a-pid", "list"])).rejects.toThrow(
       "--pid must be a numeric process ID",
     );
+  });
+
+  it("reports a requested session PID that is not available", async () => {
+    createSessionFile();
     await expect(runCli(["--pid", "999999", "list"])).rejects.toThrow(
       "No msw-dev-tool session found for PID 999999",
     );

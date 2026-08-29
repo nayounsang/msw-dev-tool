@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 const api = vi.hoisted(() => ({
   addSnapshotTempHandler: vi.fn(),
@@ -70,126 +70,328 @@ const wsEventBranch = {
   behavior: { preset: "default" },
 };
 
+const sessionPath = "/tmp/session.json";
+
+const settleMutation = async <Result>(mutation: Promise<Result>) => {
+  await vi.advanceTimersByTimeAsync(300);
+  return mutation;
+};
+
+const createHttpSession = () => {
+  api.readSnapshotOrEmpty.mockReturnValue(snapshot());
+  api.listSnapshotHandlers.mockReturnValue([{ id: "a" }]);
+  api.getSnapshotHandler.mockReturnValue({ id: "a" });
+  api.setSnapshotBehavior.mockReturnValue(snapshot());
+  api.setSnapshotHandlerEnabled.mockReturnValue(snapshot([{ id: "a", enabled: false }]));
+  api.setSnapshotMockEnabled.mockReturnValue({
+    revision: 2,
+    state: { flattenHandlers: [{ id: "a" }], pendingReset: false, mockEnabled: false },
+  });
+  api.setSnapshotCustomResponse.mockReturnValue(snapshot());
+  api.addSnapshotTempHandler.mockReturnValue(snapshot([{ id: "a" }, { id: "temp" }]));
+  api.removeSnapshotTempHandler.mockReturnValue(snapshot());
+  return new FileSnapshotCliSession(sessionPath);
+};
+
+const createWebSocketSession = () => {
+  const endpointWithListener = { ...wsEndpoint, listeners: [wsListener] };
+  api.listSnapshotWebSocketEndpoints.mockResolvedValue([wsEndpoint]);
+  api.getSnapshotWebSocketEndpoint.mockResolvedValue(wsEndpoint);
+  api.addSnapshotWebSocketEndpoint.mockReturnValue(wsSnapshot());
+  api.removeSnapshotWebSocketEndpoint.mockReturnValue(wsSnapshot());
+  api.setSnapshotWebSocketEndpointEnabled.mockReturnValue(wsSnapshot());
+  api.addSnapshotWebSocketListener.mockReturnValue(wsSnapshot(endpointWithListener));
+  api.removeSnapshotWebSocketListener.mockReturnValue(wsSnapshot());
+  api.setSnapshotWebSocketListenerEnabled.mockReturnValue(wsSnapshot(endpointWithListener));
+  api.setSnapshotWebSocketListenerBehavior.mockReturnValue(wsSnapshot(endpointWithListener));
+  api.setSnapshotWebSocketListenerCustomResponse.mockReturnValue(
+    wsSnapshot({
+      ...endpointWithListener,
+      listeners: [
+        { ...wsListener, customResponse: { type: "send", dataType: "string", value: "hello" } },
+      ],
+    }),
+  );
+  api.setSnapshotWebSocketListenerResponse.mockReturnValue(
+    wsSnapshot({
+      ...endpointWithListener,
+      listeners: [
+        { ...wsListener, response: { type: "send", dataType: "string", value: "default" } },
+      ],
+    }),
+  );
+  return new FileSnapshotCliSession(sessionPath);
+};
+
+const createEventBranchSession = () => {
+  const listenerWithBranch = { ...wsListener, eventBranches: [wsEventBranch] };
+  const endpointWithBranch = { ...wsEndpoint, listeners: [listenerWithBranch] };
+  api.setSnapshotWebSocketListenerEventBehavior.mockReturnValue(wsSnapshot(endpointWithBranch));
+  api.setSnapshotWebSocketListenerEventEnabled.mockReturnValue(
+    wsSnapshot({
+      ...wsEndpoint,
+      listeners: [{ ...listenerWithBranch, eventBranches: [{ ...wsEventBranch, enabled: false }] }],
+    }),
+  );
+  api.setSnapshotWebSocketListenerEventCustomResponse.mockReturnValue(
+    wsSnapshot({
+      ...wsEndpoint,
+      listeners: [
+        {
+          ...listenerWithBranch,
+          eventBranches: [
+            {
+              ...wsEventBranch,
+              customResponse: { type: "send", dataType: "string", value: "custom" },
+            },
+          ],
+        },
+      ],
+    }),
+  );
+  api.setSnapshotWebSocketListenerEventResponse.mockReturnValue(
+    wsSnapshot({
+      ...wsEndpoint,
+      listeners: [
+        {
+          ...listenerWithBranch,
+          eventBranches: [
+            {
+              ...wsEventBranch,
+              response: { type: "send", dataType: "string", value: "response" },
+            },
+          ],
+        },
+      ],
+    }),
+  );
+  return new FileSnapshotCliSession(sessionPath);
+};
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.clearAllMocks();
+});
+
 describe("FileSnapshotCliSession", () => {
-  it("adapts reads and every mutation result", async () => {
-    vi.useFakeTimers();
-    api.readSnapshotOrEmpty.mockReturnValue(snapshot());
-    api.listSnapshotHandlers.mockReturnValue([{ id: "a" }]);
-    api.getSnapshotHandler.mockReturnValue({ id: "a" });
-    api.setSnapshotBehavior.mockReturnValue(snapshot());
-    api.setSnapshotHandlerEnabled.mockReturnValue(snapshot([{ id: "a", enabled: false }]));
-    api.setSnapshotMockEnabled.mockReturnValue({
-      revision: 2,
-      state: { flattenHandlers: [{ id: "a" }], pendingReset: false, mockEnabled: false },
-    });
-    api.setSnapshotCustomResponse.mockReturnValue(snapshot());
-    api.addSnapshotTempHandler.mockReturnValue(snapshot([{ id: "a" }, { id: "temp" }]));
-    api.removeSnapshotTempHandler.mockReturnValue(snapshot());
-    const session = new FileSnapshotCliSession("/tmp/session.json");
+  it("returns the selected session metadata", async () => {
+    const session = createHttpSession();
+
     await expect(session.describe()).resolves.toEqual({
       revision: 2,
       pendingReset: false,
       handlerCount: 1,
       mockEnabled: true,
     });
-    await expect(session.list()).resolves.toEqual([{ id: "a" }]);
-    await expect(session.get("a")).resolves.toEqual({ id: "a" });
-    const calls = [
-      session.setBehavior("a", "delay"),
-      session.setEnabled("a", false),
-      session.setMockEnabled(false),
-      session.setCustomResponse("a", {
-        status: "200",
-        contentType: "text/plain",
-        response: "ok",
-      }),
-      session.addTemp({ path: "/t", method: "get", contentType: "text/plain", status: "200" }),
-      session.removeTemp("a"),
-      session.reset(),
-    ];
-    await vi.advanceTimersByTimeAsync(300);
-    await expect(Promise.all(calls)).resolves.toHaveLength(7);
-    expect(api.setSnapshotHandlerEnabled).toHaveBeenCalledWith("/tmp/session.json", "a", false);
-    expect(api.setSnapshotMockEnabled).toHaveBeenCalledWith("/tmp/session.json", false);
-    expect(api.requestSnapshotReset).toHaveBeenCalledWith("/tmp/session.json");
-    vi.useRealTimers();
   });
 
-  it("adapts all WebSocket reads and mutations", async () => {
+  it("returns the HTTP handlers stored in the selected session", async () => {
+    const session = createHttpSession();
+
+    await expect(session.list()).resolves.toEqual([{ id: "a" }]);
+  });
+
+  it("returns an HTTP handler by ID", async () => {
+    const session = createHttpSession();
+
+    await expect(session.get("a")).resolves.toEqual({ id: "a" });
+  });
+
+  it("persists a handler behavior change in the session snapshot", async () => {
     vi.useFakeTimers();
-    const endpointWithListener = { ...wsEndpoint, listeners: [wsListener] };
-    api.listSnapshotWebSocketEndpoints.mockResolvedValue([wsEndpoint]);
-    api.getSnapshotWebSocketEndpoint.mockResolvedValue(wsEndpoint);
-    api.addSnapshotWebSocketEndpoint.mockReturnValue(wsSnapshot());
-    api.removeSnapshotWebSocketEndpoint.mockReturnValue(wsSnapshot());
-    api.setSnapshotWebSocketEndpointEnabled.mockReturnValue(wsSnapshot());
-    api.addSnapshotWebSocketListener.mockReturnValue(wsSnapshot(endpointWithListener));
-    api.removeSnapshotWebSocketListener.mockReturnValue(wsSnapshot());
-    api.setSnapshotWebSocketListenerEnabled.mockReturnValue(wsSnapshot(endpointWithListener));
-    api.setSnapshotWebSocketListenerBehavior.mockReturnValue(wsSnapshot(endpointWithListener));
-    api.setSnapshotWebSocketListenerCustomResponse.mockReturnValue(
-      wsSnapshot({
-        ...endpointWithListener,
-        listeners: [
-          { ...wsListener, customResponse: { type: "send", dataType: "string", value: "hello" } },
-        ],
-      }),
-    );
-    api.setSnapshotWebSocketListenerResponse.mockReturnValue(
-      wsSnapshot({
-        ...endpointWithListener,
-        listeners: [
-          { ...wsListener, response: { type: "send", dataType: "string", value: "default" } },
-        ],
-      }),
-    );
-    const session = new FileSnapshotCliSession("/tmp/session.json");
+    const session = createHttpSession();
+
+    await expect(settleMutation(session.setBehavior("a", "delay"))).resolves.toMatchObject({
+      handler: { id: "a" },
+    });
+    expect(api.setSnapshotBehavior).toHaveBeenCalledWith(sessionPath, "a", "delay");
+  });
+
+  it("persists a handler enabled-state change in the session snapshot", async () => {
+    vi.useFakeTimers();
+    const session = createHttpSession();
+
+    await expect(settleMutation(session.setEnabled("a", false))).resolves.toMatchObject({
+      handler: { id: "a", enabled: false },
+    });
+    expect(api.setSnapshotHandlerEnabled).toHaveBeenCalledWith(sessionPath, "a", false);
+  });
+
+  it("persists a global mock enabled-state change in the session snapshot", async () => {
+    vi.useFakeTimers();
+    const session = createHttpSession();
+
+    await expect(settleMutation(session.setMockEnabled(false))).resolves.toMatchObject({
+      mockEnabled: false,
+    });
+    expect(api.setSnapshotMockEnabled).toHaveBeenCalledWith(sessionPath, false);
+  });
+
+  it("stores a custom response on a handler in the session snapshot", async () => {
+    vi.useFakeTimers();
+    const session = createHttpSession();
+
+    await expect(
+      settleMutation(
+        session.setCustomResponse("a", {
+          status: "200",
+          contentType: "text/plain",
+          response: "ok",
+        }),
+      ),
+    ).resolves.toMatchObject({ handler: { id: "a" } });
+  });
+
+  it("adds a temporary handler to the session snapshot", async () => {
+    vi.useFakeTimers();
+    const session = createHttpSession();
+
+    await expect(
+      settleMutation(
+        session.addTemp({ path: "/t", method: "get", contentType: "text/plain", status: "200" }),
+      ),
+    ).resolves.toMatchObject({ handler: { id: "temp" } });
+  });
+
+  it("removes a temporary handler from the session snapshot", async () => {
+    vi.useFakeTimers();
+    const session = createHttpSession();
+
+    await expect(settleMutation(session.removeTemp("a"))).resolves.toMatchObject({
+      handlerCount: 1,
+    });
+  });
+
+  it("requests a reset for the selected session snapshot", async () => {
+    vi.useFakeTimers();
+    const session = createHttpSession();
+
+    await expect(settleMutation(session.reset())).resolves.toMatchObject({ handlerCount: 1 });
+    expect(api.requestSnapshotReset).toHaveBeenCalledWith(sessionPath);
+  });
+
+  it("lists the WebSocket endpoints in a session snapshot", async () => {
+    const session = createWebSocketSession();
+
     await expect(session.listWebSocket()).resolves.toEqual([wsEndpoint]);
+  });
+
+  it("returns a WebSocket endpoint from a session snapshot", async () => {
+    const session = createWebSocketSession();
+
     await expect(session.getWebSocketEndpoint("ws-1")).resolves.toEqual(wsEndpoint);
-    const calls = [
-      session.addWebSocketEndpoint(wsEndpoint.matcher),
-      session.removeWebSocketEndpoint("ws-1"),
-      session.setWebSocketEndpointEnabled("ws-1", false),
-      session.addWebSocketListener("ws-1", { preset: "send" }),
-      session.removeWebSocketListener(wsListener.info.id),
-      session.setWebSocketListenerEnabled(wsListener.info.id, false),
-      session.setWebSocketListenerBehavior(wsListener.info.id, { preset: "close" }),
-      session.setWebSocketListenerCustomResponse(wsListener.info.id, {
-        type: "send",
-        dataType: "string",
-        value: "hello",
-      }),
-      session.addWebSocketListener({
-        endpointId: "ws-1",
-        behavior: { preset: "default" },
-        response: {
-          type: "send",
-          dataType: "string",
-          value: "default",
-          delay: 300,
-          repeat: { interval: 500, repetitions: 3 },
-        },
-        customResponse: { type: "send", dataType: "string", value: "custom", delay: 100 },
-      }),
-      session.setWebSocketListenerResponse(wsListener.info.id, {
-        type: "send",
-        dataType: "string",
-        value: "default",
-        delay: 300,
-        repeat: { interval: 500, repetitions: "Infinity" },
-      }),
-    ];
-    await vi.advanceTimersByTimeAsync(300);
-    await expect(Promise.all(calls)).resolves.toHaveLength(10);
-    expect(api.addSnapshotWebSocketEndpoint).toHaveBeenCalledWith(
-      "/tmp/session.json",
-      wsEndpoint.matcher,
+  });
+
+  it("adds a WebSocket endpoint to a session snapshot", async () => {
+    vi.useFakeTimers();
+    const session = createWebSocketSession();
+
+    await expect(
+      settleMutation(session.addWebSocketEndpoint(wsEndpoint.matcher)),
+    ).resolves.toBeDefined();
+    expect(api.addSnapshotWebSocketEndpoint).toHaveBeenCalledWith(sessionPath, wsEndpoint.matcher);
+  });
+
+  it("removes a WebSocket endpoint from a session snapshot", async () => {
+    vi.useFakeTimers();
+    const session = createWebSocketSession();
+
+    await expect(settleMutation(session.removeWebSocketEndpoint("ws-1"))).resolves.toBeDefined();
+    expect(api.removeSnapshotWebSocketEndpoint).toHaveBeenCalledWith(sessionPath, "ws-1");
+  });
+
+  it("changes a WebSocket endpoint enabled state in a session snapshot", async () => {
+    vi.useFakeTimers();
+    const session = createWebSocketSession();
+
+    await expect(
+      settleMutation(session.setWebSocketEndpointEnabled("ws-1", false)),
+    ).resolves.toBeDefined();
+    expect(api.setSnapshotWebSocketEndpointEnabled).toHaveBeenCalledWith(
+      sessionPath,
+      "ws-1",
+      false,
     );
+  });
+
+  it("adds a WebSocket listener to a session snapshot", async () => {
+    vi.useFakeTimers();
+    const session = createWebSocketSession();
+
+    await expect(
+      settleMutation(session.addWebSocketListener("ws-1", { preset: "send" })),
+    ).resolves.toMatchObject({ listener: { info: { id: wsListener.info.id } } });
+  });
+
+  it("removes a WebSocket listener from a session snapshot", async () => {
+    vi.useFakeTimers();
+    const session = createWebSocketSession();
+
+    await expect(
+      settleMutation(session.removeWebSocketListener(wsListener.info.id)),
+    ).resolves.toBeDefined();
+  });
+
+  it("changes a WebSocket listener enabled state in a session snapshot", async () => {
+    vi.useFakeTimers();
+    const session = createWebSocketSession();
+
+    await expect(
+      settleMutation(session.setWebSocketListenerEnabled(wsListener.info.id, false)),
+    ).resolves.toMatchObject({ listener: { info: { id: wsListener.info.id } } });
+  });
+
+  it("changes a WebSocket listener behavior in a session snapshot", async () => {
+    vi.useFakeTimers();
+    const session = createWebSocketSession();
+
+    await expect(
+      settleMutation(session.setWebSocketListenerBehavior(wsListener.info.id, { preset: "close" })),
+    ).resolves.toMatchObject({ listener: { info: { id: wsListener.info.id } } });
     expect(api.setSnapshotWebSocketListenerBehavior).toHaveBeenCalledWith(
-      "/tmp/session.json",
+      sessionPath,
       wsListener.info.id,
       { preset: "close" },
     );
+  });
+
+  it("sets a custom response on a WebSocket listener in a session snapshot", async () => {
+    vi.useFakeTimers();
+    const session = createWebSocketSession();
+
+    await expect(
+      settleMutation(
+        session.setWebSocketListenerCustomResponse(wsListener.info.id, {
+          type: "send",
+          dataType: "string",
+          value: "hello",
+        }),
+      ),
+    ).resolves.toMatchObject({ listener: { customResponse: { value: "hello" } } });
+  });
+
+  it("preserves a temporary listener response schedule in a session snapshot", async () => {
+    vi.useFakeTimers();
+    const session = createWebSocketSession();
+    const input = {
+      endpointId: "ws-1",
+      behavior: { preset: "default" as const },
+      response: {
+        type: "send" as const,
+        dataType: "string" as const,
+        value: "default",
+        delay: 300,
+        repeat: { interval: 500, repetitions: 3 },
+      },
+      customResponse: {
+        type: "send" as const,
+        dataType: "string" as const,
+        value: "custom",
+        delay: 100,
+      },
+    };
+
+    await expect(settleMutation(session.addWebSocketListener(input))).resolves.toBeDefined();
     expect(api.addSnapshotWebSocketListener).toHaveBeenCalledWith("/tmp/session.json", "ws-1", {
       behavior: { preset: "default" },
       response: {
@@ -201,120 +403,110 @@ describe("FileSnapshotCliSession", () => {
       },
       customResponse: { type: "send", dataType: "string", value: "custom", delay: 100 },
     });
-    expect(api.setSnapshotWebSocketListenerResponse).toHaveBeenCalledWith(
-      "/tmp/session.json",
-      wsListener.info.id,
-      {
-        type: "send",
-        dataType: "string",
-        value: "default",
-        delay: 300,
-        repeat: { interval: 500, repetitions: "Infinity" },
-      },
-    );
-    vi.useRealTimers();
   });
 
-  it("adapts every logical WebSocket event branch mutation", async () => {
+  it("preserves a WebSocket listener response schedule in a session snapshot", async () => {
     vi.useFakeTimers();
-    const listenerWithBranch = { ...wsListener, eventBranches: [wsEventBranch] };
-    const endpointWithBranch = { ...wsEndpoint, listeners: [listenerWithBranch] };
-    api.setSnapshotWebSocketListenerEventBehavior.mockReturnValue(wsSnapshot(endpointWithBranch));
-    api.setSnapshotWebSocketListenerEventEnabled.mockReturnValue(
-      wsSnapshot({
-        ...wsEndpoint,
-        listeners: [
-          { ...listenerWithBranch, eventBranches: [{ ...wsEventBranch, enabled: false }] },
-        ],
-      }),
+    const session = createWebSocketSession();
+    const response = {
+      type: "send" as const,
+      dataType: "string" as const,
+      value: "default",
+      delay: 300,
+      repeat: { interval: 500, repetitions: "Infinity" as const },
+    };
+
+    await expect(
+      settleMutation(session.setWebSocketListenerResponse(wsListener.info.id, response)),
+    ).resolves.toMatchObject({ listener: { response: { value: "default" } } });
+    expect(api.setSnapshotWebSocketListenerResponse).toHaveBeenCalledWith(
+      sessionPath,
+      wsListener.info.id,
+      response,
     );
-    api.setSnapshotWebSocketListenerEventCustomResponse.mockReturnValue(
-      wsSnapshot({
-        ...wsEndpoint,
-        listeners: [
-          {
-            ...listenerWithBranch,
-            eventBranches: [
-              {
-                ...wsEventBranch,
-                customResponse: { type: "send", dataType: "string", value: "custom" },
-              },
-            ],
-          },
-        ],
-      }),
-    );
-    api.setSnapshotWebSocketListenerEventResponse.mockReturnValue(
-      wsSnapshot({
-        ...wsEndpoint,
-        listeners: [
-          {
-            ...listenerWithBranch,
-            eventBranches: [
-              {
-                ...wsEventBranch,
-                response: { type: "send", dataType: "string", value: "response" },
-              },
-            ],
-          },
-        ],
-      }),
-    );
-    const session = new FileSnapshotCliSession("/tmp/session.json");
-    const calls = [
-      session.setWebSocketListenerEventEnabled(wsListener.info.id, "chat/message", false),
-      session.setWebSocketListenerEventBehavior(wsListener.info.id, "chat/message", {
-        preset: "echo",
-      }),
-      session.setWebSocketListenerEventCustomResponse(wsListener.info.id, "chat/message", {
-        type: "send",
-        dataType: "string",
-        value: "custom",
-      }),
-      session.setWebSocketListenerEventResponse(wsListener.info.id, "chat/message", {
-        type: "send",
-        dataType: "string",
-        value: "response",
-      }),
-    ];
-    await vi.advanceTimersByTimeAsync(300);
-    await expect(Promise.all(calls)).resolves.toEqual([
-      expect.objectContaining({
-        eventBranch: expect.objectContaining({ enabled: false }),
-      }),
-      expect.objectContaining({ eventBranch: wsEventBranch }),
-      expect.objectContaining({
-        eventBranch: expect.objectContaining({
-          customResponse: { type: "send", dataType: "string", value: "custom" },
+  });
+
+  it("changes a logical WebSocket event branch enabled state in a session snapshot", async () => {
+    vi.useFakeTimers();
+    const session = createEventBranchSession();
+
+    await expect(
+      settleMutation(
+        session.setWebSocketListenerEventEnabled(wsListener.info.id, "chat/message", false),
+      ),
+    ).resolves.toMatchObject({ eventBranch: { enabled: false } });
+  });
+
+  it("changes a logical WebSocket event branch behavior in a session snapshot", async () => {
+    vi.useFakeTimers();
+    const session = createEventBranchSession();
+
+    await expect(
+      settleMutation(
+        session.setWebSocketListenerEventBehavior(wsListener.info.id, "chat/message", {
+          preset: "echo",
         }),
-      }),
-      expect.objectContaining({
-        eventBranch: expect.objectContaining({
-          response: { type: "send", dataType: "string", value: "response" },
-        }),
-      }),
-    ]);
+      ),
+    ).resolves.toMatchObject({ eventBranch: wsEventBranch });
     expect(api.setSnapshotWebSocketListenerEventBehavior).toHaveBeenCalledWith(
-      "/tmp/session.json",
+      sessionPath,
       wsListener.info.id,
       "chat/message",
       { preset: "echo" },
     );
-    vi.useRealTimers();
   });
 
-  it("reports mutations that cannot find the resulting handler", async () => {
+  it("sets a custom response on a logical WebSocket event branch in a session snapshot", async () => {
+    vi.useFakeTimers();
+    const session = createEventBranchSession();
+
+    await expect(
+      settleMutation(
+        session.setWebSocketListenerEventCustomResponse(wsListener.info.id, "chat/message", {
+          type: "send",
+          dataType: "string",
+          value: "custom",
+        }),
+      ),
+    ).resolves.toMatchObject({ eventBranch: { customResponse: { value: "custom" } } });
+  });
+
+  it("sets a response on a logical WebSocket event branch in a session snapshot", async () => {
+    vi.useFakeTimers();
+    const session = createEventBranchSession();
+
+    await expect(
+      settleMutation(
+        session.setWebSocketListenerEventResponse(wsListener.info.id, "chat/message", {
+          type: "send",
+          dataType: "string",
+          value: "response",
+        }),
+      ),
+    ).resolves.toMatchObject({ eventBranch: { response: { value: "response" } } });
+  });
+
+  it("reports a behavior change when its handler is no longer in the snapshot", async () => {
     vi.useFakeTimers();
     api.setSnapshotBehavior.mockReturnValue(snapshot([]));
-    api.addSnapshotTempHandler.mockReturnValue(snapshot([]));
-    const session = new FileSnapshotCliSession("/tmp/session.json");
+    const session = new FileSnapshotCliSession(sessionPath);
+
     const missing = expect(session.setBehavior("a", "delay")).rejects.toThrow("Handler not found");
-    const empty = expect(
-      session.addTemp({ path: "/t", method: "get", contentType: "text/plain", status: "200" }),
-    ).rejects.toThrow("Temporary handler was not added");
+
     await vi.advanceTimersByTimeAsync(300);
     await missing;
-    await empty;
-    vi.useRealTimers();
+  });
+
+  it("reports a temporary handler creation when the handler is absent from the snapshot", async () => {
+    vi.useFakeTimers();
+    api.addSnapshotTempHandler.mockReturnValue(snapshot([]));
+    const session = new FileSnapshotCliSession(sessionPath);
+    const assertion = expect(
+      session.addTemp({ path: "/t", method: "get", contentType: "text/plain", status: "200" }),
+    ).rejects.toThrow("Temporary handler was not added");
+
+    await vi.advanceTimersByTimeAsync(300);
+
+    await assertion;
   });
 });
