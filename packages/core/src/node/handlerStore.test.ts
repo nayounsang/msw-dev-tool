@@ -40,21 +40,34 @@ const makeSession = () => {
   return sessionPath;
 };
 
+const setupHttpNodeSession = async () => {
+  const sessionPath = makeSession();
+  const server = await setupDevToolServer(
+    http.get("/api/items", () => HttpResponse.json({ ok: true })),
+  );
+  const id = nodeHandlerStore.getState().flattenHandlers[0]!.id;
+  return { id, server, sessionPath };
+};
+
 describe("setupDevToolServer", () => {
-  it("initializes server, writes snapshot, and applies external behavior changes", async () => {
-    const sessionPath = makeSession();
-    const server = await setupDevToolServer(
-      http.get("/api/items", () => HttpResponse.json({ ok: true })),
-    );
+  it("registers HTTP handlers when a Node Dev Tool session starts", async () => {
+    const { server } = await setupHttpNodeSession();
 
     expect(server).toBeTruthy();
     expect(getNodeSessionPath()).toBe(getSessionPathForPid(process.pid));
     expect(nodeHandlerStore.getState().flattenHandlers).toHaveLength(1);
+  });
+
+  it("writes the initial HTTP handler snapshot when a Node Dev Tool session starts", async () => {
+    const { sessionPath } = await setupHttpNodeSession();
 
     const snap = await readSnapshot(sessionPath);
     expect(snap?.state.flattenHandlers).toHaveLength(1);
+  });
 
-    const id = nodeHandlerStore.getState().flattenHandlers[0]!.id;
+  it("applies an external handler behavior change during Node session synchronization", async () => {
+    const { id, sessionPath } = await setupHttpNodeSession();
+
     await setSnapshotBehavior(sessionPath, id, HttpHandlerBehavior.DELAY);
 
     await syncNodeSession();
