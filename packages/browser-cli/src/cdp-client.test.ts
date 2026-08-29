@@ -44,33 +44,72 @@ vi.mock("ws", () => ({ default: socketState.FakeSocket }));
 import { CdpClient } from "./cdp";
 
 describe("CdpClient protocol transport", () => {
-  it("resolves matching responses and ignores malformed or unrelated messages", async () => {
+  it("resolves a response that matches the pending CDP command", async () => {
     const client = await CdpClient.connect("ws://test");
     const socket = socketState.sockets.at(-1)!;
     const pending = client.call("Runtime.evaluate");
-    socket.emit("message", "not-json");
-    socket.emit("message", JSON.stringify({ id: 999, result: {} }));
     socket.emit("message", JSON.stringify({ id: 1, result: { value: 1 } }));
     await expect(pending).resolves.toEqual({ value: 1 });
     client.close();
   });
 
-  it("rejects protocol errors, transport errors, and command timeouts", async () => {
-    vi.useFakeTimers();
+  it("keeps a pending command open after receiving a malformed CDP message", async () => {
     const client = await CdpClient.connect("ws://test");
     const socket = socketState.sockets.at(-1)!;
-    const protocol = expect(client.call("Runtime")).rejects.toThrow("CDP error: failed");
+    const pending = client.call("Runtime.evaluate");
+
+    socket.emit("message", "not-json");
+    socket.emit("message", JSON.stringify({ id: 1, result: { value: 1 } }));
+
+    await expect(pending).resolves.toEqual({ value: 1 });
+    client.close();
+  });
+
+  it("keeps a pending command open after receiving another command's response", async () => {
+    const client = await CdpClient.connect("ws://test");
+    const socket = socketState.sockets.at(-1)!;
+    const pending = client.call("Runtime.evaluate");
+
+    socket.emit("message", JSON.stringify({ id: 999, result: {} }));
+    socket.emit("message", JSON.stringify({ id: 1, result: { value: 1 } }));
+
+    await expect(pending).resolves.toEqual({ value: 1 });
+    client.close();
+  });
+
+  it("rejects a command when Chrome reports a protocol error", async () => {
+    const client = await CdpClient.connect("ws://test");
+    const socket = socketState.sockets.at(-1)!;
+    const assertion = expect(client.call("Runtime")).rejects.toThrow("CDP error: failed");
+
     socket.emit("message", JSON.stringify({ id: 1, error: { message: "failed" } }));
-    await protocol;
+
+    await assertion;
+    client.close();
+  });
+
+  it("rejects a command after its timeout expires", async () => {
+    vi.useFakeTimers();
+    const client = await CdpClient.connect("ws://test");
     const timeout = expect(client.call("Timeout", undefined, 5)).rejects.toThrow(
       "Timed out waiting for CDP Timeout after 5ms",
     );
+
     await vi.advanceTimersByTimeAsync(5);
     await timeout;
-    const connection = expect(client.call("Close")).rejects.toThrow("boom");
-    socket.emit("error", new Error("boom"));
-    await connection;
+    client.close();
     vi.useRealTimers();
+  });
+
+  it("rejects a pending command when the transport reports an error", async () => {
+    const client = await CdpClient.connect("ws://test");
+    const socket = socketState.sockets.at(-1)!;
+    const connection = expect(client.call("Close")).rejects.toThrow("boom");
+
+    socket.emit("error", new Error("boom"));
+
+    await connection;
+    client.close();
   });
 
   it("rejects a command when the socket send callback reports an error", async () => {
