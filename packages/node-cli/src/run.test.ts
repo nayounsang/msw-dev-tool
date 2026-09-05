@@ -130,8 +130,16 @@ describe("node-cli", () => {
   });
 
   it("rejects get without a handler ID before changing a selected session", async () => {
-    const { pid } = createSessionFile();
+    const { pid, sessionPath } = createSessionFile();
+    const before = JSON.parse(fs.readFileSync(sessionPath, "utf8"));
+
     await expect(runCli(["--pid", String(pid), "get"])).rejects.toThrow("Usage: get <id>");
+
+    const after = JSON.parse(fs.readFileSync(sessionPath, "utf8"));
+    expect({ revision: after.revision, state: after.state }).toEqual({
+      revision: before.revision,
+      state: before.state,
+    });
   });
 
   it("rejects a non-numeric session PID", async () => {

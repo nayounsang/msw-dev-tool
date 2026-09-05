@@ -99,11 +99,23 @@ const createWebSocketSession = () => {
   api.getSnapshotWebSocketEndpoint.mockResolvedValue(wsEndpoint);
   api.addSnapshotWebSocketEndpoint.mockReturnValue(wsSnapshot());
   api.removeSnapshotWebSocketEndpoint.mockReturnValue(wsSnapshot());
-  api.setSnapshotWebSocketEndpointEnabled.mockReturnValue(wsSnapshot());
+  api.setSnapshotWebSocketEndpointEnabled.mockReturnValue(
+    wsSnapshot({ ...wsEndpoint, enabled: false }),
+  );
   api.addSnapshotWebSocketListener.mockReturnValue(wsSnapshot(endpointWithListener));
   api.removeSnapshotWebSocketListener.mockReturnValue(wsSnapshot());
-  api.setSnapshotWebSocketListenerEnabled.mockReturnValue(wsSnapshot(endpointWithListener));
-  api.setSnapshotWebSocketListenerBehavior.mockReturnValue(wsSnapshot(endpointWithListener));
+  api.setSnapshotWebSocketListenerEnabled.mockReturnValue(
+    wsSnapshot({
+      ...endpointWithListener,
+      listeners: [{ ...wsListener, enabled: false }],
+    }),
+  );
+  api.setSnapshotWebSocketListenerBehavior.mockReturnValue(
+    wsSnapshot({
+      ...endpointWithListener,
+      listeners: [{ ...wsListener, behavior: { preset: "close" } }],
+    }),
+  );
   api.setSnapshotWebSocketListenerCustomResponse.mockReturnValue(
     wsSnapshot({
       ...endpointWithListener,
@@ -126,7 +138,17 @@ const createWebSocketSession = () => {
 const createEventBranchSession = () => {
   const listenerWithBranch = { ...wsListener, eventBranches: [wsEventBranch] };
   const endpointWithBranch = { ...wsEndpoint, listeners: [listenerWithBranch] };
-  api.setSnapshotWebSocketListenerEventBehavior.mockReturnValue(wsSnapshot(endpointWithBranch));
+  api.setSnapshotWebSocketListenerEventBehavior.mockReturnValue(
+    wsSnapshot({
+      ...endpointWithBranch,
+      listeners: [
+        {
+          ...listenerWithBranch,
+          eventBranches: [{ ...wsEventBranch, behavior: { preset: "echo" } }],
+        },
+      ],
+    }),
+  );
   api.setSnapshotWebSocketListenerEventEnabled.mockReturnValue(
     wsSnapshot({
       ...wsEndpoint,
@@ -306,7 +328,7 @@ describe("FileSnapshotCliSession", () => {
 
     await expect(
       settleMutation(session.setWebSocketEndpointEnabled("ws-1", false)),
-    ).resolves.toBeDefined();
+    ).resolves.toMatchObject({ endpoint: { enabled: false } });
     expect(api.setSnapshotWebSocketEndpointEnabled).toHaveBeenCalledWith(
       sessionPath,
       "ws-1",
@@ -338,7 +360,7 @@ describe("FileSnapshotCliSession", () => {
 
     await expect(
       settleMutation(session.setWebSocketListenerEnabled(wsListener.info.id, false)),
-    ).resolves.toMatchObject({ listener: { info: { id: wsListener.info.id } } });
+    ).resolves.toMatchObject({ listener: { enabled: false } });
   });
 
   it("changes a WebSocket listener behavior in a session snapshot", async () => {
@@ -347,7 +369,7 @@ describe("FileSnapshotCliSession", () => {
 
     await expect(
       settleMutation(session.setWebSocketListenerBehavior(wsListener.info.id, { preset: "close" })),
-    ).resolves.toMatchObject({ listener: { info: { id: wsListener.info.id } } });
+    ).resolves.toMatchObject({ listener: { behavior: { preset: "close" } } });
     expect(api.setSnapshotWebSocketListenerBehavior).toHaveBeenCalledWith(
       sessionPath,
       wsListener.info.id,
@@ -447,7 +469,7 @@ describe("FileSnapshotCliSession", () => {
           preset: "echo",
         }),
       ),
-    ).resolves.toMatchObject({ eventBranch: wsEventBranch });
+    ).resolves.toMatchObject({ eventBranch: { behavior: { preset: "echo" } } });
     expect(api.setSnapshotWebSocketListenerEventBehavior).toHaveBeenCalledWith(
       sessionPath,
       wsListener.info.id,
