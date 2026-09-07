@@ -25,8 +25,87 @@ const createEvaluatingClient = (bridge: Record<string, unknown>) => {
   return { call, client: { call } as unknown as CdpClient };
 };
 
+const createWebSocketBridge = () => {
+  const listWebSocket = vi.fn(() => []);
+  const getWebSocketEndpoint = vi.fn(() => undefined);
+  const addWebSocketEndpoint = vi.fn(() => ({ endpoint: { endpointId: "endpoint-a" } }));
+  const removeWebSocketEndpoint = vi.fn(() => ({ endpoints: [] }));
+  const setWebSocketEndpointEnabled = vi.fn(() => ({ endpoint: { endpointId: "endpoint-a" } }));
+  const addWebSocketListener = vi.fn(() => ({
+    endpoint: { endpointId: "endpoint-a" },
+    listener: { info: { id: "listener-a" } },
+  }));
+  const removeWebSocketListener = vi.fn(() => ({ endpoints: [] }));
+  const setWebSocketListenerEnabled = vi.fn(() => ({
+    endpoint: { endpointId: "endpoint-a" },
+    listener: { info: { id: "listener-a" } },
+  }));
+  const setWebSocketListenerEventEnabled = vi.fn(() => ({
+    endpoint: { endpointId: "endpoint-a" },
+    listener: { info: { id: "listener-a" } },
+    eventBranch: { eventType: "chat/message" },
+  }));
+  const setWebSocketListenerBehavior = vi.fn(() => ({
+    endpoint: { endpointId: "endpoint-a" },
+    listener: { info: { id: "listener-a" } },
+  }));
+  const setWebSocketListenerResponse = vi.fn(() => ({
+    endpoint: { endpointId: "endpoint-a" },
+    listener: { info: { id: "listener-a" } },
+  }));
+  const setWebSocketListenerEventBehavior = vi.fn(() => ({
+    endpoint: { endpointId: "endpoint-a" },
+    listener: { info: { id: "listener-a" } },
+    eventBranch: { eventType: "chat/message" },
+  }));
+  const setWebSocketListenerEventCustomResponse = vi.fn(() => ({
+    endpoint: { endpointId: "endpoint-a" },
+    listener: { info: { id: "listener-a" } },
+    eventBranch: { eventType: "chat/message" },
+  }));
+  const setWebSocketListenerEventResponse = vi.fn(() => ({
+    endpoint: { endpointId: "endpoint-a" },
+    listener: { info: { id: "listener-a" } },
+    eventBranch: { eventType: "chat/message" },
+  }));
+  const bridge = {
+    methods: {
+      listWebSocket: 1,
+      getWebSocketEndpoint: 1,
+      addWebSocketEndpoint: 1,
+      removeWebSocketEndpoint: 1,
+      setWebSocketEndpointEnabled: 1,
+      addWebSocketListener: 1,
+      removeWebSocketListener: 1,
+      setWebSocketListenerEnabled: 1,
+      setWebSocketListenerEventEnabled: 1,
+      setWebSocketListenerBehavior: 1,
+      setWebSocketListenerResponse: 2,
+      setWebSocketListenerEventBehavior: 1,
+      setWebSocketListenerEventCustomResponse: 1,
+      setWebSocketListenerEventResponse: 1,
+    },
+    listWebSocket,
+    getWebSocketEndpoint,
+    addWebSocketEndpoint,
+    removeWebSocketEndpoint,
+    setWebSocketEndpointEnabled,
+    addWebSocketListener,
+    removeWebSocketListener,
+    setWebSocketListenerEnabled,
+    setWebSocketListenerEventEnabled,
+    setWebSocketListenerBehavior,
+    setWebSocketListenerResponse,
+    setWebSocketListenerEventBehavior,
+    setWebSocketListenerEventCustomResponse,
+    setWebSocketListenerEventResponse,
+  };
+
+  return { ...createEvaluatingClient(bridge), ...bridge };
+};
+
 describe("CdpBrowserCliSession", () => {
-  it("calls the page control bridge and returns its serializable result", async () => {
+  it("returns the serialized result after a user changes a handler behavior", async () => {
     const call = vi.fn().mockResolvedValue({ result: { value: { revision: 2, handlerCount: 1 } } });
     const client = { call } as unknown as CdpClient;
     const session = new CdpBrowserCliSession(client);
@@ -35,6 +114,14 @@ describe("CdpBrowserCliSession", () => {
       revision: 2,
       handlerCount: 1,
     });
+  });
+
+  it("requests the required browser-control capability before changing a handler behavior", async () => {
+    const call = vi.fn().mockResolvedValue({ result: { value: { revision: 2, handlerCount: 1 } } });
+    const session = new CdpBrowserCliSession({ call } as unknown as CdpClient);
+
+    await session.setBehavior("handler-a", "delay");
+
     expect(call).toHaveBeenCalledWith(
       "Runtime.evaluate",
       expect.objectContaining({
@@ -43,12 +130,28 @@ describe("CdpBrowserCliSession", () => {
         expression: expect.stringContaining("__MSW_DEV_TOOL_CONTROL__"),
       }),
     );
+  });
+
+  it("checks the set-behavior capability revision before invoking the page control", async () => {
+    const call = vi.fn().mockResolvedValue({ result: { value: { revision: 2, handlerCount: 1 } } });
+    const session = new CdpBrowserCliSession({ call } as unknown as CdpClient);
+
+    await session.setBehavior("handler-a", "delay");
+
     expect(call).toHaveBeenCalledWith(
       "Runtime.evaluate",
       expect.objectContaining({
         expression: expect.stringContaining('bridge.methods?.["setBehavior"] !== 1'),
       }),
     );
+  });
+
+  it("does not depend on the legacy bridge version when changing a handler behavior", async () => {
+    const call = vi.fn().mockResolvedValue({ result: { value: { revision: 2, handlerCount: 1 } } });
+    const session = new CdpBrowserCliSession({ call } as unknown as CdpClient);
+
+    await session.setBehavior("handler-a", "delay");
+
     expect(call.mock.calls[0]?.[1]).toEqual(
       expect.objectContaining({
         expression: expect.not.stringContaining("bridge.version"),
@@ -75,18 +178,28 @@ describe("CdpBrowserCliSession", () => {
     );
   });
 
-  it("sends HTTP and global mock enable arguments through the page control bridge", async () => {
+  it("sends a handler enabled-state change through the page control bridge", async () => {
     const call = vi.fn().mockResolvedValue({
       result: { value: { revision: 3, handlerCount: 1, mockEnabled: false } },
     });
     const session = new CdpBrowserCliSession({ call } as unknown as CdpClient);
 
     await session.setEnabled("handler-a", false);
-    await session.setMockEnabled(false);
+
     expect(call.mock.calls[0]?.[1].expression).toContain(
       'bridge["setEnabled"](...["handler-a",false])',
     );
-    expect(call.mock.calls[1]?.[1].expression).toContain('bridge["setMockEnabled"](...[false])');
+  });
+
+  it("sends a global mock enabled-state change through the page control bridge", async () => {
+    const call = vi.fn().mockResolvedValue({
+      result: { value: { revision: 3, handlerCount: 1, mockEnabled: false } },
+    });
+    const session = new CdpBrowserCliSession({ call } as unknown as CdpClient);
+
+    await session.setMockEnabled(false);
+
+    expect(call.mock.calls[0]?.[1].expression).toContain('bridge["setMockEnabled"](...[false])');
   });
 
   it.each(["setEnabled", "setMockEnabled"] as const)(
@@ -127,7 +240,7 @@ describe("CdpBrowserCliSession", () => {
     );
   });
 
-  it("surfaces a bridge error from Chrome", async () => {
+  it("returns the Chrome bridge error description to the CLI caller", async () => {
     const client = {
       call: vi.fn().mockResolvedValue({
         exceptionDetails: {
@@ -138,6 +251,17 @@ describe("CdpBrowserCliSession", () => {
     await expect(new CdpBrowserCliSession(client).list()).rejects.toThrow(
       "Error: bridge unavailable",
     );
+  });
+
+  it("omits Chrome stack frames from a bridge error returned to the CLI caller", async () => {
+    const client = {
+      call: vi.fn().mockResolvedValue({
+        exceptionDetails: {
+          exception: { description: "Error: bridge unavailable\n    at internal webpack frame" },
+        },
+      }),
+    } as unknown as CdpClient;
+
     await expect(new CdpBrowserCliSession(client).list()).rejects.not.toThrow("webpack");
   });
 
@@ -209,168 +333,184 @@ describe("CdpBrowserCliSession", () => {
     );
   });
 
-  it("forwards every WebSocket operation with serializable arguments", async () => {
-    const listWebSocket = vi.fn(() => []);
-    const getWebSocketEndpoint = vi.fn(() => undefined);
-    const addWebSocketEndpoint = vi.fn(() => ({ endpoint: { endpointId: "endpoint-a" } }));
-    const removeWebSocketEndpoint = vi.fn(() => ({ endpoints: [] }));
-    const setWebSocketEndpointEnabled = vi.fn(() => ({ endpoint: { endpointId: "endpoint-a" } }));
-    const addWebSocketListener = vi.fn(() => ({
-      endpoint: { endpointId: "endpoint-a" },
-      listener: { info: { id: "listener-a" } },
-    }));
-    const removeWebSocketListener = vi.fn(() => ({ endpoints: [] }));
-    const setWebSocketListenerEnabled = vi.fn(() => ({
-      endpoint: { endpointId: "endpoint-a" },
-      listener: { info: { id: "listener-a" } },
-    }));
-    const setWebSocketListenerEventEnabled = vi.fn(() => ({
-      endpoint: { endpointId: "endpoint-a" },
-      listener: { info: { id: "listener-a" } },
-      eventBranch: { eventType: "chat/message" },
-    }));
-    const setWebSocketListenerBehavior = vi.fn(() => ({
-      endpoint: { endpointId: "endpoint-a" },
-      listener: { info: { id: "listener-a" } },
-    }));
-    const setWebSocketListenerResponse = vi.fn(() => ({
-      endpoint: { endpointId: "endpoint-a" },
-      listener: { info: { id: "listener-a" } },
-    }));
-    const setWebSocketListenerEventBehavior = vi.fn(() => ({
-      endpoint: { endpointId: "endpoint-a" },
-      listener: { info: { id: "listener-a" } },
-      eventBranch: { eventType: "chat/message" },
-    }));
-    const setWebSocketListenerEventCustomResponse = vi.fn(() => ({
-      endpoint: { endpointId: "endpoint-a" },
-      listener: { info: { id: "listener-a" } },
-      eventBranch: { eventType: "chat/message" },
-    }));
-    const setWebSocketListenerEventResponse = vi.fn(() => ({
-      endpoint: { endpointId: "endpoint-a" },
-      listener: { info: { id: "listener-a" } },
-      eventBranch: { eventType: "chat/message" },
-    }));
-    const { client, call } = createEvaluatingClient({
-      methods: {
-        listWebSocket: 1,
-        getWebSocketEndpoint: 1,
-        addWebSocketEndpoint: 1,
-        removeWebSocketEndpoint: 1,
-        setWebSocketEndpointEnabled: 1,
-        addWebSocketListener: 1,
-        removeWebSocketListener: 1,
-        setWebSocketListenerEnabled: 1,
-        setWebSocketListenerEventEnabled: 1,
-        setWebSocketListenerBehavior: 1,
-        setWebSocketListenerResponse: 2,
-        setWebSocketListenerEventBehavior: 1,
-        setWebSocketListenerEventCustomResponse: 1,
-        setWebSocketListenerEventResponse: 1,
-      },
-      listWebSocket,
-      getWebSocketEndpoint,
-      addWebSocketEndpoint,
-      removeWebSocketEndpoint,
-      setWebSocketEndpointEnabled,
-      addWebSocketListener,
-      removeWebSocketListener,
-      setWebSocketListenerEnabled,
-      setWebSocketListenerEventEnabled,
-      setWebSocketListenerBehavior,
-      setWebSocketListenerResponse,
-      setWebSocketListenerEventBehavior,
-      setWebSocketListenerEventCustomResponse,
-      setWebSocketListenerEventResponse,
-    });
-    const session = new CdpBrowserCliSession(client);
-    const matcher = { kind: "regexp" as const, source: "browser\\.example", flags: "i" };
-    const behavior = { preset: "send", options: { message: "hello" } } as const;
+  it("returns the WebSocket endpoints available to the CLI caller", async () => {
+    const { client } = createWebSocketBridge();
 
-    await expect(session.listWebSocket()).resolves.toEqual([]);
-    await expect(session.getWebSocketEndpoint("endpoint-a")).resolves.toBeUndefined();
-    await session.addWebSocketEndpoint(matcher);
-    await session.removeWebSocketEndpoint("endpoint-a");
-    await session.setWebSocketEndpointEnabled("endpoint-a", false);
-    await session.addWebSocketListener("endpoint-a", behavior);
-    await session.removeWebSocketListener("listener-a");
-    await session.setWebSocketListenerEnabled("listener-a", false);
-    await session.setWebSocketListenerEventEnabled("listener-a", "chat/message", false);
-    await session.setWebSocketListenerBehavior("listener-a", {
-      preset: "close",
-      options: { code: 4001, reason: "done" },
-    });
-    await session.addWebSocketListener({
-      endpointId: "endpoint-a",
-      behavior: { preset: "default" },
-      response: {
-        type: "send",
-        dataType: "string",
-        value: "default",
-        delay: 300,
-        repeat: { interval: 500, repetitions: 3 },
-      },
-      customResponse: { type: "send", dataType: "string", value: "custom", delay: 100 },
-    });
-    await session.setWebSocketListenerResponse("listener-a", {
-      type: "send",
-      dataType: "string",
-      value: "default",
-      delay: 300,
-      repeat: { interval: 500, repetitions: "Infinity" },
-    });
-    await session.setWebSocketListenerEventBehavior("listener-a", "chat/message", {
-      preset: "echo",
-    });
-    await session.setWebSocketListenerEventCustomResponse("listener-a", "chat/message", {
-      type: "send",
-      dataType: "string",
-      value: "custom",
-    });
-    await session.setWebSocketListenerEventResponse("listener-a", "chat/message", {
-      type: "send",
-      dataType: "string",
-      value: "response",
-    });
+    await expect(new CdpBrowserCliSession(client).listWebSocket()).resolves.toEqual([]);
+  });
+
+  it("returns no endpoint when the requested WebSocket endpoint is absent", async () => {
+    const { client } = createWebSocketBridge();
+
+    await expect(
+      new CdpBrowserCliSession(client).getWebSocketEndpoint("endpoint-a"),
+    ).resolves.toBeUndefined();
+  });
+
+  it("passes a WebSocket endpoint matcher to the page control bridge", async () => {
+    const { client, addWebSocketEndpoint } = createWebSocketBridge();
+    const matcher = { kind: "regexp" as const, source: "browser\\.example", flags: "i" };
+
+    await new CdpBrowserCliSession(client).addWebSocketEndpoint(matcher);
 
     expect(addWebSocketEndpoint).toHaveBeenCalledWith(matcher);
+  });
+
+  it("passes a WebSocket endpoint ID when removing a temporary endpoint", async () => {
+    const { client, removeWebSocketEndpoint } = createWebSocketBridge();
+
+    await new CdpBrowserCliSession(client).removeWebSocketEndpoint("endpoint-a");
+
+    expect(removeWebSocketEndpoint).toHaveBeenCalledWith("endpoint-a");
+  });
+
+  it("passes a WebSocket endpoint enabled state to the page control bridge", async () => {
+    const { client, setWebSocketEndpointEnabled } = createWebSocketBridge();
+
+    await new CdpBrowserCliSession(client).setWebSocketEndpointEnabled("endpoint-a", false);
+
+    expect(setWebSocketEndpointEnabled).toHaveBeenCalledWith("endpoint-a", false);
+  });
+
+  it("passes an endpoint ID and behavior when adding a WebSocket listener", async () => {
+    const { client, addWebSocketListener } = createWebSocketBridge();
+    const behavior = { preset: "send", options: { message: "hello" } } as const;
+
+    await new CdpBrowserCliSession(client).addWebSocketListener("endpoint-a", behavior);
+
     expect(addWebSocketListener).toHaveBeenCalledWith("endpoint-a", behavior);
-    expect(addWebSocketListener).toHaveBeenLastCalledWith({
+  });
+
+  it("passes a temporary listener input without losing response schedule fields", async () => {
+    const { client, addWebSocketListener } = createWebSocketBridge();
+    const input = {
       endpointId: "endpoint-a",
-      behavior: { preset: "default" },
+      behavior: { preset: "default" as const },
       response: {
-        type: "send",
-        dataType: "string",
+        type: "send" as const,
+        dataType: "string" as const,
         value: "default",
         delay: 300,
         repeat: { interval: 500, repetitions: 3 },
       },
-      customResponse: { type: "send", dataType: "string", value: "custom", delay: 100 },
-    });
-    expect(setWebSocketListenerResponse).toHaveBeenCalledWith("listener-a", {
-      type: "send",
-      dataType: "string",
+      customResponse: {
+        type: "send" as const,
+        dataType: "string" as const,
+        value: "custom",
+        delay: 100,
+      },
+    };
+
+    await new CdpBrowserCliSession(client).addWebSocketListener(input);
+
+    expect(addWebSocketListener).toHaveBeenCalledWith(input);
+  });
+
+  it("passes a listener ID when removing a WebSocket listener", async () => {
+    const { client, removeWebSocketListener } = createWebSocketBridge();
+
+    await new CdpBrowserCliSession(client).removeWebSocketListener("listener-a");
+
+    expect(removeWebSocketListener).toHaveBeenCalledWith("listener-a");
+  });
+
+  it("passes a listener enabled state to the page control bridge", async () => {
+    const { client, setWebSocketListenerEnabled } = createWebSocketBridge();
+
+    await new CdpBrowserCliSession(client).setWebSocketListenerEnabled("listener-a", false);
+
+    expect(setWebSocketListenerEnabled).toHaveBeenCalledWith("listener-a", false);
+  });
+
+  it("passes an event branch enabled state to the page control bridge", async () => {
+    const { client, setWebSocketListenerEventEnabled } = createWebSocketBridge();
+
+    await new CdpBrowserCliSession(client).setWebSocketListenerEventEnabled(
+      "listener-a",
+      "chat/message",
+      false,
+    );
+
+    expect(setWebSocketListenerEventEnabled).toHaveBeenCalledWith(
+      "listener-a",
+      "chat/message",
+      false,
+    );
+  });
+
+  it("passes a listener behavior to the page control bridge", async () => {
+    const { client, setWebSocketListenerBehavior } = createWebSocketBridge();
+    const behavior = { preset: "close" as const, options: { code: 4001, reason: "done" } };
+
+    await new CdpBrowserCliSession(client).setWebSocketListenerBehavior("listener-a", behavior);
+
+    expect(setWebSocketListenerBehavior).toHaveBeenCalledWith("listener-a", behavior);
+  });
+
+  it("passes a listener response schedule to the page control bridge", async () => {
+    const { client, setWebSocketListenerResponse } = createWebSocketBridge();
+    const response = {
+      type: "send" as const,
+      dataType: "string" as const,
       value: "default",
       delay: 300,
-      repeat: { interval: 500, repetitions: "Infinity" },
-    });
-    expect(setWebSocketListenerEventBehavior).toHaveBeenCalledWith("listener-a", "chat/message", {
-      preset: "echo",
-    });
+      repeat: { interval: 500, repetitions: "Infinity" as const },
+    };
+
+    await new CdpBrowserCliSession(client).setWebSocketListenerResponse("listener-a", response);
+
+    expect(setWebSocketListenerResponse).toHaveBeenCalledWith("listener-a", response);
+  });
+
+  it("passes an event branch behavior to the page control bridge", async () => {
+    const { client, setWebSocketListenerEventBehavior } = createWebSocketBridge();
+    const behavior = { preset: "echo" as const };
+
+    await new CdpBrowserCliSession(client).setWebSocketListenerEventBehavior(
+      "listener-a",
+      "chat/message",
+      behavior,
+    );
+
+    expect(setWebSocketListenerEventBehavior).toHaveBeenCalledWith(
+      "listener-a",
+      "chat/message",
+      behavior,
+    );
+  });
+
+  it("passes an event branch custom response to the page control bridge", async () => {
+    const { client, setWebSocketListenerEventCustomResponse } = createWebSocketBridge();
+    const customResponse = { type: "send" as const, dataType: "string" as const, value: "custom" };
+
+    await new CdpBrowserCliSession(client).setWebSocketListenerEventCustomResponse(
+      "listener-a",
+      "chat/message",
+      customResponse,
+    );
+
     expect(setWebSocketListenerEventCustomResponse).toHaveBeenCalledWith(
       "listener-a",
       "chat/message",
-      { type: "send", dataType: "string", value: "custom" },
+      customResponse,
     );
-    expect(setWebSocketListenerEventResponse).toHaveBeenCalledWith("listener-a", "chat/message", {
-      type: "send",
-      dataType: "string",
-      value: "response",
-    });
-    expect(call).toHaveBeenCalledTimes(15);
-    expect(call.mock.calls[2]?.[1].expression).toContain('"source":"browser\\\\.example"');
-    expect(call.mock.calls[4]?.[1].expression).toContain("false");
+  });
+
+  it("passes an event branch response to the page control bridge", async () => {
+    const { client, setWebSocketListenerEventResponse } = createWebSocketBridge();
+    const response = { type: "send" as const, dataType: "string" as const, value: "response" };
+
+    await new CdpBrowserCliSession(client).setWebSocketListenerEventResponse(
+      "listener-a",
+      "chat/message",
+      response,
+    );
+
+    expect(setWebSocketListenerEventResponse).toHaveBeenCalledWith(
+      "listener-a",
+      "chat/message",
+      response,
+    );
   });
 
   it.each([
