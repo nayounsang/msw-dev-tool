@@ -64,17 +64,59 @@ afterEach(() => {
   }
 });
 
+const createSnapshotWithCodeHandler = async () => {
+  const sessionPath = path.join(makeTempDir(), "session.json");
+  await writeSnapshot(
+    sessionPath,
+    bumpSnapshot(createEmptySnapshot(), {
+      flattenHandlers: [
+        {
+          id: "code",
+          path: "/code",
+          method: HttpMethod.GET,
+          behavior: HttpHandlerBehavior.DEFAULT,
+          type: "default",
+        },
+      ],
+    }),
+  );
+  return sessionPath;
+};
+
 describe("snapshot file protocol", () => {
-  it("exercises the SnapshotRepository read, write, and mutation boundary", async () => {
+  it("returns null when a SnapshotRepository has not written a snapshot", async () => {
     const dir = makeTempDir();
     const repository = new SnapshotRepository(path.join(dir, "session.json"));
+
     await expect(repository.read()).resolves.toBeNull();
+  });
+
+  it("returns an empty snapshot when a SnapshotRepository has not written a snapshot", async () => {
+    const dir = makeTempDir();
+    const repository = new SnapshotRepository(path.join(dir, "session.json"));
+
     await expect(repository.readOrEmpty()).resolves.toEqual(createEmptySnapshot());
+  });
+
+  it("returns a snapshot written through a SnapshotRepository", async () => {
+    const dir = makeTempDir();
+    const repository = new SnapshotRepository(path.join(dir, "session.json"));
+    const snapshot = createEmptySnapshot();
+
+    await repository.write(snapshot);
+
+    await expect(repository.read()).resolves.toEqual(snapshot);
+  });
+
+  it("returns a SnapshotRepository mutation after persisting it", async () => {
+    const dir = makeTempDir();
+    const repository = new SnapshotRepository(path.join(dir, "session.json"));
 
     await repository.write(createEmptySnapshot());
     const next = await repository.mutate((snapshot) =>
       bumpSnapshot(snapshot, { flattenHandlers: [] }),
     );
+
     await expect(repository.read()).resolves.toEqual(next);
   });
 
@@ -758,42 +800,84 @@ try {
     expect(cleared.state.pendingReset).toBeUndefined();
   });
 
-  it("handles snapshot mutation lookup, removal, reset, and empty-file edges", async () => {
-    const dir = makeTempDir();
-    const sessionPath = path.join(dir, "session.json");
+  it("returns an empty snapshot when the session file does not exist", async () => {
+    const sessionPath = path.join(makeTempDir(), "session.json");
+
     await expect(readSnapshotOrEmpty(sessionPath)).resolves.toEqual(createEmptySnapshot());
+  });
+
+  it("returns null when the session file does not exist", async () => {
+    const sessionPath = path.join(makeTempDir(), "session.json");
+
     await expect(readSnapshot(sessionPath)).resolves.toBeNull();
-    await writeSnapshot(
-      sessionPath,
-      bumpSnapshot(createEmptySnapshot(), {
-        flattenHandlers: [
-          {
-            id: "code",
-            path: "/code",
-            method: HttpMethod.GET,
-            behavior: HttpHandlerBehavior.DEFAULT,
-            type: "default",
-          },
-        ],
-      }),
-    );
+  });
+
+  it("lists handlers persisted in a snapshot", async () => {
+    const sessionPath = await createSnapshotWithCodeHandler();
+
     await expect(listSnapshotHandlers(sessionPath)).resolves.toHaveLength(1);
+  });
+
+  it("returns no handler for an ID that is absent from a snapshot", async () => {
+    const sessionPath = await createSnapshotWithCodeHandler();
+
     await expect(getSnapshotHandler(sessionPath, "missing")).resolves.toBeUndefined();
+  });
+
+  it("rejects a behavior change for a handler that is absent from a snapshot", async () => {
+    const sessionPath = await createSnapshotWithCodeHandler();
+
     await expect(
       setSnapshotBehavior(sessionPath, "missing", HttpHandlerBehavior.DELAY),
     ).rejects.toThrow("Handler not found");
+  });
+
+  it("rejects a custom response for a handler that is absent from a snapshot", async () => {
+    const sessionPath = await createSnapshotWithCodeHandler();
+
     await expect(
       setSnapshotCustomResponse(sessionPath, "missing", {
         status: StringHttpStatusCode.OK,
         contentType: MimeType.TEXT_PLAIN,
       }),
     ).rejects.toThrow("Handler not found");
+  });
+
+  it("rejects removal of a handler that is absent from a snapshot", async () => {
+    const sessionPath = await createSnapshotWithCodeHandler();
+
     await expect(removeSnapshotTempHandler(sessionPath, "missing")).rejects.toThrow(
       "Handler not found",
     );
+  });
+
+  it("keeps code handlers when removing temporary handlers", async () => {
+    const sessionPath = await createSnapshotWithCodeHandler();
+
     await expect(removeSnapshotTempHandler(sessionPath, "code")).rejects.toThrow(
       "cannot be deleted",
     );
+  });
+
+  it("rejects a temporary handler that duplicates an existing temporary handler", async () => {
+    const sessionPath = await createSnapshotWithCodeHandler();
+    const tempInput = {
+      path: "/temp",
+      method: HttpMethod.POST,
+      contentType: MimeType.TEXT_PLAIN,
+      status: StringHttpStatusCode.OK,
+      response: "ok",
+    };
+
+    await addSnapshotTempHandler(sessionPath, tempInput);
+
+    await expect(addSnapshotTempHandler(sessionPath, tempInput)).rejects.toThrow(
+      "Duplicate handler",
+    );
+  });
+
+  it("removes a persisted temporary handler", async () => {
+    const sessionPath = await createSnapshotWithCodeHandler();
     const temp = await addSnapshotTempHandler(sessionPath, {
       path: "/temp",
       method: HttpMethod.POST,
@@ -802,29 +886,33 @@ try {
       response: "ok",
     });
     const tempId = temp.state.flattenHandlers.at(-1)!.id;
-    await expect(
-      addSnapshotTempHandler(sessionPath, {
-        path: "/temp",
-        method: HttpMethod.POST,
-        contentType: MimeType.TEXT_PLAIN,
-        status: StringHttpStatusCode.OK,
-        response: "ok",
-      }),
-    ).rejects.toThrow("Duplicate handler");
+
     await expect(removeSnapshotTempHandler(sessionPath, tempId)).resolves.toMatchObject({
       state: { flattenHandlers: [expect.objectContaining({ id: "code" })] },
     });
+  });
+
+  it("marks a snapshot for reset", async () => {
+    const sessionPath = await createSnapshotWithCodeHandler();
+
     await expect(requestSnapshotReset(sessionPath)).resolves.toMatchObject({
       state: { pendingReset: true },
     });
   });
 
-  it("rejects empty and schema-invalid snapshot files", async () => {
+  it("rejects an empty snapshot file", async () => {
     const dir = makeTempDir();
     const sessionPath = path.join(dir, "session.json");
     fs.writeFileSync(sessionPath, "   ");
+
     await expect(readSnapshot(sessionPath)).rejects.toThrow("empty");
+  });
+
+  it("rejects a snapshot file that fails schema validation", async () => {
+    const dir = makeTempDir();
+    const sessionPath = path.join(dir, "session.json");
     fs.writeFileSync(sessionPath, JSON.stringify({ revision: "bad" }));
+
     await expect(readSnapshot(sessionPath)).rejects.toThrow("Invalid session snapshot schema");
   });
 
