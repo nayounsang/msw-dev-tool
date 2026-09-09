@@ -33,8 +33,9 @@ Chrome DevTools MCP server configured in `.codex/config.toml` for Codex or
    Chrome DevTools MCP for navigation, DOM inspection, console/network inspection,
    and verifying the user-visible result.
 5. After a mutation, inspect the same tab with Chrome DevTools MCP and verify the
-   application behavior. Run `msw-dev-tool-browser reset` when the scenario is
-   no longer needed.
+   application behavior. Run `msw-dev-tool-browser reset --cdp-url
+http://127.0.0.1:9222 --target <target-id>` when the scenario is no longer
+   needed.
 
 If the MCP server was added or its arguments changed, restart the MCP session
 before using it. Keep the Chrome process running while both the MCP server and
