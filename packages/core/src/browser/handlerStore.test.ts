@@ -19,6 +19,7 @@ import {
 import { STORAGE_KEY } from "../shared/const";
 import { BROWSER_CONTROL_METHOD_VERSIONS } from "../shared/controlProtocol";
 import { MimeType, StringHttpStatusCode } from "../shared/types";
+import { getRowId } from "../shared/utils/store";
 
 const getBridge = (): BrowserControlBridge => {
   const bridge = window[BROWSER_CONTROL_KEY];
@@ -107,6 +108,49 @@ describe("browser control bridge", () => {
     expect(result.status).toBe(202);
     expect(result.headers.get("X-Custom")).toBe("yes");
     expect(await result.text()).toBe("custom body");
+  });
+
+  it("renders a custom response restored from browser session storage", async () => {
+    const path = "/hydrated-template";
+    const id = getRowId({ path, method: "get" });
+    sessionStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        revision: 1,
+        state: {
+          mockEnabled: true,
+          webSocket: [],
+          flattenHandlers: [
+            {
+              id,
+              path,
+              method: "get",
+              type: "default",
+              enabled: true,
+              behavior: "custom response",
+              customResponse: {
+                contentType: MimeType.APPLICATION_JSON,
+                status: StringHttpStatusCode.OK,
+                response: '{"page":"${{request.query.page}}"}',
+              },
+            },
+          ],
+        },
+      }),
+    );
+    await setupDevToolWorker(http.get(path, () => HttpResponse.json({ original: true })));
+
+    const handler = handlerStore.getState().getFlattenHandlerById(id);
+    if (!handler) throw new Error("Expected hydrated handler");
+    const result = await handler.handler.resolver({
+      request: new Request("http://localhost/hydrated-template?page=2"),
+      requestId: "browser-request",
+      params: {},
+      cookies: {},
+    });
+
+    if (!(result instanceof Response)) throw new Error("Expected Response");
+    expect(await result.json()).toEqual({ page: "2" });
   });
 
   it("exposes and persists HTTP and global mock enable transitions", async () => {
