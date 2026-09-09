@@ -24,18 +24,24 @@ const childScript = `
     const server = await setupDevToolServer(
       http.get("http://node.test/code/:id", () => HttpResponse.json({ original: true })),
     );
-    server.listen();
+    server.listen({ onUnhandledRequest: "bypass" });
     console.log(JSON.stringify({ ready: true, pid: process.pid }));
     readline.createInterface({ input: process.stdin }).on("line", async (line) => {
       const input = JSON.parse(line);
-      const response = await fetch(input.url, input.init);
-      console.log(JSON.stringify({
-        status: response.status,
-        body: await response.text(),
-        requestId: response.headers.get("X-Request-ID"),
-        queryHeader: response.headers.get("X-Query"),
-        contentLength: response.headers.get("Content-Length"),
-      }));
+      try {
+        const response = await fetch(input.url, input.init);
+        console.log(JSON.stringify({
+          status: response.status,
+          body: await response.text(),
+          requestId: response.headers.get("X-Request-ID"),
+          queryHeader: response.headers.get("X-Query"),
+          contentLength: response.headers.get("Content-Length"),
+        }));
+      } catch (error) {
+        console.log(JSON.stringify({
+          error: error instanceof Error ? error.message : String(error),
+        }));
+      }
     });
   })().catch((error) => { console.error(error); process.exit(1); });
 `;
@@ -68,6 +74,36 @@ const waitForLine = (child: ChildProcessWithoutNullStreams) => {
       : new Promise<string>((resolve) => {
           resolveNext = resolve;
         });
+};
+
+type ChildResponse = {
+  status?: number;
+  body?: string;
+  requestId?: string | null;
+  queryHeader?: string | null;
+  contentLength?: string | null;
+  error?: string;
+};
+
+const waitForResponse = async (
+  child: ChildProcessWithoutNullStreams,
+  nextLine: () => Promise<string>,
+  input: { url: string; init?: RequestInit },
+  isReady: (response: ChildResponse) => boolean,
+  timeout = 5_000,
+): Promise<ChildResponse> => {
+  const deadline = Date.now() + timeout;
+  let latest: ChildResponse = {};
+  do {
+    child.stdin.write(JSON.stringify(input) + "\n");
+    latest = JSON.parse(await nextLine()) as ChildResponse;
+    if (isReady(latest)) return latest;
+    const remaining = deadline - Date.now();
+    if (remaining > 0) {
+      await new Promise((resolve) => setTimeout(resolve, Math.min(50, remaining)));
+    }
+  } while (Date.now() < deadline);
+  throw new Error(`Timed out waiting for child response: ${JSON.stringify(latest)}`);
 };
 
 const startChild = () => {
@@ -112,14 +148,12 @@ describe("HTTP template Node process E2E", () => {
         header: '{"X-Request-ID":"${{requestId}}"}',
       });
       await setSnapshotBehavior(sessionPath, handlerId, HttpHandlerBehavior.CUSTOM_RESPONSE);
-      await new Promise((resolve) => setTimeout(resolve, 350));
-
-      child.stdin.write(JSON.stringify({ url: "http://node.test/code/9?q=a%22b" }) + "\n");
-      const result = JSON.parse(await nextLine()) as {
-        status: number;
-        body: string;
-        requestId: string;
-      };
+      const result = await waitForResponse(
+        child,
+        nextLine,
+        { url: "http://node.test/code/9?q=a%22b" },
+        (response) => response.status === 200 && response.body?.includes('"id":"9"') === true,
+      );
       expect(result.status).toBe(200);
       expect(JSON.parse(result.body)).toEqual({ id: "9", q: 'a"b' });
       expect(result.requestId).toBeTruthy();
@@ -140,19 +174,19 @@ describe("HTTP template Node process E2E", () => {
         status: StringHttpStatusCode.OK,
         response: '{"id":"${{params.id}}","body":${{request.body}}}',
       });
-      await new Promise((resolve) => setTimeout(resolve, 350));
-
-      child.stdin.write(
-        JSON.stringify({
+      const result = await waitForResponse(
+        child,
+        nextLine,
+        {
           url: "http://node.test/temp/8",
           init: {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ok: true }),
           },
-        }) + "\n",
+        },
+        (response) => response.status === 200 && response.body?.includes('"id":"8"') === true,
       );
-      const result = JSON.parse(await nextLine()) as { status: number; body: string };
       expect(result.status).toBe(200);
       expect(JSON.parse(result.body)).toEqual({ id: "8", body: { ok: true } });
     } finally {
@@ -172,19 +206,19 @@ describe("HTTP template Node process E2E", () => {
         status: StringHttpStatusCode.OK,
         response: '{"body":${{request.body}}}',
       });
-      await new Promise((resolve) => setTimeout(resolve, 350));
-
-      child.stdin.write(
-        JSON.stringify({
+      const result = await waitForResponse(
+        child,
+        nextLine,
+        {
           url: "http://node.test/vendor-json",
           init: {
             method: "POST",
             headers: { "Content-Type": "application/problem+json; charset=utf-8" },
             body: JSON.stringify({ title: "Invalid request" }),
           },
-        }) + "\n",
+        },
+        (response) => response.status === 200 && response.body?.includes('"body"') === true,
       );
-      const result = JSON.parse(await nextLine()) as { status: number; body: string };
       expect(result.status).toBe(200);
       expect(JSON.parse(result.body)).toEqual({ body: { title: "Invalid request" } });
     } finally {
@@ -205,17 +239,12 @@ describe("HTTP template Node process E2E", () => {
         response: '{"ok":true}',
         header: '{"X-Query":"${{request.query.q}}"}',
       });
-      await new Promise((resolve) => setTimeout(resolve, 350));
-
-      child.stdin.write(
-        JSON.stringify({ url: "http://node.test/header-template?q=before%0Aafter%00end" }) + "\n",
+      const result = await waitForResponse(
+        child,
+        nextLine,
+        { url: "http://node.test/header-template?q=before%0Aafter%00end" },
+        (response) => response.status === 200 && response.queryHeader === "before after end",
       );
-      const result = JSON.parse(await nextLine()) as {
-        status: number;
-        body: string;
-        requestId: string;
-        queryHeader: string;
-      };
       expect(result.status).toBe(200);
       expect(JSON.parse(result.body)).toEqual({ ok: true });
       expect(result.queryHeader).toBe("before after end");
@@ -237,24 +266,21 @@ describe("HTTP template Node process E2E", () => {
         response:
           '{"${{params.id}}":"${{request.query.value}}","body":${{request.body}},"missing":"${{params.missing}}","static":"__MSW_DEV_TOOL_TEMPLATE_0__"}',
       });
-      await new Promise((resolve) => setTimeout(resolve, 350));
 
       const value = encodeURIComponent('quote " slash \\ line\n 한글');
-      child.stdin.write(
-        JSON.stringify({
+      const result = await waitForResponse(
+        child,
+        nextLine,
+        {
           url: `http://node.test/edge/8?value=${value}`,
           init: {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ok: true }),
           },
-        }) + "\n",
+        },
+        (response) => response.status === 200 && response.body?.includes('"body"') === true,
       );
-      const result = JSON.parse(await nextLine()) as {
-        status: number;
-        body: string;
-        contentLength: string;
-      };
       expect(result.status).toBe(200);
       expect(JSON.parse(result.body)).toEqual({
         8: 'quote " slash \\ line\n 한글',
