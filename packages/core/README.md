@@ -14,18 +14,18 @@ pnpm add -D @msw-dev-tool/core msw
 
 ## Entries
 
-| Import                       | Environment                                  |
-| ---------------------------- | -------------------------------------------- |
-| `@msw-dev-tool/core/browser` | Browser (`setupWorker`)                      |
-| `@msw-dev-tool/core/node`    | Node (`setupServer` + session snapshot file) |
-| `@msw-dev-tool/core/shared`  | Shared core types and schemas                |
+| Import                       | Environment                                    |
+| ---------------------------- | ---------------------------------------------- |
+| `@msw-dev-tool/core/browser` | Browser (`setupDevToolWorker`)                 |
+| `@msw-dev-tool/core/node`    | Node (`setupDevToolServer` + session snapshot) |
+| `@msw-dev-tool/core/shared`  | Shared core types and schemas                  |
 
 ### Browser
 
 ```ts
 import { setupDevToolWorker } from "@msw-dev-tool/core/browser";
 
-export const worker = setupDevToolWorker(...handlers);
+export const worker = await setupDevToolWorker(...handlers);
 ```
 
 ### WebSocket handlers

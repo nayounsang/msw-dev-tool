@@ -8,8 +8,8 @@ Browser + Node MSW in one app.
 ## Run
 
 ```bash
-# from repo root (build core/react/cli first if needed)
-yarn build:core && yarn build:react && yarn build:node-cli
+# from repo root
+yarn build:packages
 yarn workspace example dev
 ```
 

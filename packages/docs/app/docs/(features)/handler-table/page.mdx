@@ -3,7 +3,6 @@ description: Show handlers and control them
 ---
 
 import { ExampleImage } from "@/app/_components/ExampleImage";
-import { Callout } from "nextra/components";
 
 # Handler Table
 
@@ -11,7 +10,7 @@ The handler table is a table that shows all the handlers in the project and cont
 
 ## Set Response Behavior
 
-<ExampleImage src="/msw-dev-tool-behavior.webp" alt="response behavior image" />
+<ExampleImage src="/msw-dev-tool-behavior.webp" alt="HTTP handler Behavior selector" />
 
 Control how your mocked APIs respond using the behavior selector. Each handler can be configured with the following response types:
 
@@ -36,27 +35,34 @@ Control how your mocked APIs respond using the behavior selector. Each handler c
   - Responds with a null value
   - Useful for testing null handling
 
+- **custom response**
+
+  - Uses the response saved in the Custom Response column
+  - Save the response first, then select this behavior to apply it
+
 #### Error
 
-- **network Error**
+- **network error**
 
   - Simulates network failure scenarios
   - Triggers error handling in your application
 
-- **4xx Error**
+- **HTTP status codes**
 
-  - Returns client error status codes
-  - Simulates client-side error responses
+  - Select one of the supported status codes to simulate a client- or server-side response
 
-- **5xx Error**
-  - Returns server error status codes
-- Simulates server-side failure scenarios
+The status behavior options are `400`, `401`, `403`, `404`, `405`, `406`, `409`, `412`, `413`,
+`415`, `429`, `500`, `502`, `503`, and `504`. These are the HTTP status codes currently
+supported by the Dev Tool.
 
 ## Mock Enable
 
 Use the **Mock Enable** toggle in each HTTP row to pass requests for that handler through to
 the real endpoint. The behavior selector only controls the response while that handler is
 enabled, so switching it off does not discard its selected behavior or custom response.
+
+Because a disabled mock is allowed to reach the configured backend, use a local or staging
+backend and non-sensitive data for this check.
 
 The toolbar **Mock Enable** toggle is a global switch for both HTTP and WebSocket mocks. When
 it is off, all requests and WebSocket connections pass through and active mock WebSocket
@@ -65,9 +71,11 @@ preserved, so turning the global switch back on restores their prior behavior.
 
 ## Reset
 
-<ExampleImage src="/msw-dev-tool-reset.webp" alt="reset button image" />
+<ExampleImage src="/msw-dev-tool-reset.webp" alt="Reset Dev Tool button" />
 
 You can reset all handlers to their initial state using the `Reset Dev Tool` button:
 
-- All response behaviors will be set back to **Default**
-- Global mocking and every HTTP/WebSocket enable toggle will be **Enabled** for mocking
+- All HTTP and WebSocket response behaviors will be set back to **default**
+- Global mocking and every HTTP/WebSocket enable toggle will be **enabled** for mocking
+- Temporary HTTP handlers, WebSocket endpoints, and WebSocket listeners will be removed
+- Active mocked WebSocket connections will be closed
