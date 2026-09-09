@@ -14,11 +14,11 @@ pnpm add -D @msw-dev-tool/core msw
 
 ## Entries
 
-| Import                       | Environment                                  |
-| ---------------------------- | -------------------------------------------- |
-| `@msw-dev-tool/core/browser` | Browser (`setupDevToolWorker`)               |
+| Import                       | Environment                                    |
+| ---------------------------- | ---------------------------------------------- |
+| `@msw-dev-tool/core/browser` | Browser (`setupDevToolWorker`)                 |
 | `@msw-dev-tool/core/node`    | Node (`setupDevToolServer` + session snapshot) |
-| `@msw-dev-tool/core/shared`  | Shared core types and schemas                |
+| `@msw-dev-tool/core/shared`  | Shared core types and schemas                  |
 
 ### Browser
 

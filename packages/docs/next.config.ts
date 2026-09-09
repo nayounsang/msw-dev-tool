@@ -26,9 +26,7 @@ const nextConfig: NextConfig = withNextra({
     return config;
   },
   async redirects() {
-    return [
-      { source: "/docs/custom-trigger", destination: "/docs/custom-ui", permanent: true },
-    ];
+    return [{ source: "/docs/custom-trigger", destination: "/docs/custom-ui", permanent: true }];
   },
 });
 
