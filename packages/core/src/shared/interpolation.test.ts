@@ -47,6 +47,12 @@ describe("interpolateText", () => {
       interpolateText("${{req.id}} ${{params.missing}} ${{request.body.missing}} ${{}}", context),
     ).toBe("${{req.id}} ${{params.missing}} ${{request.body.missing}} ${{}}");
   });
+
+  it("keeps an unresolved raw JSON token as a string value", () => {
+    expect(interpolateJson('{"missing":${{params.missing}}}', context)).toBe(
+      '{"missing":"${{params.missing}}"}',
+    );
+  });
 });
 
 describe("interpolateJson", () => {
