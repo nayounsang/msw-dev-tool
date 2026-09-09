@@ -2,7 +2,11 @@
 
 Inspect and control HTTP and WebSocket mock scenarios at runtime with MSW Dev Tool.
 
-MSW Dev Tool connects to MSW handlers that define your API contracts and normal scenarios. Use the browser UI to inspect requests and responses, switch a handler's runtime behavior, disable a mock to exercise the real API, or create a temporary mock API without adding exploratory handler code. CLI control is also available when automation is useful.
+MSW Dev Tool connects to MSW handlers that define your API contracts and normal scenarios.
+
+Use the browser UI to inspect requests and responses, switch a handler's runtime behavior,
+disable a mock to exercise the real API, or create a temporary mock API without adding
+exploratory handler code. CLI control is also available when automation is useful.
 
 ## Documentation
 
@@ -24,7 +28,7 @@ pnpm add -D @msw-dev-tool/core @msw-dev-tool/react msw
 ```ts
 import { setupDevToolWorker } from "@msw-dev-tool/core/browser";
 
-export const worker = setupDevToolWorker(...handlers);
+export const worker = await setupDevToolWorker(...handlers);
 ```
 
 ```tsx

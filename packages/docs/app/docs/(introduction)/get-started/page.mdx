@@ -109,22 +109,22 @@ agent or script needs to control that Node session.
 
 ### Browser UI
 
-##### 1. Integrate with msw
+#### 1. Integrate with MSW
 Replace MSW's `setupWorker` with `setupDevToolWorker` from `@msw-dev-tool/core/browser`:
 
 ```ts copy
 import { setupDevToolWorker } from "@msw-dev-tool/core/browser";
 
-export const worker = setupDevToolWorker(...handlers);
+export const worker = await setupDevToolWorker(...handlers);
 ```
 
 > **Note:** Unlike `msw`, `setupDevToolWorker()` returns a **Promise** that resolves to a worker instance.
 
-##### 2. Integrate worker with browser
+#### 2. Integrate the worker with the browser
 
 For detailed information about **msw browser integration**, please refer to the [msw official documentation](https://mswjs.io/docs/integrations/browser).
 
-##### 3. Add DevTool UI
+#### 3. Add the Dev Tool UI
 Add the `MSWDevTool` component and `msw-dev-tool.css` to your jsx:
 
 ```tsx {1-2}
