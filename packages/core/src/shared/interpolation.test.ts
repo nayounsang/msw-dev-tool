@@ -67,6 +67,26 @@ describe("interpolateJson", () => {
     });
   });
 
+  it("keeps quoted primitive and compound values as JSON strings", () => {
+    const output = interpolateJson(
+      '{"count":"${{request.body.count}}","active":"${{request.body.active}}","tags":"${{request.body.tags}}","body":"${{request.body}}"}',
+      {
+        ...context,
+        request: {
+          ...context.request,
+          body: { count: 2, active: true, tags: ["one", "two"], user: { id: 1 } },
+        },
+      },
+    );
+
+    expect(JSON.parse(output)).toEqual({
+      count: "2",
+      active: "true",
+      tags: '["one","two"]',
+      body: '{"count":2,"active":true,"tags":["one","two"],"user":{"id":1}}',
+    });
+  });
+
   it("renders multiple tokens and object values inside a JSON string", () => {
     const output = interpolateJson(
       '{"message":"id=${{params.id}} body=${{request.body}}"}',

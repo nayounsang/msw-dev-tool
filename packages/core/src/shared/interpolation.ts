@@ -42,8 +42,13 @@ const createMarkerPrefix = (input: string): string => {
   return prefix;
 };
 
+type TemplateMarker = {
+  token: string;
+  inString: boolean;
+};
+
 const replaceJsonTokens = (input: string) => {
-  const markers = new Map<string, string>();
+  const markers = new Map<string, TemplateMarker>();
   const markerPrefix = createMarkerPrefix(input);
   let output = "";
   let inString = false;
@@ -62,7 +67,7 @@ const replaceJsonTokens = (input: string) => {
       if (end !== -1) {
         const token = input.slice(cursor + 3, end);
         const marker = `${markerPrefix}${markerIndex++}__`;
-        markers.set(marker, token);
+        markers.set(marker, { token, inString });
         output += inString ? marker : JSON.stringify(marker);
         cursor = end + 2;
         continue;
@@ -80,17 +85,19 @@ const escapeRegExp = (input: string): string => input.replace(/[.*+?^${}()|[\]\\
 
 const replaceStringMarkers = (
   value: string,
-  markers: Map<string, string>,
+  markers: Map<string, TemplateMarker>,
   context: TemplateContext,
 ): string => {
   if (markers.size === 0) return value;
   const markerPattern = new RegExp([...markers.keys()].map(escapeRegExp).join("|"), "g");
-  return value.replace(markerPattern, (marker) => resolveToken(markers.get(marker)!, context));
+  return value.replace(markerPattern, (marker) =>
+    resolveToken(markers.get(marker)!.token, context),
+  );
 };
 
 const replaceMarkers = (
   value: unknown,
-  markers: Map<string, string>,
+  markers: Map<string, TemplateMarker>,
   context: TemplateContext,
 ): unknown => {
   if (Array.isArray(value)) return value.map((entry) => replaceMarkers(entry, markers, context));
@@ -104,8 +111,8 @@ const replaceMarkers = (
   }
   if (typeof value !== "string") return value;
 
-  for (const [marker, token] of markers) {
-    if (value === marker) {
+  for (const [marker, { token, inString }] of markers) {
+    if (value === marker && !inString) {
       const resolved = getPathValue(context, token);
       return resolved === undefined ? `\${{${token}}}` : resolved;
     }
