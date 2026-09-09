@@ -1,0 +1,4 @@
+interface:
+  display_name: "Documentation Review"
+  short_description: "Audit project docs against code and style"
+  default_prompt: "Use $documentation-review to audit the requested English developer documentation without editing it."
