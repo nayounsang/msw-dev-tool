@@ -10,6 +10,37 @@ import { Callout, Tabs } from "nextra/components";
 
 ## Configuration
 
+### Configure Chrome DevTools MCP
+
+For Codex, use `.codex/config.toml`:
+
+```toml copy
+[mcp_servers.chrome-devtools]
+command = "npx"
+args = ["-y", "chrome-devtools-mcp@latest", "--browser-url=http://127.0.0.1:9222"]
+startup_timeout_sec = 120.0
+```
+
+For Claude Code, use the root `.mcp.json`:
+
+```json copy
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest",
+        "--browser-url=http://127.0.0.1:9222"
+      ]
+    }
+  }
+}
+```
+
+See the [Chrome DevTools MCP documentation](https://github.com/ChromeDevTools/chrome-devtools-mcp#connecting-to-a-running-chrome-instance)
+for other clients and connection options.
+
 ### Install and connect the runtime
 
 ```bash copy
