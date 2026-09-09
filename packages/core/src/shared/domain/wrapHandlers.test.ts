@@ -110,6 +110,57 @@ describe("wrapHandlersWithBehavior", () => {
     expect(await result.text()).toBe("custom");
   });
 
+  it("renders resolver arguments for a code-defined custom response", async () => {
+    const handler = createHttpHandler(HttpMethod.POST, "/x");
+    wrapHandlersWithBehavior(
+      [handler],
+      () => CustomBehavior.CUSTOM_RESPONSE,
+      () => ({
+        contentType: MimeType.APPLICATION_JSON,
+        response: '{"id":"${{params.id}}","body":${{request.body}}}',
+        status: StringHttpStatusCode.OK,
+      }),
+    );
+
+    const result = await handler.resolver({
+      request: new Request("http://localhost/x", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value: true }),
+      }),
+      requestId: "1",
+      params: { id: "7" },
+      cookies: {},
+    });
+
+    if (!(result instanceof Response)) throw new Error("Expected Response");
+    expect(await result.json()).toEqual({ id: "7", body: { value: true } });
+  });
+
+  it("preserves the request body for the original resolver", async () => {
+    const original = vi.fn(async ({ request }: { request: Request }) =>
+      HttpResponse.text(await request.text()),
+    );
+    const handler = createHttpHandler(HttpMethod.POST, "/body", original);
+    wrapHandlersWithBehavior([handler], () => CustomBehavior.DEFAULT);
+    const request = new Request("http://localhost/body", {
+      method: "POST",
+      body: "original body",
+    });
+    const clone = vi.spyOn(request, "clone");
+
+    const result = await handler.resolver({
+      request,
+      requestId: "1",
+      params: {},
+      cookies: {},
+    });
+
+    if (!(result instanceof Response)) throw new Error("Expected Response");
+    expect(await result.text()).toBe("original body");
+    expect(clone).not.toHaveBeenCalled();
+  });
+
   it("preserves network-error behavior from the original resolver", async () => {
     const networkError = HttpResponse.error();
     const handler = createHttpHandler(HttpMethod.GET, "/x", async () => networkError);

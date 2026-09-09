@@ -91,6 +91,33 @@ describe("buildTempHandler", () => {
     expect(await result.text()).toBe("temporary custom");
   });
 
+  it("renders resolver arguments in a temporary response", async () => {
+    const { handler } = buildTempHandler(
+      {
+        ...baseInput,
+        response:
+          '{"id":"${{params.id}}","query":"${{request.query.page}}","body":${{request.body}}}',
+        header: '{"X-Request-ID":"${{requestId}}"}',
+      },
+      vi.fn(() => CustomBehavior.DEFAULT),
+    );
+
+    const result = await handler.resolver({
+      request: new Request("http://localhost/temp?page=2", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ok: true }),
+      }),
+      requestId: "request-1",
+      params: { id: "42" },
+      cookies: {},
+    });
+
+    if (!(result instanceof Response)) throw new Error("Expected Response");
+    expect(await result.json()).toEqual({ id: "42", query: "2", body: { ok: true } });
+    expect(result.headers.get("X-Request-ID")).toBe("request-1");
+  });
+
   it("supports every HTTP method when constructing temporary handlers", () => {
     for (const method of Object.values(HttpMethod)) {
       const { handler } = buildTempHandler({ ...baseInput, method });

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { HttpMethod, MimeType, StringHttpStatusCode } from "../types";
+import { isValidJsonTemplate } from "../interpolation";
 
 const bodylessStatusCodes = new Set([204, 205, 304]);
 
@@ -38,7 +39,7 @@ export const httpResponseConfigSchema = z
     if (
       data.response &&
       data.contentType === MimeType.APPLICATION_JSON &&
-      !isValidJson(data.response)
+      !isValidJsonTemplate(data.response)
     ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
