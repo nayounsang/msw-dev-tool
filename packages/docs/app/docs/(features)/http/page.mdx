@@ -24,6 +24,16 @@ Open an HTTP handler to send a request directly. Provide path parameters, query 
 
 Use **Add Temp Handler** to create a temporary HTTP endpoint with a method, path, status, headers, delay, and response body. This lets you create a mock API for an exploratory scenario without adding a handler to application code. Temporary handlers are stored with the active browser session and are removed by **Reset Dev Tool**.
 
+## Use dynamic response templates
+
+HTTP temporary-handler responses and custom responses can interpolate values from the MSW resolver arguments. A template must use the `${{...}}` marker, and the prefix must be one of the resolver argument names: `request`, `requestId`, `params`, or `cookies`.
+
+Use dots to access properties. For example, `${{params.id}}`, `${{cookies.locale}}`, `${{requestId}}`, `${{request.query.page}}`, and `${{request.body.user.name}}` are valid paths. The same syntax works in the response body and response-header values.
+
+`request.body` is parsed as JSON for JSON requests and is text for other request content types. If a value is an object or array, it is inserted as JSON. When a value is inserted into a JSON string, quotes, backslashes, and control characters are escaped automatically.
+
+Unsupported prefixes, missing properties, and values that cannot be read leave the original `${{...}}` token in the response. The template language does not evaluate JavaScript, call functions, or support custom delimiters. Dynamic templates are currently supported for HTTP only.
+
 ## Reset a scenario
 
 **Reset Dev Tool** restores HTTP behaviors to their defaults, re-enables mocks, and removes temporary HTTP handlers. Use it before moving to another scenario.
