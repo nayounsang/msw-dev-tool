@@ -27,6 +27,19 @@ One scenario can need more than one assertion when those assertions jointly esta
 
 These expressions are not automatic failures. Split only when they combine independently meaningful behaviors, conditions, or outcomes; keep them when they describe one coherent flow or one result. For example, `returns a response with its status, headers, and body` may state one response contract, while `creates, returns, and deletes a handler` usually covers separate outcomes.
 
+## Dynamic test cases
+
+Prefer test cases that remain statically visible in the test file. Avoid generating a case list
+with `.map`, `.flatMap`, filtering, deduplication, or helper functions when that hides which
+cases run, makes the suite grow unexpectedly, or prevents useful static analysis. This guidance
+targets generated test cases, not legitimate dynamic data or fixtures used inside one scenario.
+
+Prefer separately named tests over `it.each` when rows have different behavior, setup, or
+expected outcomes. Use `it.each` when it is necessary to express one shared scenario with the
+same Arrange, Act, and Assert shape, and keep the cases in a simple inline table. Do not treat
+`it.each` as forbidden; treat it as a tool for reducing repetition after checking that the
+individual cases remain easy to see and understand.
+
 ## Title vocabulary
 
 Avoid titles that label a result without saying what the result is. The following words commonly hide the expected behavior:
@@ -99,6 +112,39 @@ it("prints help and rejects unknown commands", ...)
 it("prints command help when called without a command", ...)
 it("prints command help when called with --help", ...)
 it("rejects an unknown command", ...)
+```
+
+### Branches and setup
+
+Do not hide independent scenarios behind a conditional assertion in one test. If the test
+chooses a different outcome based on a branch, split the conditions into separately named
+tests and keep each Arrange section limited to its condition:
+
+```ts
+// Before
+it("returns or rejects a request based on the handler state", async () => {
+  const handler = createHandler();
+  const enabled = getHandlerState(handler);
+
+  if (enabled) {
+    await expect(sendRequest(handler)).resolves.toMatchObject({ status: 200 });
+  } else {
+    await expect(sendRequest(handler)).rejects.toThrow("Mock disabled");
+  }
+});
+
+// After
+it("returns a mocked response when the handler is enabled", async () => {
+  const handler = createHandler({ enabled: true });
+
+  await expect(sendRequest(handler)).resolves.toMatchObject({ status: 200 });
+});
+
+it("rejects the request when the handler is disabled", async () => {
+  const handler = createHandler({ enabled: false });
+
+  await expect(sendRequest(handler)).rejects.toThrow("Mock disabled");
+});
 ```
 
 In contrast, assertions such as a returned response's status, headers, and body may remain together when they establish the one promised response. A title such as `creates, returns, and deletes a handler` usually covers separate outcomes and should be split.
