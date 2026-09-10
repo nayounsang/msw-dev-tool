@@ -4,7 +4,8 @@
 
 When working with the browser version of MSW Dev Tool, use the project-local
 Chrome DevTools MCP server.
-Start a separate Chrome profile with remote debugging enabled on
+
+1. Start a separate Chrome profile with remote debugging enabled on
    `http://127.0.0.1:9222`. Use the
    command for the current operating system:
 
@@ -16,8 +17,15 @@ Start a separate Chrome profile with remote debugging enabled on
    google-chrome --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-debug-9222
    ```
 
-   On Windows PowerShell, run:
+   On Windows PowerShell:
 
    ```powershell
    & "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-address=127.0.0.1 --remote-debugging-port=9222 --user-data-dir="$env:TEMP\chrome-debug-9222"
    ```
+
+2. Use `msw-dev-tool-browser tabs --cdp-url http://127.0.0.1:9222` to obtain the
+   Browser CLI target ID.
+
+3. After a mutation and the scenario is no longer
+   needed, run `msw-dev-tool-browser reset --cdp-url
+http://127.0.0.1:9222 --target <target-id>`
