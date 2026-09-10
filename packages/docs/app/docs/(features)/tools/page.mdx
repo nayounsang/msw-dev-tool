@@ -9,26 +9,28 @@ import { ExampleImage } from "@/app/_components/ExampleImage";
 
 <ExampleImage
   src="/msw-dev-tool-tools.webp"
-  alt="msw-dev-tool tools"
+  alt="MSW Dev Tool tools panel"
   width={730}
   height={122}
   className="!w-[50%]"
 />
 
-Utility tools for msw-dev-tool
+Utility tools for MSW Dev Tool.
 
 ## Reset Dev tool
 
-Button to reset the dev tool to the initial state.
+Button to reset the Dev Tool to its initial runtime state.
 
-- Set all behaviors to default
-- Remove all temp handlers you added.
+- Set HTTP and WebSocket behaviors to **default**
+- Enable global and per-item HTTP/WebSocket mocking
+- Remove temporary HTTP handlers, WebSocket endpoints, and listeners
+- Close active mocked WebSocket connections
 
 ## Add Temp Handler
 
 <ExampleImage
   src="/msw-dev-tool-handler-form.webp"
-  alt="msw-dev-tool add temp handler"
+  alt="Add Temp Handler form"
   width={718}
   height={1034}
   className="max-w-[350px] !w-[50%]"
@@ -52,7 +54,7 @@ You can add the following fields to the temporary handler.
     <Table.Tr>
       <Table.Td>Method</Table.Td>
       <Table.Td>HTTP method, Default: GET</Table.Td>
-      <Table.Td></Table.Td>
+      <Table.Td>Optional</Table.Td>
     </Table.Tr>
     <Table.Tr>
       <Table.Td>
@@ -64,22 +66,22 @@ You can add the following fields to the temporary handler.
     <Table.Tr>
       <Table.Td>[Delay](https://mswjs.io/docs/api/delay/)</Table.Td>
       <Table.Td>Delay time in milliseconds, Default: 0</Table.Td>
-      <Table.Td></Table.Td>
+      <Table.Td>Minimum 0 milliseconds</Table.Td>
     </Table.Tr>
     <Table.Tr>
       <Table.Td>Status</Table.Td>
-      <Table.Td>Status code: 2xx, 4xx and 5xx, Default: 200</Table.Td>
-      <Table.Td></Table.Td>
+      <Table.Td>One of the supported HTTP status codes, Default: 200</Table.Td>
+      <Table.Td>Supported codes only</Table.Td>
     </Table.Tr>
     <Table.Tr>
       <Table.Td>Status Text</Table.Td>
       <Table.Td>Status message for status code</Table.Td>
-      <Table.Td></Table.Td>
+      <Table.Td>Optional</Table.Td>
     </Table.Tr>
     <Table.Tr>
       <Table.Td>Content Type</Table.Td>
       <Table.Td>MIME type of response body, Default: JSON</Table.Td>
-      <Table.Td></Table.Td>
+      <Table.Td>One of the supported MIME types</Table.Td>
     </Table.Tr>
     <Table.Tr>
       <Table.Td>Response Body</Table.Td>

@@ -11,14 +11,14 @@ Keep handlers in code as the source of truth for API contracts and normal scenar
 Select an existing handler in the HTTP panel, confirm the endpoint it represents, then change its response behavior for the scenario you want to test.
 
 1. **Loading.** Apply `delay` to keep the request pending and verify skeletons, spinners, disabled inputs, and waiting UX.
-2. **Failure.** Apply `network error` or an error status to verify error copy, retry paths, fallbacks, and how the UI handles existing data.
-3. **Alternative data.** Set a custom response body to return an empty list, long text, an unauthorized user, or unexpected fields. Confirm the API response and verify empty states, layout, permission UI, and defensive data handling.
+2. **Failure.** Apply `network error` or a supported error status to verify error copy, retry paths, fallbacks, and how the UI handles existing data.
+3. **Alternative data.** Save a custom response, select **custom response** in the Behavior column, and return an empty list, long text, an unauthorized user, or unexpected fields. Confirm the API response and verify empty states, layout, permission UI, and defensive data handling.
 4. **Real backend.** Disable the mock at runtime to verify the real API integration without commenting out a handler or restarting the development server.
 5. **One-off flow.** Add a temporary handler for an endpoint or response that is not yet in code. Explore a new UI flow or edge case, then remove it or reset the Dev Tool.
 
-## Send a request with the debugger
+When a handler or the global **Mock Enable** switch is off, MSW does not intercept that request or WebSocket connection. The request can reach the configured backend, so use a local or staging backend and non-sensitive data when exercising this scenario.
 
-Open an HTTP handler to send a request directly. Provide path parameters, query parameters, and headers, then inspect the response. This is useful for checking a handler configuration before returning to the application flow.
+For the complete behavior list, custom-response editor, per-handler mock toggle, and supported status codes, see [Handler Table](/docs/handler-table). The **custom response** behavior is applied in two steps: save the response in the Custom Response column, then select **custom response** in the Behavior column.
 
 ## Explore a one-off flow
 
@@ -82,4 +82,4 @@ The response body is:
 
 ## Reset a scenario
 
-**Reset Dev Tool** restores HTTP behaviors to their defaults, re-enables mocks, and removes temporary HTTP handlers. Use it before moving to another scenario.
+**Reset Dev Tool** restores behaviors to their defaults, enables the global and per-item mock controls, removes temporary HTTP and WebSocket handlers, and closes active mocked WebSocket connections. Use it before moving to another scenario. See [Tools](/docs/tools) for the complete reset and temporary-handler reference.

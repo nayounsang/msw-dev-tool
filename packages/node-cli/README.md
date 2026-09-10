@@ -24,38 +24,44 @@ Sessions are PID-named files in `.msw-dev-tool/sessions` under the current
 working directory. Run `msw-dev-tool sessions` to list them. Commands select a
 session automatically only when exactly one exists; when there are multiple,
 pass `--pid <pid>`. The former `--session` option and `MSW_DEV_TOOL_SESSION`
-environment variable are not supported.
+environment variable are not supported. The normal flow is: start the app, run
+`sessions`, select a PID, and pass it to the following commands.
 
 ## Commands
 
-All commands print JSON to stdout.
+Successful commands print JSON to stdout. Errors are JSON on stderr and exit
+with a non-zero status.
 
 ```bash
 msw-dev-tool sessions
-msw-dev-tool --pid 4182 list
-msw-dev-tool session
-msw-dev-tool list
-msw-dev-tool get '<id>'
-msw-dev-tool set-behavior '<id>' delay
-msw-dev-tool set-enabled '<id>' false
-msw-dev-tool set-mock-enabled false
-msw-dev-tool add-temp --json '{"path":"/api/tmp","method":"get","contentType":"application/json","status":"200","response":"{\"ok\":true}"}'
-msw-dev-tool remove-temp '<id>'
-msw-dev-tool reset
+msw-dev-tool --pid <pid> session
+msw-dev-tool --pid <pid> list
+msw-dev-tool --pid <pid> get '<id>'
+msw-dev-tool --pid <pid> set-behavior '<id>' delay
+msw-dev-tool --pid <pid> set-enabled '<id>' false
+msw-dev-tool --pid <pid> set-mock-enabled false
+msw-dev-tool --pid <pid> add-temp --json '{"path":"/api/tmp","method":"get","contentType":"application/json","status":"200","response":"{\"ok\":true}"}'
+msw-dev-tool --pid <pid> remove-temp '<id>'
+msw-dev-tool --pid <pid> reset
 ```
 
 WebSocket commands use the same machine-readable JSON interface:
 
 ```bash
-msw-dev-tool --pid 4182 ws-list
-msw-dev-tool --pid 4182 ws-add-endpoint --json '{"kind":"string","value":"ws://localhost:8080/preview"}'
-msw-dev-tool --pid 4182 ws-add-listener '<endpoint-id>' --json '{"behavior":{"preset":"default"},"response":{"type":"send","dataType":"string","value":"temp response","delay":300,"repeat":{"interval":500,"repetitions":3}},"customResponse":{"type":"send","dataType":"string","value":"custom response","delay":100}}'
-msw-dev-tool --pid 4182 ws-set-listener-behavior '<listener-id>' --json '{"preset":"close"}'
-msw-dev-tool --pid 4182 ws-set-listener-response '<listener-id>' --json '{"type":"send","dataType":"string","value":"scheduled","delay":300,"repeat":{"interval":500,"repetitions":"Infinity"}}'
-msw-dev-tool --pid 4182 ws-set-listener-event-behavior '<listener-id>' 'chat/join' --json '{"preset":"send","options":{"message":"joined"}}'
+msw-dev-tool --pid <pid> ws-list
+endpoint_id="$(msw-dev-tool --pid <pid> ws-add-endpoint \
+  --json '{"kind":"string","value":"ws://localhost:8080/preview"}' \
+  | jq -r '.endpoint.endpointId')"
+listener_id="$(msw-dev-tool --pid <pid> ws-add-listener "$endpoint_id" --json '{"behavior":{"preset":"default"},"response":{"type":"send","dataType":"string","value":"temp response","delay":300,"repeat":{"interval":500,"repetitions":3}},"customResponse":{"type":"send","dataType":"string","value":"custom response","delay":100}}' \
+  | jq -r '.listener.info.id')"
+msw-dev-tool --pid <pid> ws-set-listener-behavior "$listener_id" --json '{"preset":"close"}'
+msw-dev-tool --pid <pid> ws-set-listener-response "$listener_id" --json '{"type":"send","dataType":"string","value":"scheduled","delay":300,"repeat":{"interval":500,"repetitions":"Infinity"}}'
+msw-dev-tool --pid <pid> ws-set-listener-event-behavior "$listener_id" 'chat/join' --json '{"preset":"send","options":{"message":"joined"}}'
+msw-dev-tool --pid <pid> ws-remove-listener "$listener_id"
+msw-dev-tool --pid <pid> ws-remove-endpoint "$endpoint_id"
 ```
 
-`set-enabled <handlerId> <true|false>` controls one HTTP handler. `set-mock-enabled <true|false>` globally controls HTTP and WebSocket mocking; its JSON result contains `mockEnabled`, while individual HTTP and WebSocket settings remain unchanged. WebSocket `ws-set-*-enabled` commands instead control only the named endpoint, listener, or logical event branch. Temporary listeners default to `{"preset":"default"}`. Their `response` and `customResponse` are independent configurations; each carries its own payload, delay, and repeat schedule. Repetitions include the first response, and unbounded repetition is the JSON string `"Infinity"` with a positive interval. Use `ws-set-listener-event-behavior`, `ws-set-listener-event-response`, and `ws-set-listener-event-custom-response` for declared logical event branches. See the [Node CLI documentation](https://msw-dev-tool-docs.vercel.app/docs/node-cli) for every HTTP and WebSocket command, JSON input, and result shape.
+`set-enabled <handlerId> <true|false>` controls one HTTP handler. `set-mock-enabled <true|false>` globally controls HTTP and WebSocket mocking; its JSON result contains `mockEnabled`, while individual HTTP and WebSocket settings remain unchanged. WebSocket `ws-set-*-enabled` commands instead control only the named endpoint, listener, or logical event branch. Temporary listeners default to `{"preset":"default"}`. Their `response` and `customResponse` are independent configurations; each carries its own payload, delay, and repeat schedule. Repetitions include the first response, and unbounded repetition is the JSON string `"Infinity"` with a positive interval. Use a local test client because an unbounded sequence can flood the client; stop it by updating or removing the listener, closing the client, or resetting the Dev Tool. Use `ws-set-listener-event-behavior`, `ws-set-listener-event-response`, and `ws-set-listener-event-custom-response` for declared logical event branches. See the [Node CLI documentation](https://msw-dev-tool-docs.vercel.app/docs/node-cli) for every HTTP and WebSocket command, JSON input, and result shape.
 
 ## Example (app)
 
@@ -70,8 +76,9 @@ server.listen();
 Then from another process / AI agent:
 
 ```bash
-msw-dev-tool --pid 4182 list
-msw-dev-tool --pid 4182 set-behavior '{"path":"/api/user","method":"get"}' "network error"
+msw-dev-tool sessions
+msw-dev-tool --pid <pid> list
+msw-dev-tool --pid <pid> set-behavior '{"path":"/api/user","method":"get"}' "network error"
 ```
 
-After changing handler code, run `msw-dev-tool reset` and wait for `ok` before further commands. Writes during an in-flight reset can be discarded when the owner reseeds; the CLI settles ~300ms so `ok` usually means apply finished.
+After changing handler code, run `msw-dev-tool --pid <pid> reset` and verify `"pendingReset": false` before further commands. Writes during an in-flight reset can be discarded when the owner reseeds; the CLI settles briefly, but the field is the authoritative completion check.

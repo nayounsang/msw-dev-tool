@@ -9,7 +9,14 @@ import { FetchProvider } from "./_components/FetchProvider";
 
 # Temp Handler
 
-> add and test [temp handler](/docs/tools#add-temp-handler) 🚀
+Use this page to verify a temporary HTTP handler without changing application code.
+
+1. Open the Dev Tool and choose **Add Temp Handler**.
+2. Add a `GET` handler for `/api/example` with the response settings you want to test.
+3. Enter `GET` and the same `/api/example` path in the request form below.
+4. Select **Fetch Data**.
+5. Confirm the returned status, headers, and body in the Response section.
+6. Remove the temporary handler from the Handler Table, or choose **Reset Dev Tool** when you are finished.
 
 <DevToolTrigger />
 

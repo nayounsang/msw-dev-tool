@@ -40,15 +40,15 @@ const server = await setupDevToolServer(...handlers);
 server.listen();
 ```
 
-Each server process writes a PID-named session snapshot to `.msw-dev-tool/sessions/<pid>.json` in its current working directory. List sessions, then use `--pid` whenever more than one is available.
+Each server process writes a PID-named session snapshot to `.msw-dev-tool/sessions/<pid>.json` in its current working directory. Start the process first, list sessions, select the PID, and then pass that PID to each command.
 
 ```bash copy
 msw-dev-tool sessions
-msw-dev-tool --pid 4182 session
+msw-dev-tool --pid <pid> session
 ```
 
 <Callout type="warning">
-After changing handler code, run `msw-dev-tool --pid 4182 reset` and wait for its JSON result before issuing another command. A normal process exit removes its session file; inspect and remove stale files after a crash before selecting a PID.
+After changing handler code, run `msw-dev-tool --pid <pid> reset` and verify the JSON result contains `"pendingReset": false` before issuing another command. Changes written while `pendingReset` is true can be replaced when the running process reloads its code. A normal process exit removes its session file; inspect and remove stale files after a crash before selecting a PID.
 </Callout>
 
 ## Commands & API
@@ -58,16 +58,16 @@ Every command prints machine-readable JSON to stdout. Handler IDs are JSON strin
 ### HTTP scenarios
 
 ```bash copy
-msw-dev-tool --pid 4182 list
-msw-dev-tool --pid 4182 get '{"path":"/api/items","method":"get"}'
-msw-dev-tool --pid 4182 set-behavior '{"path":"/api/items","method":"get"}' delay
-msw-dev-tool --pid 4182 set-enabled '{"path":"/api/items","method":"get"}' false
-msw-dev-tool --pid 4182 set-mock-enabled false
-msw-dev-tool --pid 4182 set-custom-response '{"path":"/api/items","method":"get"}' --json '{"status":"200","contentType":"application/json","response":"[]","delay":100}'
-msw-dev-tool --pid 4182 set-behavior '{"path":"/api/items","method":"get"}' 'custom response'
-msw-dev-tool --pid 4182 add-temp --json '{"path":"/api/preview","method":"get","contentType":"application/json","status":"200","response":"{\\"ok\\":true}"}'
-msw-dev-tool --pid 4182 remove-temp '{"path":"/api/preview","method":"get"}'
-msw-dev-tool --pid 4182 reset
+msw-dev-tool --pid <pid> list
+msw-dev-tool --pid <pid> get '{"path":"/api/items","method":"get"}'
+msw-dev-tool --pid <pid> set-behavior '{"path":"/api/items","method":"get"}' delay
+msw-dev-tool --pid <pid> set-enabled '{"path":"/api/items","method":"get"}' false
+msw-dev-tool --pid <pid> set-mock-enabled false
+msw-dev-tool --pid <pid> set-custom-response '{"path":"/api/items","method":"get"}' --json '{"status":"200","contentType":"application/json","response":"[]","delay":100}'
+msw-dev-tool --pid <pid> set-behavior '{"path":"/api/items","method":"get"}' 'custom response'
+msw-dev-tool --pid <pid> add-temp --json '{"path":"/api/preview","method":"get","contentType":"application/json","status":"200","response":"{\\"ok\\":true}"}'
+msw-dev-tool --pid <pid> remove-temp '{"path":"/api/preview","method":"get"}'
+msw-dev-tool --pid <pid> reset
 ```
 
 ```json
@@ -80,26 +80,30 @@ individual behavior and response settings.
 
 ### WebSocket scenarios
 
-First discover endpoint and listener IDs, then pass the selected ID to a mutation command.
+First discover endpoint and listener IDs, then pass the exact IDs returned by those commands to later mutations. Do not construct an endpoint ID from its URL.
 
 ```bash copy
-msw-dev-tool --pid 4182 ws-list
-msw-dev-tool --pid 4182 ws-get-endpoint 'websocket:endpoint:ws://localhost:8080/chat'
-msw-dev-tool --pid 4182 ws-add-endpoint --json '{"kind":"string","value":"ws://localhost:8080/preview"}'
-msw-dev-tool --pid 4182 ws-set-endpoint-enabled 'websocket:endpoint:ws://localhost:8080/chat' false
-msw-dev-tool --pid 4182 ws-add-listener 'websocket:endpoint:ws://localhost:8080/preview:0' --json '{"behavior":{"preset":"default"},"response":{"type":"send","dataType":"string","value":"temp response","delay":300,"repeat":{"interval":500,"repetitions":3}},"customResponse":{"type":"send","dataType":"string","value":"custom response","delay":100}}'
-msw-dev-tool --pid 4182 ws-set-listener-behavior '<listener-id>' --json '{"preset":"close","options":{"code":4001,"reason":"test"}}'
-msw-dev-tool --pid 4182 ws-set-listener-response '<listener-id>' --json '{"type":"send","dataType":"string","value":"temp response"}'
-msw-dev-tool --pid 4182 ws-set-listener-custom-response '<listener-id>' --json '{"type":"send","dataType":"string","value":"hello"}'
-msw-dev-tool --pid 4182 ws-set-listener-behavior '<listener-id>' --json '{"preset":"custom response"}'
-msw-dev-tool --pid 4182 ws-set-listener-response '<listener-id>' --json '{"type":"send","dataType":"string","value":"scheduled","delay":300,"repeat":{"interval":500,"repetitions":"Infinity"}}'
-msw-dev-tool --pid 4182 ws-set-listener-enabled '<listener-id>' false
-msw-dev-tool --pid 4182 ws-remove-listener '<temporary-listener-id>'
-msw-dev-tool --pid 4182 ws-remove-endpoint 'websocket:endpoint:ws://localhost:8080/preview:0'
+msw-dev-tool --pid <pid> ws-list
+endpoint_id="$(msw-dev-tool --pid <pid> ws-add-endpoint \
+  --json '{"kind":"string","value":"ws://localhost:8080/preview"}' \
+  | jq -r '.endpoint.endpointId')"
+listener_id="$(msw-dev-tool --pid <pid> ws-add-listener "$endpoint_id" --json '{"behavior":{"preset":"default"},"response":{"type":"send","dataType":"string","value":"temp response","delay":300,"repeat":{"interval":500,"repetitions":3}},"customResponse":{"type":"send","dataType":"string","value":"custom response","delay":100}}' \
+  | jq -r '.listener.info.id')"
+msw-dev-tool --pid <pid> ws-get-endpoint "$endpoint_id"
+msw-dev-tool --pid <pid> ws-set-endpoint-enabled "$endpoint_id" false
+msw-dev-tool --pid <pid> ws-set-listener-behavior "$listener_id" --json '{"preset":"close","options":{"code":4001,"reason":"test"}}'
+msw-dev-tool --pid <pid> ws-set-listener-response "$listener_id" --json '{"type":"send","dataType":"string","value":"scheduled","delay":300,"repeat":{"interval":500,"repetitions":"Infinity"}}'
+msw-dev-tool --pid <pid> ws-set-listener-enabled "$listener_id" false
+msw-dev-tool --pid <pid> ws-remove-listener "$listener_id"
+msw-dev-tool --pid <pid> ws-remove-endpoint "$endpoint_id"
 ```
 
 ```json
-{"ok":true,"endpoint":{"endpointId":"websocket:endpoint:ws://localhost:8080/chat","enabled":false,"listeners":[]}}
+{"ok":true,"endpoint":{"endpointId":"<value returned in endpoint.endpointId>","enabled":false,"listeners":[]}}
 ```
 
-`ws-set-*-enabled` commands control only the selected WebSocket endpoint, listener, or logical event branch; the global `set-mock-enabled` switch takes precedence. `ws-add-endpoint`, `ws-add-listener`, and `ws-set-listener-behavior` accept JSON input. A temporary listener defaults to `{ "preset": "default" }`; its `response` and `customResponse` are independent configurations containing payload, delay, and repeat. Default uses `response`, while `{ "preset": "custom response" }` uses `customResponse`. `repeat.repetitions` includes the first response; use `"Infinity"` with a positive interval for unbounded repetition. Update each complete configuration with `ws-set-listener-response` or `ws-set-listener-custom-response`. Send supports String, Blob, and ArrayBuffer values; Blob and ArrayBuffer values are space-separated hexadecimal bytes. Close accepts optional `code` and `reason`. Code-discovered endpoints and listeners cannot be removed; remove commands apply only to temporary items.
+`ws-set-*-enabled` commands control only the selected WebSocket endpoint, listener, or logical event branch; the global `set-mock-enabled` switch takes precedence. `ws-add-endpoint`, `ws-add-listener`, and `ws-set-listener-behavior` accept JSON input.
+
+A temporary listener defaults to `{ "preset": "default" }`. Its `response` and `customResponse` are independent configurations containing payload, delay, and repeat. Default uses `response`, while `{ "preset": "custom response" }` uses `customResponse`. `repeat.repetitions` includes the first response. Use `"Infinity"` only with a positive interval and a local test client because it can flood the client. Stop an unbounded sequence by updating or removing the listener, closing the client, or resetting the Dev Tool.
+
+Update each complete configuration with `ws-set-listener-response` or `ws-set-listener-custom-response`. Send supports String, Blob, and ArrayBuffer values; Blob and ArrayBuffer values are space-separated hexadecimal bytes. Close accepts optional `code` and `reason`. Code-discovered endpoints and listeners cannot be removed; remove commands apply only to temporary items.

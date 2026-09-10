@@ -26,13 +26,10 @@ const meta: MetaRecord = {
     title: "WebSocket",
   },
   "handler-table": {
-    display: "hidden",
-  },
-  debugger: {
-    display: "hidden",
+    title: "Handler Table",
   },
   tools: {
-    display: "hidden",
+    title: "Tools",
   },
   "node-cli": {
     title: "Node CLI",
