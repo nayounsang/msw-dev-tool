@@ -1,9 +1,10 @@
 import { HttpResponse, passthrough } from "msw";
 import type { BehaviorResolverResult } from "../types";
-import { HttpResponseConfig, HttpHandlerBehavior } from "../types";
-import { getHandlerResponseByBehavior } from "../utils/handler";
+import { CustomBehavior, HttpResponseConfig, HttpHandlerBehavior } from "../types";
+import { getHandlerResponseByBehavior, hasHttpResponseTemplate } from "../utils/handler";
 import { getRowId } from "../utils/store";
 import { isHttpHandler } from "../utils/validate";
+import { createHttpTemplateContext } from "../httpInterpolation";
 
 const toStrictResolverResult = async (result: unknown): Promise<BehaviorResolverResult> => {
   const value = result instanceof Promise ? await result : result;
@@ -51,11 +52,17 @@ export const wrapHandlersWithBehavior = <T>(
       });
       const behavior = getBehavior(id);
       if (!getMockEnabled() || !getEnabled(id)) return passthrough();
+      const customResponse = getCustomResponse(id);
+      const context =
+        behavior === CustomBehavior.CUSTOM_RESPONSE && hasHttpResponseTemplate(customResponse)
+          ? await createHttpTemplateContext(args)
+          : undefined;
 
       return await getHandlerResponseByBehavior(
         behavior,
         () => toStrictResolverResult(originalResolver(args)),
-        getCustomResponse(id),
+        customResponse,
+        context,
       );
     };
     return handler;

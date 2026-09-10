@@ -8,9 +8,14 @@ import {
   TempHandlerInput,
 } from "../types";
 import type { HydratableFlattenHandler } from "../utils/storage";
-import { createHttpResponseFromConfig, getHandlerResponseByBehavior } from "../utils/handler";
+import {
+  createHttpResponseFromConfig,
+  getHandlerResponseByBehavior,
+  hasHttpResponseTemplate,
+} from "../utils/handler";
 import { getRowId } from "../utils/store";
 import { isHttpHandler } from "../utils/validate";
+import { createHttpTemplateContext } from "../httpInterpolation";
 
 export type { TempHandlerInput };
 
@@ -47,13 +52,24 @@ export const buildTempHandler = (
 
   const id = getRowId({ path, method });
 
-  const created = new MswHttpHandler(toMswMethod(method), path, async () => {
+  const created = new MswHttpHandler(toMswMethod(method), path, async (args) => {
     if (!getMockEnabled() || !getEnabled(id)) return passthrough();
     const behavior = getBehavior(id);
+    const customResponse = getCustomResponse(id);
+    const responseConfig =
+      behavior === HttpHandlerBehavior.CUSTOM_RESPONSE
+        ? customResponse
+        : !behavior || behavior === HttpHandlerBehavior.DEFAULT
+          ? data
+          : undefined;
+    const context = hasHttpResponseTemplate(responseConfig)
+      ? await createHttpTemplateContext(args)
+      : undefined;
     return await getHandlerResponseByBehavior(
       behavior,
-      () => createHttpResponseFromConfig(data),
-      getCustomResponse(id),
+      () => createHttpResponseFromConfig(data, context),
+      customResponse,
+      context,
     );
   });
 

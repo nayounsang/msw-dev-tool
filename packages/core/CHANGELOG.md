@@ -1,5 +1,11 @@
 # @msw-dev-tool/core
 
+## 1.11.0
+
+### Minor Changes
+
+- 2a26ba3: Support `${{request...}}`, `${{requestId}}`, `${{params...}}`, and `${{cookies...}}` templates in HTTP temporary-handler and custom responses.
+
 ## 1.10.0
 
 ### Minor Changes

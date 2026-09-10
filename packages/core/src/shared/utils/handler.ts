@@ -8,6 +8,7 @@ import {
   STANDARD_HTTP_STATUS_TEXT,
 } from "../types";
 import { headerRecordSchema } from "../schema";
+import { interpolateJson, interpolateText, TemplateContext } from "../interpolation";
 
 export type { BehaviorResolverResult };
 
@@ -15,25 +16,49 @@ type MaybeBehaviorResolverResult = BehaviorResolverResult | Promise<BehaviorReso
 
 const getDefaultStatusText = (status: number) => STANDARD_HTTP_STATUS_TEXT[status] ?? "";
 
+export const hasHttpResponseTemplate = (config: HttpResponseConfig | undefined): boolean =>
+  config !== undefined &&
+  [config.response, config.header].some((value) => value?.includes("${{") === true);
+
+const sanitizeHeaderValue = (value: string): string => value.replace(/[\r\n\0]/g, " ");
+
 export const createHttpResponseFromConfig = async (
   config: HttpResponseConfig,
+  context?: TemplateContext,
 ): Promise<HttpResponse> => {
   await delay(config.delay ?? 0);
   const status = Number(config.status);
   const customHeaders = config.header
     ? headerRecordSchema.parse(JSON.parse(config.header))
     : undefined;
+  const renderedHeaders =
+    context && customHeaders
+      ? Object.fromEntries(
+          Object.entries(customHeaders).map(([key, value]) => [
+            key,
+            sanitizeHeaderValue(interpolateText(value, context)),
+          ]),
+        )
+      : customHeaders;
+  const response =
+    context && config.response !== undefined
+      ? config.contentType === "application/json"
+        ? config.response.includes("${{")
+          ? interpolateJson(config.response, context)
+          : config.response
+        : interpolateText(config.response, context)
+      : config.response;
   const contentLength =
     config.contentType === "application/json"
-      ? new Blob(config.response === undefined ? [] : [config.response]).size.toString()
+      ? new Blob(response === undefined ? [] : [response]).size.toString()
       : undefined;
-  return new HttpResponse(config.response ?? null, {
+  return new HttpResponse(response ?? null, {
     status,
     statusText: config.statusText ?? getDefaultStatusText(status),
     headers: {
       "Content-Type": config.contentType,
       ...(contentLength === undefined ? {} : { "Content-Length": contentLength }),
-      ...customHeaders,
+      ...renderedHeaders,
     },
   });
 };
@@ -42,6 +67,7 @@ export const getHandlerResponseByBehavior = async (
   behavior: HttpHandlerBehavior | undefined | string,
   originalResolverCallback: () => MaybeBehaviorResolverResult,
   customResponse?: HttpResponseConfig,
+  context?: TemplateContext,
 ): Promise<BehaviorResolverResult> => {
   if (!behavior || behavior === CustomBehavior.DEFAULT) {
     return originalResolverCallback();
@@ -64,7 +90,7 @@ export const getHandlerResponseByBehavior = async (
     if (!customResponse) {
       throw new Error("Please configure a custom response before using this behavior.");
     }
-    return createHttpResponseFromConfig(customResponse);
+    return createHttpResponseFromConfig(customResponse, context);
   }
 
   for (const code of Object.values(HttpErrorStatusCode)) {
