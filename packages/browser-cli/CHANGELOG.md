@@ -1,5 +1,13 @@
 # @msw-dev-tool/browser-cli
 
+## 2.4.1
+
+### Patch Changes
+
+- Updated dependencies [2a26ba3]
+  - @msw-dev-tool/core@1.11.0
+  - @msw-dev-tool/cli-core@0.5.1
+
 ## 2.4.0
 
 ### Minor Changes
