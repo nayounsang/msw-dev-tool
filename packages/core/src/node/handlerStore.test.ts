@@ -8,6 +8,7 @@ import {
   nodeHandlerStore,
   readSnapshot,
   setSnapshotBehavior,
+  setSnapshotCustomResponse,
   addSnapshotTempHandler,
   requestSnapshotReset,
   syncNodeSession,
@@ -73,6 +74,38 @@ describe("setupDevToolServer", () => {
     await syncNodeSession();
 
     expect(nodeHandlerStore.getState().getHandlerBehavior(id)).toBe(HttpHandlerBehavior.DELAY);
+  });
+
+  it("renders a custom response after Node snapshot synchronization", async () => {
+    const sessionPath = makeSession();
+    await setupDevToolServer(http.post("/api/items", () => HttpResponse.json({ ok: true })));
+    const id = nodeHandlerStore.getState().flattenHandlers[0]!.id;
+
+    await setSnapshotCustomResponse(sessionPath, id, {
+      contentType: MimeType.APPLICATION_JSON,
+      status: StringHttpStatusCode.OK,
+      response: '{"page":"${{request.query.page}}","body":${{request.body}}}',
+      header: '{"X-Cookie":"${{cookies.locale}}"}',
+    });
+    await setSnapshotBehavior(sessionPath, id, HttpHandlerBehavior.CUSTOM_RESPONSE);
+    await syncNodeSession();
+
+    const handler = nodeHandlerStore.getState().getFlattenHandlerById(id);
+    if (!handler) throw new Error("Expected synchronized handler");
+    const result = await handler.handler.resolver({
+      request: new Request("http://localhost/api/items?page=2", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ok: true }),
+      }),
+      requestId: "node-request",
+      params: {},
+      cookies: { locale: "ko" },
+    });
+
+    if (!(result instanceof Response)) throw new Error("Expected Response");
+    expect(await result.json()).toEqual({ page: "2", body: { ok: true } });
+    expect(result.headers.get("X-Cookie")).toBe("ko");
   });
 
   it("rejects a second active Node session in the same process", async () => {

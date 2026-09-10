@@ -27,6 +27,24 @@ describe("tempHandlerSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("accepts JSON response templates", () => {
+    expect(
+      tempHandlerSchema.safeParse({
+        ...validBase,
+        response: '{"id":"${{params.id}}","body":${{request.body}}}',
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects an invalid JSON value template", () => {
+    expect(
+      tempHandlerSchema.safeParse({
+        ...validBase,
+        response: '{"id":${{params.id}}-suffix}',
+      }).success,
+    ).toBe(false);
+  });
+
   it("accepts MSW path patterns", () => {
     expect(isValidHandlerPath("/users/:id")).toBe(true);
     expect(isValidHandlerPath("/files/*")).toBe(true);

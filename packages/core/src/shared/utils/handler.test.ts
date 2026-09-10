@@ -18,6 +18,19 @@ vi.mock("msw", async (importOriginal) => {
 });
 
 describe("getHandlerResponseByBehavior", () => {
+  const context = {
+    request: {
+      body: { id: 'a"b' },
+      headers: { "x-request-value": "yes" },
+      method: "GET",
+      query: { page: "2" },
+      url: "https://example.test/items?page=2",
+    },
+    requestId: "request-1",
+    params: { id: "42" },
+    cookies: { locale: "ko" },
+  };
+
   it("creates an empty JSON response with its default metadata", async () => {
     const result = await createHttpResponseFromConfig({
       contentType: MimeType.APPLICATION_JSON,
@@ -111,6 +124,57 @@ describe("getHandlerResponseByBehavior", () => {
     if (!(result instanceof Response)) throw new Error("Expected Response");
     expect(result.status).toBe(200);
     expect(result.statusText).toBe("Custom OK");
+  });
+
+  it("renders request values in custom response bodies and headers", async () => {
+    const result = await getHandlerResponseByBehavior(
+      CustomBehavior.CUSTOM_RESPONSE,
+      async () => HttpResponse.json({ original: true }),
+      {
+        response:
+          '{"id":${{params.id}},"name":"${{request.body.id}}","page":"${{request.query.page}}"}',
+        header: '{"X-Request-ID":"${{requestId}}","X-Locale":"${{cookies.locale}}"}',
+        contentType: MimeType.APPLICATION_JSON,
+        status: StringHttpStatusCode.OK,
+      },
+      context,
+    );
+
+    expect(result).toBeInstanceOf(Response);
+    if (!(result instanceof Response)) throw new Error("Expected Response");
+    expect(await result.json()).toEqual({ id: "42", name: 'a"b', page: "2" });
+    expect(result.headers.get("X-Request-ID")).toBe("request-1");
+    expect(result.headers.get("X-Locale")).toBe("ko");
+  });
+
+  it("removes unsafe control characters from a rendered response header", async () => {
+    const result = await createHttpResponseFromConfig(
+      {
+        contentType: MimeType.TEXT_PLAIN,
+        header: '{"X-Query":"${{request.query.q}}"}',
+        status: StringHttpStatusCode.OK,
+      },
+      {
+        ...context,
+        request: { ...context.request, query: { q: "before\nafter\u0000end" } },
+      },
+    );
+
+    expect(result.headers.get("X-Query")).toBe("before after end");
+  });
+
+  it("preserves a static JSON response when a resolver context is present", async () => {
+    const response = '{\n  "ok": true\n}';
+    const result = await createHttpResponseFromConfig(
+      {
+        contentType: MimeType.APPLICATION_JSON,
+        response,
+        status: StringHttpStatusCode.OK,
+      },
+      context,
+    );
+
+    expect(await result.text()).toBe(response);
   });
 
   it("throws when CUSTOM_RESPONSE has not been configured", async () => {
