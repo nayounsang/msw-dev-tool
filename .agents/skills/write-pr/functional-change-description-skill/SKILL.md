@@ -23,21 +23,24 @@ The implementation diff explains what was changed. The tests establish which beh
    - **Removed Spec** — an existing observable behavior is no longer available or is explicitly deleted.
    - **Changed Spec** — an existing observable behavior remains but its input, condition, output, or user-visible result changed. Show the behavior before and after.
    - **Added Spec** — a new observable behavior is introduced without replacing an existing behavior.
-   A new or expanded regression test does not by itself make a behavior added. If the implementation preserves an existing contract and the test only protects it, leave that behavior out of the output.
+     A new or expanded regression test does not by itself make a behavior added. If the implementation preserves an existing contract and the test only protects it, leave that behavior out of the output.
 5. Group related changes across packages by the user's flow and remove duplicate descriptions. Mention package boundaries only when they clarify the flow.
 6. Do not infer behavior that is absent from both the changed tests and the implementation diff. If the evidence is ambiguous, omit the claim rather than speculate.
 7. Return only the following Markdown structure. Use `None` for every section with no supported entries:
 
 ```md
 ### Removed Spec
+
 - ...
 
 ### Changed Spec
+
 | Before | After |
-| --- | --- |
-| ... | ... |
+| ------ | ----- |
+| ...    | ...   |
 
 ### Added Spec
+
 - ...
 ```
 
