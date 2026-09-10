@@ -27,6 +27,19 @@ One scenario can need more than one assertion when those assertions jointly esta
 
 These expressions are not automatic failures. Split only when they combine independently meaningful behaviors, conditions, or outcomes; keep them when they describe one coherent flow or one result. For example, `returns a response with its status, headers, and body` may state one response contract, while `creates, returns, and deletes a handler` usually covers separate outcomes.
 
+## Dynamic test cases
+
+Prefer test cases that remain statically visible in the test file. Avoid generating a case list
+with `.map`, `.flatMap`, filtering, deduplication, or helper functions when that hides which
+cases run, makes the suite grow unexpectedly, or prevents useful static analysis. This guidance
+targets generated test cases, not legitimate dynamic data or fixtures used inside one scenario.
+
+Prefer separately named tests over `it.each` when rows have different behavior, setup, or
+expected outcomes. Use `it.each` when it is necessary to express one shared scenario with the
+same Arrange, Act, and Assert shape, and keep the cases in a simple inline table. Do not treat
+`it.each` as forbidden; treat it as a tool for reducing repetition after checking that the
+individual cases remain easy to see and understand.
+
 ## Title vocabulary
 
 Avoid titles that label a result without saying what the result is. The following words commonly hide the expected behavior:
