@@ -101,6 +101,39 @@ it("prints command help when called with --help", ...)
 it("rejects an unknown command", ...)
 ```
 
+### Branches and setup
+
+Do not hide independent scenarios behind a conditional assertion in one test. If the test
+chooses a different outcome based on a branch, split the conditions into separately named
+tests and keep each Arrange section limited to its condition:
+
+```ts
+// Before
+it("returns or rejects a request based on the handler state", async () => {
+  const handler = createHandler();
+  const enabled = getHandlerState(handler);
+
+  if (enabled) {
+    await expect(sendRequest(handler)).resolves.toMatchObject({ status: 200 });
+  } else {
+    await expect(sendRequest(handler)).rejects.toThrow("Mock disabled");
+  }
+});
+
+// After
+it("returns a mocked response when the handler is enabled", async () => {
+  const handler = createHandler({ enabled: true });
+
+  await expect(sendRequest(handler)).resolves.toMatchObject({ status: 200 });
+});
+
+it("rejects the request when the handler is disabled", async () => {
+  const handler = createHandler({ enabled: false });
+
+  await expect(sendRequest(handler)).rejects.toThrow("Mock disabled");
+});
+```
+
 In contrast, assertions such as a returned response's status, headers, and body may remain together when they establish the one promised response. A title such as `creates, returns, and deletes a handler` usually covers separate outcomes and should be split.
 
 ## Workflow
