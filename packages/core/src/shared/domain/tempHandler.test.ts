@@ -240,6 +240,6 @@ describe("rehydrateTempHandlers", () => {
     expect(getBehavior).toHaveBeenCalledWith(tempId);
     expect(getCustomResponse).toHaveBeenCalledWith(tempId);
     expect(getEnabled).toHaveBeenCalledWith(tempId);
-    expect(getMockEnabled).toHaveBeenCalled();
+    expect(getMockEnabled).toHaveBeenCalledWith();
   });
 });

@@ -313,6 +313,7 @@ describe("snapshot file protocol", () => {
       }),
       expect.objectContaining({ id: "b" }),
     ]);
+    expect(next.state.flattenHandlers[1]!.customResponse).toBeUndefined();
   });
 
   it("mutates HTTP and global mock enabled state without changing other settings", async () => {

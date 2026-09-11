@@ -246,13 +246,9 @@ describe("temporary WebSocket listener state", () => {
     );
 
     expect(changed.eventBranch.behavior).toEqual({ preset: "no-reply" });
-    expect(changed.endpoint.listeners).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          info: expect.objectContaining({ id: second.listener.info.id }),
-        }),
-      ]),
-    );
+    expect(
+      changed.endpoint.listeners.find((listener) => listener.info.id === second.listener.info.id),
+    ).toEqual(second.listener);
   });
 
   it("rejects a logical event update when the listener has no matching branch", () => {
