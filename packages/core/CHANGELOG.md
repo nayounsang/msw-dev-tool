@@ -1,5 +1,11 @@
 # @msw-dev-tool/core
 
+## 1.12.0
+
+### Minor Changes
+
+- 48d5dfb: Support dynamic `${{event.data}}` templates in string WebSocket responses.
+
 ## 1.11.0
 
 ### Minor Changes
