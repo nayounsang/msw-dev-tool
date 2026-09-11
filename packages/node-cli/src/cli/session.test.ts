@@ -519,6 +519,34 @@ describe("FileSnapshotCliSession", () => {
     await missing;
   });
 
+  it("reports an enabled-state change when its handler is no longer in the snapshot", async () => {
+    vi.useFakeTimers();
+    api.setSnapshotHandlerEnabled.mockReturnValue(snapshot([]));
+    const session = new FileSnapshotCliSession(sessionPath);
+    const assertion = expect(session.setEnabled("a", false)).rejects.toThrow("Handler not found");
+
+    await vi.advanceTimersByTimeAsync(300);
+
+    await assertion;
+  });
+
+  it("reports a custom-response change when its handler is no longer in the snapshot", async () => {
+    vi.useFakeTimers();
+    api.setSnapshotCustomResponse.mockReturnValue(snapshot([]));
+    const session = new FileSnapshotCliSession(sessionPath);
+    const assertion = expect(
+      session.setCustomResponse("a", {
+        status: "200",
+        contentType: "text/plain",
+        response: "ok",
+      }),
+    ).rejects.toThrow("Handler not found");
+
+    await vi.advanceTimersByTimeAsync(300);
+
+    await assertion;
+  });
+
   it("reports a temporary handler creation when the handler is absent from the snapshot", async () => {
     vi.useFakeTimers();
     api.addSnapshotTempHandler.mockReturnValue(snapshot([]));
@@ -530,5 +558,25 @@ describe("FileSnapshotCliSession", () => {
     await vi.advanceTimersByTimeAsync(300);
 
     await assertion;
+  });
+
+  it("returns an empty endpoint list when endpoint removal omits WebSocket state", async () => {
+    vi.useFakeTimers();
+    const session = createWebSocketSession();
+    api.removeSnapshotWebSocketEndpoint.mockReturnValue(snapshot());
+
+    await expect(settleMutation(session.removeWebSocketEndpoint("ws-1"))).resolves.toEqual({
+      endpoints: [],
+    });
+  });
+
+  it("returns an empty endpoint list when listener removal omits WebSocket state", async () => {
+    vi.useFakeTimers();
+    const session = createWebSocketSession();
+    api.removeSnapshotWebSocketListener.mockReturnValue(snapshot());
+
+    await expect(
+      settleMutation(session.removeWebSocketListener(wsListener.info.id)),
+    ).resolves.toEqual({ endpoints: [] });
   });
 });

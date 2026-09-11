@@ -5,9 +5,9 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**/*.{ts,tsx}"],
-      exclude: ["src/**/*.test.{ts,tsx}", "src/**/*.d.ts"],
+      exclude: ["src/**/*.test.{ts,tsx}", "src/**/*.d.ts", "src/shared/testing/**"],
       reporter: ["text", "lcov"],
-      thresholds: { statements: 85, branches: 85, functions: 85, lines: 85 },
+      thresholds: { statements: 95, branches: 95, functions: 95, lines: 95 },
     },
     projects: [
       {

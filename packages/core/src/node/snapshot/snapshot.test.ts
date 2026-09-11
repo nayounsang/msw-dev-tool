@@ -207,6 +207,115 @@ describe("snapshot file protocol", () => {
     });
   });
 
+  it("changes only the requested handler behavior in a multi-handler snapshot", async () => {
+    const dir = makeTempDir();
+    const sessionPath = path.join(dir, "session.json");
+    await writeSnapshot(
+      sessionPath,
+      bumpSnapshot(createEmptySnapshot(), {
+        flattenHandlers: [
+          {
+            id: "a",
+            path: "/a",
+            method: HttpMethod.GET,
+            behavior: HttpHandlerBehavior.DEFAULT,
+            type: "default",
+          },
+          {
+            id: "b",
+            path: "/b",
+            method: HttpMethod.POST,
+            behavior: HttpHandlerBehavior.DEFAULT,
+            type: "default",
+          },
+        ],
+      }),
+    );
+
+    const next = await setSnapshotBehavior(sessionPath, "a", HttpHandlerBehavior.DELAY);
+
+    expect(next.state.flattenHandlers).toEqual([
+      expect.objectContaining({ id: "a", behavior: HttpHandlerBehavior.DELAY }),
+      expect.objectContaining({ id: "b", behavior: HttpHandlerBehavior.DEFAULT }),
+    ]);
+  });
+
+  it("changes only the requested handler enabled state in a multi-handler snapshot", async () => {
+    const dir = makeTempDir();
+    const sessionPath = path.join(dir, "session.json");
+    await writeSnapshot(
+      sessionPath,
+      bumpSnapshot(createEmptySnapshot(), {
+        flattenHandlers: [
+          {
+            id: "a",
+            path: "/a",
+            method: HttpMethod.GET,
+            behavior: HttpHandlerBehavior.DEFAULT,
+            enabled: true,
+            type: "default",
+          },
+          {
+            id: "b",
+            path: "/b",
+            method: HttpMethod.POST,
+            behavior: HttpHandlerBehavior.DEFAULT,
+            enabled: true,
+            type: "default",
+          },
+        ],
+      }),
+    );
+
+    const next = await setSnapshotHandlerEnabled(sessionPath, "a", false);
+
+    expect(next.state.flattenHandlers).toEqual([
+      expect.objectContaining({ id: "a", enabled: false }),
+      expect.objectContaining({ id: "b", enabled: true }),
+    ]);
+  });
+
+  it("changes only the requested handler custom response in a multi-handler snapshot", async () => {
+    const dir = makeTempDir();
+    const sessionPath = path.join(dir, "session.json");
+    await writeSnapshot(
+      sessionPath,
+      bumpSnapshot(createEmptySnapshot(), {
+        flattenHandlers: [
+          {
+            id: "a",
+            path: "/a",
+            method: HttpMethod.GET,
+            behavior: HttpHandlerBehavior.DEFAULT,
+            type: "default",
+          },
+          {
+            id: "b",
+            path: "/b",
+            method: HttpMethod.POST,
+            behavior: HttpHandlerBehavior.DEFAULT,
+            type: "default",
+          },
+        ],
+      }),
+    );
+
+    const next = await setSnapshotCustomResponse(sessionPath, "a", {
+      status: StringHttpStatusCode.CREATED,
+      response: "created",
+      contentType: MimeType.TEXT_PLAIN,
+    });
+
+    expect(next.state.flattenHandlers).toEqual([
+      expect.objectContaining({
+        id: "a",
+        customResponse: expect.objectContaining({ response: "created" }),
+      }),
+      expect.objectContaining({ id: "b" }),
+    ]);
+    expect(next.state.flattenHandlers[1]!.customResponse).toBeUndefined();
+  });
+
   it("mutates HTTP and global mock enabled state without changing other settings", async () => {
     const dir = makeTempDir();
     const sessionPath = path.join(dir, "session.json");
@@ -640,6 +749,23 @@ describe("snapshot file protocol", () => {
     await writeSnapshot(sessionPath, createEmptySnapshot());
     expect(sessionPath).toBe(path.join(dir, ".msw-dev-tool", "sessions", "4182.json"));
     expect(await listSessionPids(dir)).toEqual([4182]);
+  });
+
+  it("returns no session PIDs when the sessions directory does not exist", async () => {
+    const dir = makeTempDir();
+
+    await expect(listSessionPids(dir)).resolves.toEqual([]);
+  });
+
+  it("ignores session files that do not contain numeric PIDs", async () => {
+    const dir = makeTempDir();
+    const sessionsDir = path.join(dir, ".msw-dev-tool", "sessions");
+    fs.mkdirSync(sessionsDir, { recursive: true });
+    fs.writeFileSync(path.join(sessionsDir, "not-a-pid.json"), "{}");
+    fs.writeFileSync(path.join(sessionsDir, "4182.json"), "{}");
+    fs.writeFileSync(path.join(sessionsDir, "notes.txt"), "{}");
+
+    await expect(listSessionPids(dir)).resolves.toEqual([4182]);
   });
 
   it("applies sequential locked mutations without lost updates", async () => {

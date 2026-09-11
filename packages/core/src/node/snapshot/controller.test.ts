@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import fsPromises from "node:fs/promises";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { http } from "msw";
 import { FlattenHandler, HttpHandlerBehavior, HttpMethod } from "../../shared/types";
@@ -8,6 +9,7 @@ import { readSnapshot, writeSnapshot } from "./file";
 import { bumpSnapshot } from "./serialize";
 import { SessionController } from "./controller";
 import { getSessionPathForPid } from "./sessionPath";
+import { SessionSnapshot } from "./types";
 
 const tempDirs: string[] = [];
 
@@ -39,9 +41,11 @@ describe("SessionController", () => {
   it("does nothing when synchronized before start", async () => {
     const onSnapshot = vi.fn();
     const controller = new SessionController({ onSnapshot, onReset: () => [] });
+    expect(controller.sessionPath).toBeNull();
     await expect(controller.sync()).resolves.toBeUndefined();
     await expect(controller.publishWebSocket(() => [])).resolves.toBeUndefined();
     expect(onSnapshot).not.toHaveBeenCalled();
+    await controller.dispose();
   });
 
   it("publishes discovered WebSocket state only when it changes", async () => {
@@ -70,6 +74,15 @@ describe("SessionController", () => {
 
     expect(published.state.webSocket).toEqual(webSocket);
     expect((await readSnapshot(sessionPath))?.revision).toBe(published.revision);
+
+    const withoutWebSocket = {
+      ...published,
+      revision: published.revision + 1,
+      state: { ...published.state, webSocket: undefined },
+    } as typeof published;
+    await writeSnapshot(sessionPath, withoutWebSocket);
+    await controller.publishWebSocket(() => []);
+    expect((await readSnapshot(sessionPath))?.state.webSocket).toBeUndefined();
     await controller.dispose();
   });
 
@@ -232,11 +245,13 @@ describe("SessionController", () => {
     expect(onReset).toHaveBeenCalledTimes(1);
     expect((await readSnapshot(sessionPath))?.state.pendingReset).toBeUndefined();
 
-    // Second sync on the same revision exercises the "lastWrittenRevision === revision" branch.
+    // A repeated sync on the acknowledged revision remains a no-op.
     await controller.sync();
     expect(onReset).toHaveBeenCalledTimes(1);
 
-    await controller.dispose();
+    const disposal = controller.dispose();
+    const repeatedDisposal = controller.dispose();
+    await Promise.all([disposal, repeatedDisposal]);
     expect(fs.existsSync(sessionPath)).toBe(false);
     expect(fs.existsSync(`${sessionPath}.lock`)).toBe(false);
   });
@@ -278,6 +293,76 @@ describe("SessionController", () => {
     expect(onResetWebSocket).toHaveBeenCalledTimes(1);
     expect((await readSnapshot(sessionPath))?.state.webSocket).toEqual([]);
     await controller.dispose();
+  });
+
+  it("does not overwrite a reset acknowledged by another process", async () => {
+    const sessionPath = createTempSessionPath();
+    let resetRequest: SessionSnapshot | null = null;
+    const onReset = vi.fn(() => {
+      const acknowledged = {
+        ...resetRequest!,
+        revision: resetRequest!.revision + 1,
+        state: { ...resetRequest!.state, pendingReset: undefined },
+      } satisfies SessionSnapshot;
+      fs.writeFileSync(sessionPath, `${JSON.stringify(acknowledged)}\n`, "utf8");
+      return [createFlattenHandler()];
+    });
+    const controller = new SessionController({ onSnapshot: vi.fn(), onReset });
+
+    await controller.start([createFlattenHandler()]);
+    resetRequest = bumpSnapshot((await readSnapshot(sessionPath))!, {
+      pendingReset: true,
+    });
+    await writeSnapshot(sessionPath, resetRequest);
+
+    await controller.sync();
+
+    const acknowledged = (await readSnapshot(sessionPath))!;
+    expect(onReset).toHaveBeenCalledOnce();
+    expect(acknowledged.revision).toBe(resetRequest.revision + 1);
+    expect(acknowledged.state.pendingReset).toBeUndefined();
+    expect(acknowledged.state.flattenHandlers).toEqual(resetRequest.state.flattenHandlers);
+    await controller.dispose();
+  });
+
+  it("recreates an empty snapshot when the watched session file is missing", async () => {
+    const sessionPath = createTempSessionPath();
+    const controller = new SessionController({ onSnapshot: vi.fn(), onReset: () => [] });
+
+    await controller.start([createFlattenHandler()]);
+    const startWatching = (
+      controller as unknown as { startWatching: () => Promise<void> }
+    ).startWatching.bind(controller);
+    const access = vi
+      .spyOn(fsPromises, "access")
+      .mockRejectedValueOnce(Object.assign(new Error("missing"), { code: "ENOENT" }));
+
+    try {
+      await expect(startWatching()).resolves.toBeUndefined();
+      expect((await readSnapshot(sessionPath))?.state.flattenHandlers).toEqual([]);
+    } finally {
+      access.mockRestore();
+      await controller.dispose();
+    }
+  });
+
+  it("propagates unexpected errors while checking the watched session file", async () => {
+    createTempSessionPath();
+    const controller = new SessionController({ onSnapshot: vi.fn(), onReset: () => [] });
+
+    await controller.start([createFlattenHandler()]);
+    const startWatching = (
+      controller as unknown as { startWatching: () => Promise<void> }
+    ).startWatching.bind(controller);
+    const accessError = Object.assign(new Error("permission denied"), { code: "EACCES" });
+    const access = vi.spyOn(fsPromises, "access").mockRejectedValueOnce(accessError);
+
+    try {
+      await expect(startWatching()).rejects.toBe(accessError);
+    } finally {
+      access.mockRestore();
+      await controller.dispose();
+    }
   });
 
   it("recovers previous WebSocket state when a reset snapshot omits it", async () => {
@@ -361,7 +446,7 @@ describe("SessionController", () => {
     expect(onSnapshot).toHaveBeenCalledOnce();
     expect(onSnapshot).toHaveBeenCalledWith(next);
 
-    // Second sync with same revision triggers the lastWrittenRevision === revision branch (L84).
+    // A second sync with the same revision remains a no-op.
     await controller.sync();
     expect(onSnapshot).toHaveBeenCalledOnce();
     await controller.dispose();

@@ -333,6 +333,16 @@ describe("CdpBrowserCliSession", () => {
     );
   });
 
+  it("falls back to the generic evaluation error when exception details are empty", async () => {
+    const client = {
+      call: vi.fn().mockResolvedValue({ exceptionDetails: {} }),
+    } as unknown as CdpClient;
+
+    await expect(new CdpBrowserCliSession(client).describe()).rejects.toThrow(
+      "CDP evaluation failed",
+    );
+  });
+
   it("returns the WebSocket endpoints available to the CLI caller", async () => {
     const { client } = createWebSocketBridge();
 

@@ -5,6 +5,7 @@ import {
   setWebSocketListenerBehavior,
   setWebSocketListenerCustomResponse,
   setWebSocketListenerResponse,
+  setWebSocketListenerEventBehavior,
   mergeDiscoveredWebSocketState,
   resetWebSocketEndpoints,
 } from "./state";
@@ -219,5 +220,48 @@ describe("temporary WebSocket listener state", () => {
       response: { delay: 300, repeat: { interval: 500, repetitions: "Infinity" } },
       customResponse: { delay: 100, repeat: { interval: 50, repetitions: 3 } },
     });
+  });
+
+  it("updates one logical event branch without changing a sibling listener", () => {
+    const initial = endpoint("ws://state.test/routed");
+    const first = addTemporaryWebSocketListener([initial], initial.endpointId, {});
+    const withBranch = first.endpoints.map((entry) => ({
+      ...entry,
+      listeners: entry.listeners.map((listener) => ({
+        ...listener,
+        eventBranches: [
+          { eventType: "chat/message", enabled: true, behavior: { preset: "default" as const } },
+        ],
+      })),
+    }));
+    const second = addTemporaryWebSocketListener(withBranch, initial.endpointId, {
+      behavior: { preset: "echo" },
+    });
+
+    const changed = setWebSocketListenerEventBehavior(
+      second.endpoints,
+      first.listener.info.id,
+      "chat/message",
+      { preset: "no-reply" },
+    );
+
+    expect(changed.eventBranch.behavior).toEqual({ preset: "no-reply" });
+    expect(
+      changed.endpoint.listeners.find((listener) => listener.info.id === second.listener.info.id),
+    ).toEqual(second.listener);
+  });
+
+  it("rejects a logical event update when the listener has no matching branch", () => {
+    const created = addTemporaryWebSocketListener(
+      [endpoint("ws://state.test/missing-event")],
+      endpoint("ws://state.test/missing-event").endpointId,
+      {},
+    );
+
+    expect(() =>
+      setWebSocketListenerEventBehavior(created.endpoints, created.listener.info.id, "missing", {
+        preset: "echo",
+      }),
+    ).toThrow("WebSocket listener event not found");
   });
 });

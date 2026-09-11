@@ -35,7 +35,6 @@ export class SessionController {
   private disposing = false;
   private disposePromise: Promise<void> | null = null;
   private shuttingDown = false;
-  private cleanedUp = false;
 
   public constructor(private readonly options: SessionControllerOptions) {}
 
@@ -49,7 +48,6 @@ export class SessionController {
   ): Promise<void> {
     const sessionPath = await ensureSessionPath();
     this.repository = new SnapshotRepository(sessionPath);
-    this.cleanedUp = false;
     // A reused PID may have left a stale file/lock after a crash.
     await clearSessionArtifacts(sessionPath);
 
@@ -119,11 +117,6 @@ export class SessionController {
     const snapshot = await repository.read();
     if (!snapshot || snapshot.revision <= this.lastAppliedRevision) return;
 
-    if (snapshot.revision === this.lastWrittenRevision) {
-      this.lastAppliedRevision = snapshot.revision;
-      return;
-    }
-
     if (snapshot.state.pendingReset) {
       const flattenHandlers = this.options.onReset();
       const webSocket = this.options.onResetWebSocket?.() ?? previousWebSocket(snapshot);
@@ -154,9 +147,8 @@ export class SessionController {
       await this.syncQueue;
       this.unregisterExitHandler();
       const sessionPath = this.sessionPath;
-      if (sessionPath && !this.cleanedUp) {
+      if (sessionPath) {
         await clearSessionArtifacts(sessionPath);
-        this.cleanedUp = true;
       }
       this.repository = null;
     })();
@@ -164,8 +156,7 @@ export class SessionController {
   }
 
   private async startWatching(): Promise<void> {
-    const repository = this.repository;
-    if (!repository) return;
+    const repository = this.repository!;
 
     await this.stopWatching();
     try {

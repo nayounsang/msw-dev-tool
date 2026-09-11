@@ -709,6 +709,99 @@ describe("shared CLI commands", () => {
     ).rejects.toThrow("WebSocket endpoint not found");
   });
 
+  it("rejects get without a handler ID", async () => {
+    await expect(
+      findCommand("get")!.execute(
+        { session: createSession() },
+        { flags: {}, positionals: ["get"] },
+      ),
+    ).rejects.toThrow("Usage: get <id>");
+  });
+
+  it("rejects set-behavior without a behavior value", async () => {
+    await expect(
+      findCommand("set-behavior")!.execute(
+        { session: createSession() },
+        { flags: {}, positionals: ["set-behavior", "a"] },
+      ),
+    ).rejects.toThrow("Usage: set-behavior <id> <behavior>");
+  });
+
+  it("rejects set-mock-enabled without an enabled value", async () => {
+    await expect(
+      findCommand("set-mock-enabled")!.execute(
+        { session: createSession() },
+        { flags: {}, positionals: ["set-mock-enabled"] },
+      ),
+    ).rejects.toThrow("Usage: set-mock-enabled <true|false>");
+  });
+
+  it("rejects an event-enabled command without all required arguments", async () => {
+    await expect(
+      findCommand("ws-set-listener-event-enabled")!.execute(
+        { session: createSession() },
+        { flags: {}, positionals: ["ws-set-listener-event-enabled", wsListener.info.id] },
+      ),
+    ).rejects.toThrow("Usage: ws-set-listener-event-enabled");
+  });
+
+  it("rejects an event-enabled command with a non-boolean value", async () => {
+    await expect(
+      findCommand("ws-set-listener-event-enabled")!.execute(
+        { session: createSession() },
+        {
+          flags: {},
+          positionals: [
+            "ws-set-listener-event-enabled",
+            wsListener.info.id,
+            "chat/message",
+            "maybe",
+          ],
+        },
+      ),
+    ).rejects.toThrow("enabled must be true or false");
+  });
+
+  it("rejects an event-behavior command without JSON input", async () => {
+    await expect(
+      findCommand("ws-set-listener-event-behavior")!.execute(
+        { session: createSession() },
+        {
+          flags: {},
+          positionals: ["ws-set-listener-event-behavior", wsListener.info.id, "chat/message"],
+        },
+      ),
+    ).rejects.toThrow("Usage: ws-set-listener-event-behavior");
+  });
+
+  it("rejects an event-custom-response command without JSON input", async () => {
+    await expect(
+      findCommand("ws-set-listener-event-custom-response")!.execute(
+        { session: createSession() },
+        {
+          flags: {},
+          positionals: [
+            "ws-set-listener-event-custom-response",
+            wsListener.info.id,
+            "chat/message",
+          ],
+        },
+      ),
+    ).rejects.toThrow("Usage: ws-set-listener-event-custom-response");
+  });
+
+  it("rejects an event-response command without JSON input", async () => {
+    await expect(
+      findCommand("ws-set-listener-event-response")!.execute(
+        { session: createSession() },
+        {
+          flags: {},
+          positionals: ["ws-set-listener-event-response", wsListener.info.id, "chat/message"],
+        },
+      ),
+    ).rejects.toThrow("Usage: ws-set-listener-event-response");
+  });
+
   it.each([
     ["ws-add-endpoint", ["ws-add-endpoint"]],
     ["ws-add-listener", ["ws-add-listener", wsEndpoint.endpointId]],

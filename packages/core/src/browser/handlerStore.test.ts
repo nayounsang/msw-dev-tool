@@ -369,6 +369,70 @@ describe("browser control bridge", () => {
     ).toMatchObject({ value: "response" });
   });
 
+  it("rejects an event behavior change when the event branch is absent", async () => {
+    await setupDevToolWorker();
+    const endpointId = handlerStore.getState().addTempWebSocketEndpoint({
+      endpoint: "ws://browser.test/missing-event-behavior",
+      matcher: { kind: "string", value: "ws://browser.test/missing-event-behavior" },
+    });
+    const listenerId = handlerStore.getState().addTempWebSocketListener({ endpointId });
+
+    await expect(
+      Promise.resolve().then(() =>
+        getBridge().setWebSocketListenerEventBehavior(listenerId, "missing", {
+          preset: "echo",
+        }),
+      ),
+    ).rejects.toThrow("WebSocket listener event not found");
+  });
+
+  it("rejects an event enabled-state change when the event branch is absent", async () => {
+    await setupDevToolWorker();
+    const endpointId = handlerStore.getState().addTempWebSocketEndpoint({
+      endpoint: "ws://browser.test/missing-event-enabled",
+      matcher: { kind: "string", value: "ws://browser.test/missing-event-enabled" },
+    });
+    const listenerId = handlerStore.getState().addTempWebSocketListener({ endpointId });
+
+    expect(() =>
+      getBridge().setWebSocketListenerEventEnabled(listenerId, "missing", false),
+    ).toThrow("WebSocket listener event not found");
+  });
+
+  it("rejects an event custom-response change when the event branch is absent", async () => {
+    await setupDevToolWorker();
+    const endpointId = handlerStore.getState().addTempWebSocketEndpoint({
+      endpoint: "ws://browser.test/missing-event-custom",
+      matcher: { kind: "string", value: "ws://browser.test/missing-event-custom" },
+    });
+    const listenerId = handlerStore.getState().addTempWebSocketListener({ endpointId });
+
+    expect(() =>
+      getBridge().setWebSocketListenerEventCustomResponse(listenerId, "missing", {
+        type: "send",
+        dataType: "string",
+        value: "custom",
+      }),
+    ).toThrow("WebSocket listener event not found");
+  });
+
+  it("rejects an event response change when the event branch is absent", async () => {
+    await setupDevToolWorker();
+    const endpointId = handlerStore.getState().addTempWebSocketEndpoint({
+      endpoint: "ws://browser.test/missing-event-response",
+      matcher: { kind: "string", value: "ws://browser.test/missing-event-response" },
+    });
+    const listenerId = handlerStore.getState().addTempWebSocketListener({ endpointId });
+
+    expect(() =>
+      getBridge().setWebSocketListenerEventResponse(listenerId, "missing", {
+        type: "send",
+        dataType: "string",
+        value: "response",
+      }),
+    ).toThrow("WebSocket listener event not found");
+  });
+
   it("keeps HTTP temp metadata when hydrating WebSocket state", async () => {
     await setupDevToolWorker(http.get("/hydrate", () => HttpResponse.json({ ok: true })));
     const state = handlerStore.getState();
@@ -453,6 +517,10 @@ describe("browser control bridge", () => {
     handlerStore.setState({ worker: initial.worker });
     handlerStore.setState({ flattenHandlers: initial.flattenHandlers });
     handlerStore.setState({ restHandlers: ["unsupported"] });
+    handlerStore.setState({
+      webSocketEndpoints: initial.webSocketEndpoints,
+      webSocketListeners: initial.webSocketListeners,
+    });
     handlerStore.setState((current) => ({
       restHandlers: [...current.restHandlers, "another"],
     }));
