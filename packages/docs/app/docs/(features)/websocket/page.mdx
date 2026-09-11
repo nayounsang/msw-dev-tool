@@ -156,6 +156,45 @@ Example configurations:
 
 Save replaces the listener's stored custom response. Closing the editor without saving leaves the previous configuration unchanged. Selecting **custom response** without a saved configuration produces `Please configure a custom response before using this behavior.`
 
+## Use dynamic response templates
+
+String WebSocket responses can interpolate data from the incoming message with `${{event.data}}` and dot paths such as `${{event.data.userId}}`. Use templates in the temporary listener **Response** or a **Custom response**.
+
+Set the response's `dataType` to `"string"`, then enter the response value as text. For example, if the application sends this message:
+
+```json
+{
+  "userId": "user-7",
+  "profile": { "displayName": "Ada" }
+}
+```
+
+Use this response value:
+
+```text
+{
+  "userId": "${{event.data.userId}}",
+  "name": "${{event.data.profile.displayName}}",
+  "payload": ${{event.data}}
+}
+```
+
+The client receives the following string:
+
+```json
+{
+  "userId": "user-7",
+  "name": "Ada",
+  "payload": {"userId":"user-7","profile":{"displayName":"Ada"}}
+}
+```
+
+For JSON object or array messages, MSW Dev Tool parses the incoming string so nested properties can be read. Plain text, malformed JSON, JSON primitives, and values with an unavailable path remain unchanged for the paths that cannot be read. An unsupported token remains in the response as its original `${{...}}` text.
+
+The rendered response is always a string. MSW Dev Tool does not parse the rendered response, choose the final data type for the application, validate generated JSON, or escape interpolated values for you. Make sure the receiving application handles parsing, data types, JSON validity, and escaping as needed. Templates do not execute JavaScript or call functions.
+
+After saving a template, select **default** to use the listener's Response, or select **custom response** to use its Custom response. Send a WebSocket message to verify the rendered value.
+
 ## Verify real-time message states
 
 Select a listener and choose the response behavior that fits the flow you are checking.
