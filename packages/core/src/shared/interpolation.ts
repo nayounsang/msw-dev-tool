@@ -1,7 +1,7 @@
 export type TemplateContext = Record<string, unknown>;
 
 const tokenPattern = /\$\{\{([^{}]*)\}\}/g;
-const pathPattern = /^(request|requestId|params|cookies)(?:\.[A-Za-z0-9_-]+)*$/;
+const pathPattern = /^(request|requestId|params|cookies|event)(?:\.[A-Za-z0-9_-]+)*$/;
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;

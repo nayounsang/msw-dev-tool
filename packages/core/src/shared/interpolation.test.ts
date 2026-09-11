@@ -15,6 +15,14 @@ const context = {
 };
 
 describe("interpolateText", () => {
+  it("renders WebSocket event data and nested properties through the event root", () => {
+    expect(
+      interpolateText("${{event.data}}/${{event.data.userId}}", {
+        event: { data: { userId: "user-7", role: "admin" } },
+      }),
+    ).toBe('{"userId":"user-7","role":"admin"}/user-7');
+  });
+
   it("renders allowed resolver values through dot paths", () => {
     expect(
       interpolateText(
