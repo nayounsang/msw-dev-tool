@@ -50,6 +50,8 @@ const waitFor = async (predicate: () => boolean, timeout = 2_000) => {
   }
 };
 
+const messageEvent = (data: unknown): MessageEvent => new MessageEvent("message", { data });
+
 describe("temporary WebSocket runtime", () => {
   it("applies temporary endpoint behavior and drops removed handlers from the runtime", async () => {
     const store = createHandlerStore<SetupServer>({
@@ -562,6 +564,132 @@ describe("closeWebSocketConnections", () => {
     });
     adapter.dispatchWebSocketMessage(endpointId, client, new Event("message"), listenerId);
     expect(client.send).toHaveBeenCalledWith("hello");
+  });
+
+  it("renders a configured listener response from the incoming event", async () => {
+    const { adapter, endpointId, listenerId, client, store } =
+      await setupCustomResponseHarness("listener-template");
+    store.getState().setWebSocketListenerResponse(listenerId, {
+      type: "send",
+      dataType: "string",
+      value: "user=${{event.data.userId}}",
+    });
+    store.getState().setWebSocketListenerBehavior(listenerId, { preset: "default" });
+
+    adapter.dispatchWebSocketMessage(
+      endpointId,
+      client,
+      messageEvent({ userId: "user-7" }),
+      listenerId,
+    );
+
+    expect(client.send).toHaveBeenCalledWith("user=user-7");
+  });
+
+  it("renders a configured listener custom response as JSON", async () => {
+    const { adapter, endpointId, listenerId, client, store } = await setupCustomResponseHarness(
+      "listener-custom-template",
+    );
+    store.getState().setWebSocketListenerCustomResponse(listenerId, {
+      type: "send",
+      dataType: "string",
+      value: '{"userId":"${{event.data.userId}}"}',
+    });
+
+    adapter.dispatchWebSocketMessage(
+      endpointId,
+      client,
+      messageEvent({ userId: "user-7" }),
+      listenerId,
+    );
+
+    expect(client.send).toHaveBeenCalledWith('{"userId":"user-7"}');
+  });
+
+  it("renders a logical branch response from the routed event data", async () => {
+    const { adapter, endpointId, listenerId, client, store } = await setupCustomResponseHarness(
+      "branch-template",
+      ["message"],
+    );
+    store.getState().setWebSocketListenerEventResponse(listenerId, "message", {
+      type: "send",
+      dataType: "string",
+      value: "branch=${{event.data.value}}",
+    });
+    store.getState().setWebSocketListenerEventBehavior(listenerId, "message", {
+      preset: "default",
+    });
+
+    adapter.dispatchWebSocketMessage(
+      endpointId,
+      client,
+      messageEvent({ value: "latest" }),
+      listenerId,
+      undefined,
+      "message",
+    );
+
+    expect(client.send).toHaveBeenCalledWith("branch=latest");
+  });
+
+  it("renders a logical branch custom response from the routed event data", async () => {
+    const { adapter, endpointId, listenerId, client, store } = await setupCustomResponseHarness(
+      "branch-custom-template",
+      ["message"],
+    );
+    store.getState().setWebSocketListenerEventCustomResponse(listenerId, "message", {
+      type: "send",
+      dataType: "string",
+      value: "custom=${{event.data.value}}",
+    });
+    store.getState().setWebSocketListenerEventBehavior(listenerId, "message", {
+      preset: "custom response",
+    });
+
+    adapter.dispatchWebSocketMessage(
+      endpointId,
+      client,
+      messageEvent({ value: "latest" }),
+      listenerId,
+      undefined,
+      "message",
+    );
+
+    expect(client.send).toHaveBeenCalledWith("custom=latest");
+  });
+
+  it("uses each incoming event data for independently delayed responses", async () => {
+    vi.useFakeTimers();
+    try {
+      const { adapter, endpointId, listenerId, client, store } =
+        await setupCustomResponseHarness("event-template-schedule");
+      store.getState().setWebSocketListenerResponse(listenerId, {
+        type: "send",
+        dataType: "string",
+        value: "value=${{event.data.value}}",
+        delay: 100,
+      });
+      store.getState().setWebSocketListenerBehavior(listenerId, { preset: "default" });
+
+      adapter.dispatchWebSocketMessage(
+        endpointId,
+        client,
+        messageEvent({ value: "first" }),
+        listenerId,
+      );
+      adapter.dispatchWebSocketMessage(
+        endpointId,
+        client,
+        messageEvent({ value: "second" }),
+        listenerId,
+      );
+      await vi.advanceTimersByTimeAsync(100);
+
+      expect(client.send).toHaveBeenNthCalledWith(1, "value=first");
+      expect(client.send).toHaveBeenNthCalledWith(2, "value=second");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("dispatches a configured ArrayBuffer response", async () => {

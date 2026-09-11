@@ -22,7 +22,11 @@ import {
 import { createTemporaryWebSocketHandler } from "../../msw/websocket";
 import { webSocketEndpointsSchema } from "../schema/websocket";
 import { webSocketCloseOptionsSchema, webSocketSendOptionsSchema } from "../schema/websocket";
-import { CUSTOM_WEBSOCKET_RESPONSE_ERROR, toWebSocketSendData } from "../websocket/response";
+import {
+  CUSTOM_WEBSOCKET_RESPONSE_ERROR,
+  renderWebSocketResponse,
+  toWebSocketSendData,
+} from "../websocket/response";
 import { createHandlerRegistry } from "./commonSlice";
 import {
   createWebSocketSlice,
@@ -213,8 +217,10 @@ export const createHandlerStore = <TRuntime extends MswDevToolRuntime>(
             const schedule: ResponseSchedule = { cancelled: false };
             const run = () => {
               if (schedule.cancelled) return;
-              if (response.type === "send") client.send(toWebSocketSendData(response));
-              else client.close(response.code, response.reason);
+              if (response.type === "send") {
+                const messageEvent = isWebSocketMessageEvent(event) ? event : undefined;
+                client.send(toWebSocketSendData(renderWebSocketResponse(response, messageEvent)));
+              } else client.close(response.code, response.reason);
               count += 1;
               listenerSchedules.delete(schedule);
               if (

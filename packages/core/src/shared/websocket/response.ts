@@ -4,6 +4,8 @@ import type {
   WebSocketListenerConfig,
   WebSocketResponseConfig,
 } from "../types";
+import { interpolateText } from "../interpolation";
+import { createWebSocketTemplateContext } from "./interpolation";
 
 export const CUSTOM_WEBSOCKET_RESPONSE_ERROR =
   "Please configure a custom response before using this behavior.";
@@ -13,6 +15,33 @@ export const getWebSocketControlledResponse = (
   field: "response" | "customResponse",
   branch?: WebSocketEventBranchConfig,
 ): WebSocketResponseConfig | undefined => (branch ? branch[field] : listener[field]);
+
+/** Renders only string WebSocket payloads; binary and close settings stay unchanged. */
+export function renderWebSocketResponse(
+  response: Extract<WebSocketResponseConfig, { type: "send" }>,
+  event?: MessageEvent<WebSocketData>,
+): Extract<WebSocketResponseConfig, { type: "send" }>;
+export function renderWebSocketResponse(
+  response: Extract<WebSocketResponseConfig, { type: "close" }>,
+  event?: MessageEvent<WebSocketData>,
+): Extract<WebSocketResponseConfig, { type: "close" }>;
+export function renderWebSocketResponse(
+  response: WebSocketResponseConfig,
+  event?: MessageEvent<WebSocketData>,
+): WebSocketResponseConfig {
+  if (
+    !event ||
+    response.type !== "send" ||
+    response.dataType !== "string" ||
+    !response.value.includes("${{")
+  ) {
+    return response;
+  }
+
+  const context = createWebSocketTemplateContext(event);
+  const value = interpolateText(response.value, context);
+  return { ...response, value };
+}
 
 export const parseWebSocketHex = (value: string): Uint8Array => {
   const tokens = value.trim().split(/\s+/);
