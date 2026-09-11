@@ -218,6 +218,28 @@ describe("WebSocket state model", () => {
     ]);
   });
 
+  it("updates one listener enabled state and behavior without changing its sibling", () => {
+    const slice = createWebSocketSlice();
+    const endpointId = slice.addTempEndpoint({
+      endpoint: "ws://example.test/sibling",
+      matcher: { kind: "string", value: "ws://example.test/sibling" },
+    });
+    const first = slice.addTempListener({ endpointId });
+    const second = slice.addTempListener({ endpointId, behavior: { preset: "echo" } });
+
+    slice.setListenerEnabled(first, false);
+    slice.setListenerBehavior(first, { preset: "no-reply" });
+
+    expect(slice.getState().listeners).toEqual([
+      expect.objectContaining({ info: expect.objectContaining({ id: first }), enabled: false }),
+      expect.objectContaining({
+        info: expect.objectContaining({ id: second }),
+        enabled: true,
+        behavior: { preset: "echo" },
+      }),
+    ]);
+  });
+
   it("keeps code entries on reset and rejects deleting them", () => {
     const slice = createWebSocketSlice();
     const codeInfo = {

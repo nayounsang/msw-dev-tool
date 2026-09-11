@@ -47,6 +47,27 @@ describe("browser-cli", () => {
 
   afterEach(() => vi.restoreAllMocks());
 
+  it("prints command help when called without a command", async () => {
+    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+    await runCli([]);
+
+    expect(write).toHaveBeenCalledWith(expect.stringContaining("msw-dev-tool-browser"));
+  });
+
+  it("prints command help when --help is passed", async () => {
+    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+    await runCli(["--help"]);
+
+    expect(write).toHaveBeenCalledWith(expect.stringContaining("msw-dev-tool-browser"));
+  });
+
+  it("requires a CDP URL for commands other than help", async () => {
+    await expect(runCli(["list"])).rejects.toThrow("Missing required --cdp-url");
+    expect(cdp.listTargets).not.toHaveBeenCalled();
+  });
+
   it("lists page targets without exposing non-page targets", async () => {
     await expect(
       runWithJsonOutput(["tabs", "--cdp-url", "http://localhost:9222"]),
@@ -61,6 +82,24 @@ describe("browser-cli", () => {
     await expect(
       runCli(["list", "--cdp-url", "http://localhost:9222", "--target", "missing"]),
     ).rejects.toThrow("No page target found for id: missing");
+    expect(cdp.connect).not.toHaveBeenCalled();
+  });
+
+  it("rejects a page target without a debugger URL", async () => {
+    cdp.listTargets.mockResolvedValueOnce([
+      { id: "page-a", type: "page", title: "Example", url: "http://localhost:3000" },
+    ]);
+
+    await expect(
+      runCli(["list", "--cdp-url", "http://localhost:9222", "--target", "page-a"]),
+    ).rejects.toThrow("No page target found for id: page-a");
+    expect(cdp.connect).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unknown command after selecting a page target", async () => {
+    await expect(
+      runCli(["unknown", "--cdp-url", "http://localhost:9222", "--target", "page-a"]),
+    ).rejects.toThrow("Unknown command: unknown");
     expect(cdp.connect).not.toHaveBeenCalled();
   });
 

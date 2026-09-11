@@ -205,4 +205,41 @@ describe("rehydrateTempHandlers", () => {
       ),
     ).toEqual([]);
   });
+
+  it("rehydrates temporary handlers with current behavior and state callbacks", async () => {
+    const getBehavior = vi.fn(() => CustomBehavior.RETURN_NULL);
+    const getCustomResponse = vi.fn();
+    const getEnabled = vi.fn(() => true);
+    const getMockEnabled = vi.fn(() => true);
+    const tempId = getRowId({ path: baseInput.path, method: baseInput.method });
+
+    const result = rehydrateTempHandlers(
+      [
+        createFlattenHandler({
+          id: tempId,
+          path: baseInput.path,
+          method: baseInput.method,
+          type: "temp",
+          behavior: CustomBehavior.DEFAULT,
+          tempInput: baseInput,
+        }),
+      ],
+      getBehavior,
+      getCustomResponse,
+      getEnabled,
+      getMockEnabled,
+    );
+    const response = await result[0]!.handler.resolver({
+      request: new Request("http://localhost/temp", { method: "POST" }),
+      requestId: "1",
+      params: {},
+      cookies: {},
+    });
+
+    expect(response).toBeInstanceOf(Response);
+    expect(getBehavior).toHaveBeenCalledWith(tempId);
+    expect(getCustomResponse).toHaveBeenCalledWith(tempId);
+    expect(getEnabled).toHaveBeenCalledWith(tempId);
+    expect(getMockEnabled).toHaveBeenCalled();
+  });
 });

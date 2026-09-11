@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 const socketState = vi.hoisted(() => {
   const sockets: Array<any> = [];
@@ -6,7 +6,10 @@ const socketState = vi.hoisted(() => {
     private listeners = new Map<string, Array<(...args: any[]) => void>>();
     public constructor(_: string) {
       sockets.push(this);
-      queueMicrotask(() => this.emit("open"));
+      queueMicrotask(() => {
+        if (state.connection === "open") this.emit("open");
+        if (state.connection === "error") this.emit("error", new Error("connect failed"));
+      });
     }
     public on(name: string, listener: (...args: any[]) => void) {
       this.add(name, listener);
@@ -30,18 +33,34 @@ const socketState = vi.hoisted(() => {
       this.listeners.set(name, [...(this.listeners.get(name) ?? []), listener]);
     }
     public send(_: string, callback: (error?: Error) => void) {
-      callback(state.sendError ? new Error("send failed") : undefined);
+      if (state.sendThrow) throw new Error("socket is unavailable");
+      const complete = () => callback(state.sendError ? new Error("send failed") : undefined);
+      if (state.sendDelay) setTimeout(complete, state.sendDelay);
+      else complete();
     }
     public close() {
       this.emit("close");
     }
     public terminate() {}
   }
-  const state = { sendError: false };
+  const state = {
+    sendError: false,
+    sendThrow: false,
+    sendDelay: 0,
+    connection: "open" as "open" | "error" | "pending",
+  };
   return { sockets, FakeSocket, state };
 });
 vi.mock("ws", () => ({ default: socketState.FakeSocket }));
 import { CdpClient } from "./cdp";
+
+afterEach(() => {
+  vi.useRealTimers();
+  socketState.state.sendError = false;
+  socketState.state.sendThrow = false;
+  socketState.state.sendDelay = 0;
+  socketState.state.connection = "open";
+});
 
 describe("CdpClient protocol transport", () => {
   it("resolves a response that matches the pending CDP command", async () => {
@@ -116,6 +135,57 @@ describe("CdpClient protocol transport", () => {
     socketState.state.sendError = true;
     const client = await CdpClient.connect("ws://test");
     await expect(client.call("Runtime")).rejects.toThrow("send failed");
-    socketState.state.sendError = false;
+  });
+
+  it("rejects a command when sending to the CDP socket throws synchronously", async () => {
+    socketState.state.sendThrow = true;
+    const client = await CdpClient.connect("ws://test");
+
+    await expect(client.call("Runtime")).rejects.toThrow("socket is unavailable");
+  });
+
+  it("ignores a delayed send error after the command has already timed out", async () => {
+    vi.useFakeTimers();
+    socketState.state.sendDelay = 10;
+    socketState.state.sendError = true;
+    const client = await CdpClient.connect("ws://test");
+    const pending = expect(client.call("Runtime", undefined, 5)).rejects.toThrow(
+      "Timed out waiting for CDP Runtime after 5ms",
+    );
+
+    await vi.advanceTimersByTimeAsync(5);
+    await pending;
+    await vi.advanceTimersByTimeAsync(5);
+    client.close();
+  });
+
+  it("ignores CDP events that do not identify a pending command", async () => {
+    const client = await CdpClient.connect("ws://test");
+    const socket = socketState.sockets.at(-1)!;
+    const pending = client.call("Runtime.evaluate");
+
+    socket.emit("message", JSON.stringify({ result: { value: "ignored" } }));
+    socket.emit("message", JSON.stringify({ id: 1, result: { value: "ok" } }));
+
+    await expect(pending).resolves.toEqual({ value: "ok" });
+    client.close();
+  });
+
+  it("rejects when Chrome fails before opening the CDP socket", async () => {
+    socketState.state.connection = "error";
+
+    await expect(CdpClient.connect("ws://test")).rejects.toThrow("connect failed");
+  });
+
+  it("rejects when Chrome does not open the CDP socket before the timeout", async () => {
+    vi.useFakeTimers();
+    socketState.state.connection = "pending";
+
+    const connection = expect(CdpClient.connect("ws://test", 5)).rejects.toThrow(
+      "Timed out while connecting to Chrome after 5ms",
+    );
+    await vi.advanceTimersByTimeAsync(5);
+
+    await connection;
   });
 });
