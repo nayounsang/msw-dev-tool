@@ -1,5 +1,13 @@
 # @msw-dev-tool/node-cli
 
+## 0.6.2
+
+### Patch Changes
+
+- Updated dependencies [48d5dfb]
+  - @msw-dev-tool/core@1.12.0
+  - @msw-dev-tool/cli-core@0.5.2
+
 ## 0.6.1
 
 ### Patch Changes

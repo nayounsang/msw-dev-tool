@@ -1,5 +1,12 @@
 # @msw-dev-tool/cli-core
 
+## 0.5.2
+
+### Patch Changes
+
+- Updated dependencies [48d5dfb]
+  - @msw-dev-tool/core@1.12.0
+
 ## 0.5.1
 
 ### Patch Changes
