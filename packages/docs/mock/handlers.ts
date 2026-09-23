@@ -1,10 +1,15 @@
 import { http, HttpResponse, type RequestHandler, type WebSocketHandler } from "msw";
 import { ws } from "@msw-dev-tool/core/msw";
+import { z } from "zod";
 import { mockPosts } from "./const";
 import { BASE_URL } from "@/const/api";
 import { getPlaygroundWebSocketUrl } from "./websocket";
 
 const playground = ws.link(getPlaygroundWebSocketUrl());
+const playgroundMessageSchema = z.object({
+  type: z.string().optional(),
+  message: z.string().optional(),
+});
 
 const getMessageType = (data: unknown): string => {
   try {
@@ -46,18 +51,13 @@ export const handlers: Array<RequestHandler | WebSocketHandler> = [
           return;
         }
 
-        if (
-          typeof parsed !== "object" ||
-          parsed === null ||
-          Array.isArray(parsed) ||
-          ("type" in parsed && typeof parsed.type !== "string") ||
-          ("message" in parsed && typeof parsed.message !== "string")
-        ) {
+        const result = playgroundMessageSchema.safeParse(parsed);
+        if (!result.success) {
           client.send(JSON.stringify({ type: "error", message: "Send a valid JSON message." }));
           return;
         }
 
-        const message = parsed as { type?: string; message?: string };
+        const message = result.data;
 
         switch (message.type) {
           case "echo":

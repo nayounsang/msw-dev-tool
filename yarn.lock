@@ -6507,6 +6507,7 @@ __metadata:
     react-error-boundary: "npm:^5.0.0"
     tailwindcss: "npm:^4"
     typescript: "npm:^5"
+    zod: "npm:^3.24.2"
     zustand: "npm:^5.0.2"
   languageName: unknown
   linkType: soft
