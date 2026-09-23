@@ -13,7 +13,7 @@
     "@msw-dev-tool/core": "workspace:*",
     "@msw-dev-tool/react": "workspace:*",
     "msw": "^2.7.0",
-    "next": "15.2.1",
+    "next": "15.5.26",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
