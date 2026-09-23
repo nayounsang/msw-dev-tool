@@ -1,9 +1,25 @@
-import { http, HttpResponse } from "msw";
-import { RequestHandler } from "msw";
+import { http, HttpResponse, type RequestHandler, type WebSocketHandler } from "msw";
+import { ws } from "@msw-dev-tool/core/msw";
 import { mockPosts } from "./const";
 import { BASE_URL } from "@/const/api";
+import { getPlaygroundWebSocketUrl } from "./websocket";
 
-export const handlers: RequestHandler[] = [
+const playground = ws.link(getPlaygroundWebSocketUrl());
+
+const getMessageType = (data: unknown): string => {
+  try {
+    const message: unknown = JSON.parse(String(data));
+    if (typeof message === "object" && message !== null && "type" in message) {
+      return typeof message.type === "string" ? message.type : "unknown";
+    }
+  } catch {
+    return "unknown";
+  }
+
+  return "unknown";
+};
+
+export const handlers: Array<RequestHandler | WebSocketHandler> = [
   http.get(`${BASE_URL}/posts`, () => {
     return HttpResponse.json(mockPosts);
   }),
@@ -16,5 +32,42 @@ export const handlers: RequestHandler[] = [
     }
 
     return HttpResponse.json(post);
+  }),
+  playground.addEventListener("connection", ({ client }) => {
+    client.addEventListener(
+      "message",
+      (event) => {
+        let message: { type?: string; message?: string };
+
+        try {
+          message = JSON.parse(String(event.data));
+        } catch {
+          client.send(JSON.stringify({ type: "error", message: "Send a valid JSON message." }));
+          return;
+        }
+
+        switch (message.type) {
+          case "echo":
+            client.send(JSON.stringify({ type: "echo", message: message.message ?? "" }));
+            break;
+          case "uppercase":
+            client.send(
+              JSON.stringify({ type: "uppercase", message: (message.message ?? "").toUpperCase() }),
+            );
+            break;
+          case "ping":
+            client.send(JSON.stringify({ type: "pong", timestamp: new Date().toISOString() }));
+            break;
+          default:
+            client.send(JSON.stringify({ type: "error", message: "Unknown message type." }));
+        }
+      },
+      {
+        mswDevTool: {
+          eventTypes: ["echo", "uppercase", "ping"],
+          resolveEventType: getMessageType,
+        },
+      },
+    );
   }),
 ];
