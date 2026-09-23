@@ -70,6 +70,8 @@ export const WebSocketDemo = () => {
       addLogEntry("error", "WebSocket connection error");
     };
     socket.onclose = () => {
+      if (socketRef.current !== socket) return;
+
       socketRef.current = null;
       setStatus(hadError ? "error" : "disconnected");
     };

@@ -37,14 +37,27 @@ export const handlers: Array<RequestHandler | WebSocketHandler> = [
     client.addEventListener(
       "message",
       (event) => {
-        let message: { type?: string; message?: string };
+        let parsed: unknown;
 
         try {
-          message = JSON.parse(String(event.data));
+          parsed = JSON.parse(String(event.data));
         } catch {
           client.send(JSON.stringify({ type: "error", message: "Send a valid JSON message." }));
           return;
         }
+
+        if (
+          typeof parsed !== "object" ||
+          parsed === null ||
+          Array.isArray(parsed) ||
+          ("type" in parsed && typeof parsed.type !== "string") ||
+          ("message" in parsed && typeof parsed.message !== "string")
+        ) {
+          client.send(JSON.stringify({ type: "error", message: "Send a valid JSON message." }));
+          return;
+        }
+
+        const message = parsed as { type?: string; message?: string };
 
         switch (message.type) {
           case "echo":
